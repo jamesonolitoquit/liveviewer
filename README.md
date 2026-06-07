@@ -105,6 +105,69 @@ When a site uses `color-mix()` or CSS variables to create semi-transparent backg
 
 This affects **decorative elements only** (badges, tags, carousel arrows). Content text contrast is always accurate thanks to the alpha channel blending fix. Sites using traditional hex/rgb colors report accurate scores.
 
+## AI-Enriched Audits (Optional)
+
+Liveviewer can enrich WCAG audits with natural-language explanations and fix suggestions using LLMs.
+
+### Quick Start (OpenAI)
+```bash
+export OPENAI_API_KEY=sk-...
+liveviewer audit https://example.com --wcag --llm-enrich
+```
+
+### Quick Start (Ollama — local, free)
+```bash
+ollama pull llama3
+liveviewer audit https://example.com --wcag --llm-enrich --llm-provider ollama
+```
+
+### LLM Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--llm-enrich` | off | Enable AI enrichment |
+| `--no-llm` | — | Force deterministic only |
+| `--llm-provider` | `openai` | `openai` or `ollama` |
+| `--llm-model` | `gpt-3.5-turbo` | Model name |
+| `--llm-api-key` | `OPENAI_API_KEY` env | API key |
+| `--llm-cache-ttl` | `7` | Cache duration in days |
+| `--llm-clear-cache` | off | Clear cache before run |
+
+### Output
+
+```json
+{
+  "wcag": { "score": 84.9, "failCount": 36 },
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-3.5-turbo",
+    "summary": "36 contrast failures, mostly on decorative badges...",
+    "perFailure": [
+      {
+        "selector": "span.badge",
+        "ruleId": "color-contrast",
+        "explanation": "White text on light blue fails 4.5:1",
+        "suggestion": "Darken text to #1a1a2e",
+        "severity": "high"
+      }
+    ],
+    "cached": false
+  }
+}
+```
+
+If the LLM call fails (e.g., missing key or network error), the audit still succeeds and returns `llm.error`.
+
+### Privacy
+
+- API keys are sent directly to the provider from your machine — never to a Liveviewer backend.
+- Only failure summaries (selectors, colors, ratios) are sent, never full page DOM.
+- For complete privacy, use `--llm-provider ollama` for fully local processing.
+
+### Caching
+
+LLM responses are cached in `./llm-cache/` to avoid repeated API calls. TTL defaults to 7 days. Use `--llm-clear-cache` to force fresh analysis.
+
 ## Interaction Syntax
 
 | Pattern | Action |
@@ -119,10 +182,30 @@ This affects **decorative elements only** (badges, tags, carousel arrows). Conte
 ## API
 
 ```javascript
-const { audit, extract } = require('liveviewer/src/auditor');
-const { recommend } = require('liveviewer/src/recommender');
-const { renderHtml } = require('liveviewer/src/report');
-const { record, screenshot } = require('liveviewer/src/recorder');
+const { audit, extract, recommend, renderHtml } = require('@liveviewer/core');
+const { enrichWithLLM } = require('@liveviewer/llm');
+
+const result = await audit(url, { wcag: true, viewport: { width: 1280, height: 800 } });
+
+const llmResult = await enrichWithLLM(result, {
+  provider: 'openai',
+  model: 'gpt-3.5-turbo',
+  llmEnrich: true,
+  apiKey: process.env.OPENAI_API_KEY
+});
+```
+
+## Install
+
+```bash
+# Via npm global
+npm install -g liveviewer
+
+# Or from monorepo
+git clone https://github.com/jamesonolitoquit/liveviewer.git
+cd liveviewer
+npm install
+npx playwright install chromium
 ```
 
 ## License

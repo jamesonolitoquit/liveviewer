@@ -41,6 +41,13 @@ Options for "audit":
   --fail-on <n>       Exit non-zero if WCAG failures exceed n (for CI)
   --timeout <ms>      Navigation timeout (default: 30000)
   --wait-until <str>  Navigation wait strategy: networkidle (default), load, domcontentloaded
+  --llm-enrich        Enable AI enrichment of audit results (requires API key)
+  --no-llm            Force deterministic only, skip AI even if key present
+  --llm-provider <n>  AI provider: openai (default) or ollama
+  --llm-model <name>  Model (default: gpt-3.5-turbo or llama3 for ollama)
+  --llm-api-key <key> API key (or set OPENAI_API_KEY env var)
+  --llm-cache-ttl <d> Cache duration in days (default: 7)
+  --llm-clear-cache   Clear LLM cache before running
 
 Options for "extract":
   --width <px>        Viewport width (default: 1280)
@@ -79,6 +86,8 @@ Examples:
   liveviewer record https://jaostudio.vercel.app --interaction "click .btn" --interaction "wait 1000"
   liveviewer screenshot https://jaostudio.vercel.app --full-page --label home
   liveviewer analyze portfolio-1234567890 --fps 5
+  liveviewer audit https://example.com --wcag --llm-enrich
+  liveviewer audit https://example.com --wcag --llm-enrich --llm-provider ollama
   liveviewer mcp
 `);
   process.exit(0);
@@ -177,6 +186,13 @@ async function main() {
       const timeout = parseInt(parseArg('--timeout') || '30000');
       const waitUntil = parseArg('--wait-until') || 'networkidle';
 
+      const llmEnrich = hasFlag('--llm-enrich') || (!hasFlag('--no-llm') && !!parseArg('--llm-api-key') || !!process.env.OPENAI_API_KEY);
+      const llmProvider = parseArg('--llm-provider') || 'openai';
+      const llmModel = parseArg('--llm-model') || (llmProvider === 'ollama' ? 'llama3' : 'gpt-3.5-turbo');
+      const llmApiKey = parseArg('--llm-api-key') || process.env.OPENAI_API_KEY || '';
+      const llmCacheTtl = parseInt(parseArg('--llm-cache-ttl') || '7');
+      const llmClearCache = hasFlag('--llm-clear-cache');
+
       console.log(`Auditing ${url} at ${width}x${height}...`);
       const result = await audit(url, {
         viewport: { width, height },
@@ -196,6 +212,48 @@ async function main() {
             console.log(`    - ${f.selector} (ratio: ${f.contrastRatio}, need: ${f.required})`);
           }
         }
+      }
+
+      if (llmEnrich) {
+        console.log('\n  Enriching with LLM...');
+        try {
+          const { enrichWithLLM } = require('@liveviewer/llm');
+          const llmResult = await enrichWithLLM(result, {
+            llmEnrich: true,
+            provider: llmProvider,
+            model: llmModel,
+            apiKey: llmApiKey,
+            promptTemplate: 'default',
+            cacheTtlDays: llmCacheTtl,
+            clearCache: llmClearCache
+          });
+          result.llm = llmResult;
+
+          if (llmResult.error) {
+            console.warn(`  ⚠ LLM enrichment failed: ${llmResult.error}`);
+          } else {
+            console.log(`  LLM:        ${llmResult.provider}/${llmResult.model}`);
+            console.log(`  Summary:    ${llmResult.summary}`);
+            if (llmResult.perFailure?.length > 0) {
+              for (const pf of llmResult.perFailure.slice(0, 5)) {
+                console.log(`    [${pf.severity.toUpperCase()}] ${pf.selector}: ${pf.suggestion}`);
+              }
+              if (llmResult.perFailure.length > 5) {
+                console.log(`    ... and ${llmResult.perFailure.length - 5} more`);
+              }
+            }
+            if (llmResult.cached) {
+              console.log('  (cached)');
+            }
+          }
+        } catch (err) {
+          result.llm = { error: err.message, provider: llmProvider, model: llmModel };
+          console.warn(`  ⚠ LLM enrichment failed: ${err.message}`);
+        }
+
+        // Re-save audit result with LLM data
+        const metaPath = `audits/${label}-${result.timestamp}.json`;
+        fs.writeFileSync(metaPath, JSON.stringify(result, null, 2));
       }
 
       const failOn = parseArg('--fail-on');
