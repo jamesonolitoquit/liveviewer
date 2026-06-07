@@ -1,0 +1,10 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "cd ../.. && npm install && cd apps/web && npm run build",
+  "outputDirectory": ".next",
+  "functions": {
+    "src/app/api/audit/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
