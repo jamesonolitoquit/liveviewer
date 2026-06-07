@@ -1,0 +1,11 @@
+node_modules/
+recordings/
+audits/
+screenshots/
+extracts/
+benchmark-artifacts/
+llm-cache/
+packages/*/dist/
+*.log
+.DS_Store
+Thumbs.db

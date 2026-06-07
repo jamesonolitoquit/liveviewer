@@ -3,8 +3,8 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$ProjectRoot = "C:\Users\Jaoce\liveviewer"
-$LV = "node bin/liveviewer.js"
+$ProjectRoot = "C:\Users\Jaoce\OneDrive\Documents\Website Tools\liveviewer"
+$LV = "node packages/cli/bin/liveviewer.js"
 $RunId = "stress-" + (Get-Date -Format "yyyyMMdd-HHmmss")
 $Results = @()
 $PassCount = 0; $FailCount = 0; $SkipCount = 0; $WarnCount = 0

@@ -1,0 +1,21 @@
+{
+  "name": "@liveviewer/core",
+  "version": "1.0.0",
+  "description": "Liveviewer deterministic design QA engine",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "files": [
+    "src/",
+    "lib/",
+    "templates/",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node -e \"console.log('core: no tests yet')\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "wcag-contrast": "^3.0.0"
+  }
+}

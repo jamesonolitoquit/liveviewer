@@ -4,7 +4,7 @@ param(
   [string]$Label = "audit"
 )
 
-$liveviewer = "node C:\Users\Jaoce\liveviewer\bin\liveviewer.js"
+$liveviewer = "node packages/cli/bin/liveviewer.js"
 $results = @{ url = $Url; timestamp = (Get-Date -Format "o"); tests = @{}; overall = "PASS" }
 
 # ---- Test 1: Screenshot ----
@@ -28,7 +28,7 @@ if (Test-Path $shotJsonPath) {
 # ---- Test 2: Record ----
 $recOut = Invoke-Expression "$liveviewer record $Url --duration $DurationMs --interaction ""scroll 400"" --interaction ""wait 500"" --interaction ""hover nav a:first-child"" --interaction ""screenshot mid_scroll"" --label ${Label}_rec"
 $recTag = ($recOut | Select-String "Tag:\s+(.+)").Matches.Groups[1].Value.Trim()
-$recJsonPath = "C:\Users\Jaoce\liveviewer\recordings\$recTag.json"
+$recJsonPath = "recordings\$recTag.json"
 if (Test-Path $recJsonPath) {
   $rec = Get-Content $recJsonPath -Raw | ConvertFrom-Json
   $results.tests.recording = @{
@@ -47,7 +47,7 @@ if (Test-Path $recJsonPath) {
 
 # ---- Test 3: Analyze ----
 $anaOut = Invoke-Expression "$liveviewer analyze $recTag"
-$anaJsonPath = "C:\Users\Jaoce\liveviewer\recordings\$recTag.json"
+$anaJsonPath = "recordings\$recTag.json"
 if (Test-Path $anaJsonPath) {
   $ana = Get-Content $anaJsonPath -Raw | ConvertFrom-Json
   if ($results.tests.recording.passed) {

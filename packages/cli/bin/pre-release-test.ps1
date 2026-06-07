@@ -3,8 +3,8 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$ProjectRoot = "C:\Users\Jaoce\liveviewer"
-$LV = "node bin/liveviewer.js"
+$ProjectRoot = "C:\Users\Jaoce\OneDrive\Documents\Website Tools\liveviewer"
+$LV = "node packages/cli/bin/liveviewer.js"
 $RunId = "prerelease-" + (Get-Date -Format "yyyyMMdd-HHmmss")
 $Results = @()
 $PassCount = 0

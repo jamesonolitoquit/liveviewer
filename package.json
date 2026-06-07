@@ -1,34 +1,20 @@
 {
-  "name": "liveviewer",
+  "name": "liveviewer-monorepo",
   "version": "1.0.0",
+  "private": true,
   "description": "Frame-by-frame visual recording and analysis engine for live websites",
-  "license": "MIT",
-  "author": "Liveviewer",
-  "bin": {
-    "liveviewer": "bin/liveviewer.js"
-  },
-  "main": "src/index.js",
-  "files": [
-    "bin/",
-    "src/",
-    "lib/",
-    "templates/",
-    "README.md",
-    "LICENSE"
+  "workspaces": [
+    "packages/*"
   ],
   "scripts": {
-    "test": "node bin/liveviewer.js record https://jaostudio.vercel.app --duration 3000",
-    "record": "node bin/liveviewer.js record",
-    "screenshot": "node bin/liveviewer.js screenshot",
-    "analyze": "node bin/liveviewer.js analyze",
-    "mcp": "node bin/liveviewer.js mcp"
-  },
-  "dependencies": {
-    "ffmpeg-static": "^5.3.0",
-    "pixelmatch": "^7.0.0",
-    "playwright": "^1.52.0",
-    "sharp": "^0.34.0",
-    "wcag-contrast": "^3.0.0"
+    "build": "npm -w packages/core run build && npm -w packages/llm run build && npm -w packages/cli run build",
+    "test": "npm -w packages/core run test && npm -w packages/llm run test",
+    "lint": "tsc --noEmit",
+    "liveviewer": "node packages/cli/bin/liveviewer.js",
+    "record": "node packages/cli/bin/liveviewer.js record",
+    "screenshot": "node packages/cli/bin/liveviewer.js screenshot",
+    "analyze": "node packages/cli/bin/liveviewer.js analyze",
+    "mcp": "node packages/cli/bin/liveviewer.js mcp"
   },
   "engines": {
     "node": ">=18"

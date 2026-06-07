@@ -2,7 +2,7 @@ param(
   [int]$Port = 8080
 )
 
-$liveviewer = "node C:\Users\Jaoce\liveviewer\bin\liveviewer.js"
+$liveviewer = "node packages/cli/bin/liveviewer.js"
 $tempDir = "C:\Users\Jaoce"
 $htmlPath = "$tempDir\tricky.html"
 
@@ -41,8 +41,8 @@ Write-Host ">>> Running audit --wcag against $url ..." -ForegroundColor Cyan
 
 $out = Invoke-Expression "$liveviewer audit $url --wcag --label edge_test" 2>&1
 $tagLine = ($out | Select-String "Screenshot: .+edge_test-(\d+)\.png")
-$timestamp = if ($tagLine) { $tagLine.Matches.Groups[1].Value } else { (Get-ChildItem "C:\Users\Jaoce\liveviewer\audits\edge_test-*.json" | Sort-Object LastWriteTime -Descending | Select-Object -First 1).Name -replace 'edge_test-(\d+)\.json', '$1' }
-$jsonPath = "C:\Users\Jaoce\liveviewer\audits\edge_test-$timestamp.json"
+$timestamp = if ($tagLine) { $tagLine.Matches.Groups[1].Value } else { (Get-ChildItem "audits\edge_test-*.json" | Sort-Object LastWriteTime -Descending | Select-Object -First 1).Name -replace 'edge_test-(\d+)\.json', '$1' }
+$jsonPath = "audits\edge_test-$timestamp.json"
 
 Start-Sleep -Seconds 1
 
@@ -88,7 +88,7 @@ $results += [PSCustomObject]@{ Test = "Shadow DOM text"; Expected = "Skipped (Tr
 $serverJob | Stop-Job -ErrorAction SilentlyContinue | Remove-Job -ErrorAction SilentlyContinue
 Get-Process -Name python* -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $htmlPath -Force -ErrorAction SilentlyContinue
-Remove-Item -LiteralPath "C:\Users\Jaoce\liveviewer\audits\edge_test-*" -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath "audits\edge_test-*" -Force -ErrorAction SilentlyContinue
 
 # ---- Print Results Table ----
 Write-Host "`n=========================================================" -ForegroundColor Yellow

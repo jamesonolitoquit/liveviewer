@@ -4,14 +4,14 @@ param(
   [float]$JankThreshold = 33.0
 )
 
-$liveviewer = "node C:\Users\Jaoce\liveviewer\bin\liveviewer.js"
+$liveviewer = "node packages/cli/bin/liveviewer.js"
 $label = "jtrace"
 
 # Record
 Write-Host "Recording $Url for ${DurationMs}ms ..." -ForegroundColor Cyan
 $out = Invoke-Expression "$liveviewer record $Url --duration $DurationMs --interaction ""scroll 400"" --interaction ""wait 500"" --interaction ""scroll 400"" --label $label" 2>&1
 $tag = ($out | Select-String "Tag:\s+(.+)").Matches.Groups[1].Value.Trim()
-$jsonPath = "C:\Users\Jaoce\liveviewer\recordings\$tag.json"
+$jsonPath = "recordings\$tag.json"
 
 if (-not (Test-Path $jsonPath)) { Write-Host "ERROR: No metadata file" -ForegroundColor Red; exit 1 }
 

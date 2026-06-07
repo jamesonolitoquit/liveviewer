@@ -1,0 +1,30 @@
+{
+  "name": "@liveviewer/llm",
+  "version": "1.0.0",
+  "description": "Liveviewer LLM adapter — optional AI enrichment for WCAG audits",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "files": [
+    "src/"
+  ],
+  "scripts": {
+    "test": "node -e \"console.log('llm: no tests yet')\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "openai": "^4.0.0",
+    "ollama": "^0.5.0"
+  },
+  "peerDependenciesMeta": {
+    "openai": {
+      "optional": true
+    },
+    "ollama": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@liveviewer/core": "*"
+  }
+}

@@ -1,5 +1,5 @@
 param(
-  [string]$Liveviewer = "node C:\Users\Jaoce\liveviewer\bin\liveviewer.js",
+  [string]$Liveviewer = "node packages/cli/bin/liveviewer.js",
   [int]$DurationMs = 4000,
   [string]$PortfolioUrl = "https://jaostudio.vercel.app"
 )
@@ -7,7 +7,7 @@ param(
 $results = @{}
 $tempDir = "C:\Users\Jaoce"
 $htmlPath = "$tempDir\test-smooth.html"
-$recordingsDir = "C:\Users\Jaoce\liveviewer\recordings"
+$recordingsDir = "recordings"
 
 # ---- Step 1: Create test-smooth.html ----
 @'

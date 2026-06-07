@@ -3,13 +3,13 @@
 const path = require('path');
 const fs = require('fs');
 
-// chdir to project root so relative paths resolve correctly
-process.chdir(path.resolve(__dirname, '..'));
+// chdir to monorepo root so relative paths resolve correctly
+process.chdir(path.resolve(__dirname, '..', '..', '..'));
 
 const command = process.argv[2];
 
 if (command === '--version' || command === '-v') {
-  console.log(require('../package.json').version);
+  console.log(require('../../../package.json').version);
   process.exit(0);
 }
 
@@ -85,13 +85,13 @@ Examples:
 }
 
 async function main() {
-  const { record, screenshot } = require('../src/recorder');
-  const { analyzeRecording, generateReport } = require('../src/analyzer');
-  const { startServer } = require('../src/mcp');
-  const { audit } = require('../src/auditor');
-  const { extract, checkBrandViolations } = require('../src/extractor');
-  const { recommend } = require('../src/recommender');
-  const { renderHtml } = require('../src/report');
+  const { record, screenshot } = require('@liveviewer/core/src/recorder');
+  const { analyzeRecording, generateReport } = require('@liveviewer/core/src/analyzer');
+  const { startServer } = require('@liveviewer/core/src/mcp');
+  const { audit } = require('@liveviewer/core/src/auditor');
+  const { extract, checkBrandViolations } = require('@liveviewer/core/src/extractor');
+  const { recommend } = require('@liveviewer/core/src/recommender');
+  const { renderHtml } = require('@liveviewer/core/src/report');
 
   switch (command) {
     case 'record': {

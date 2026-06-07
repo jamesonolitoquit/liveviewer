@@ -2,8 +2,8 @@ param(
   [switch]$KeepArtifacts
 )
 
-$ProjectRoot = "C:\Users\Jaoce\liveviewer"
-$LV = "node bin/liveviewer.js"
+$ProjectRoot = "C:\Users\Jaoce\OneDrive\Documents\Website Tools\liveviewer"
+$LV = "node packages/cli/bin/liveviewer.js"
 $ArtifactDir = "$ProjectRoot\benchmark-artifacts"
 New-Item -ItemType Directory -Force -Path $ArtifactDir | Out-Null
 $RunId = "bm-" + (Get-Date -Format "yyyyMMdd-HHmmss")
