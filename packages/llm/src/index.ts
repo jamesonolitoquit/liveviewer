@@ -117,7 +117,7 @@ export async function enrichWithLLM(
     clearCache(options.cacheDir)
   }
 
-  const cacheKey = getCacheKey(auditResults, options)
+  const cacheKey = await getCacheKey(auditResults, options)
   const cached = readCache(cacheKey, options)
   if (cached) {
     return { ...cached, cached: true }

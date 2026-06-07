@@ -1,10 +1,6 @@
-import { createHash } from 'node:crypto'
-import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
 import type { LLMResponse, LLMOptions } from './types.js'
 
 const DEFAULT_CACHE_DIR = 'llm-cache'
-const DEFAULT_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 export interface CacheEntry {
   key: string
@@ -14,11 +10,18 @@ export interface CacheEntry {
   model: string
 }
 
-function hash(input: string): string {
-  return createHash('sha256').update(input).digest('hex').slice(0, 16)
+// In-memory fallback cache for environments without fs (browser)
+const memoryCache = new Map<string, CacheEntry>()
+
+async function hash(input: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(input)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16)
 }
 
-export function getCacheKey(auditResults: object, options: LLMOptions): string {
+export async function getCacheKey(auditResults: object, options: LLMOptions): Promise<string> {
   const payload = JSON.stringify({
     failures: (auditResults as any).wcag?.failures ?? [],
     template: options.promptTemplate ?? 'default',
@@ -27,25 +30,48 @@ export function getCacheKey(auditResults: object, options: LLMOptions): string {
   return hash(payload)
 }
 
-export function readCache(key: string, options: LLMOptions): LLMResponse | null {
-  const cacheDir = options.cacheDir ?? DEFAULT_CACHE_DIR
-  const cachePath = join(cacheDir, `${key}.json`)
-  if (!existsSync(cachePath)) return null
-
+function hasFs(): boolean {
   try {
-    const entry: CacheEntry = JSON.parse(readFileSync(cachePath, 'utf-8'))
-    const ttl = (options.cacheTtlDays ?? 7) * 24 * 60 * 60 * 1000
-    if (Date.now() - entry.timestamp > ttl) return null
-    return entry.data
+    return !!require('node:fs')
   } catch {
-    return null
+    return false
   }
 }
 
-export function writeCache(key: string, data: LLMResponse, options: LLMOptions): void {
-  const cacheDir = options.cacheDir ?? DEFAULT_CACHE_DIR
-  if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true })
+function hasCrypto(): boolean {
+  return typeof crypto !== 'undefined' && !!crypto.subtle
+}
 
+export function readCache(key: string, options: LLMOptions): LLMResponse | null {
+  const ttl = (options.cacheTtlDays ?? 7) * 24 * 60 * 60 * 1000
+
+  if (hasFs()) {
+    try {
+      const path = require('node:path')
+      const fs = require('node:fs')
+      const cacheDir = options.cacheDir ?? DEFAULT_CACHE_DIR
+      const cachePath = path.join(cacheDir, `${key}.json`)
+      if (!fs.existsSync(cachePath)) return memoryCache.get(key)?.data ?? null
+
+      const entry: CacheEntry = JSON.parse(fs.readFileSync(cachePath, 'utf-8'))
+      if (Date.now() - entry.timestamp > ttl) return null
+      return entry.data
+    } catch {
+      return memoryCache.get(key)?.data ?? null
+    }
+  }
+
+  // Browser fallback: check memory cache
+  const entry = memoryCache.get(key)
+  if (!entry) return null
+  if (Date.now() - entry.timestamp > ttl) {
+    memoryCache.delete(key)
+    return null
+  }
+  return entry.data
+}
+
+export function writeCache(key: string, data: LLMResponse, options: LLMOptions): void {
   const entry: CacheEntry = {
     key,
     data,
@@ -54,15 +80,38 @@ export function writeCache(key: string, data: LLMResponse, options: LLMOptions):
     model: options.model
   }
 
-  writeFileSync(join(cacheDir, `${key}.json`), JSON.stringify(entry, null, 2), 'utf-8')
+  // Always store in memory cache
+  memoryCache.set(key, entry)
+
+  if (hasFs()) {
+    try {
+      const path = require('node:path')
+      const fs = require('node:fs')
+      const cacheDir = options.cacheDir ?? DEFAULT_CACHE_DIR
+      if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true })
+      fs.writeFileSync(path.join(cacheDir, `${key}.json`), JSON.stringify(entry, null, 2), 'utf-8')
+    } catch {
+      // File cache failed, memory cache still works
+    }
+  }
 }
 
 export function clearCache(cacheDir?: string): void {
-  const dir = cacheDir ?? DEFAULT_CACHE_DIR
-  if (existsSync(dir)) {
-    const files = readdirSync(dir)
-    for (const file of files) {
-      rmSync(join(dir, file), { force: true })
+  memoryCache.clear()
+
+  if (hasFs()) {
+    try {
+      const path = require('node:path')
+      const fs = require('node:fs')
+      const dir = cacheDir ?? DEFAULT_CACHE_DIR
+      if (fs.existsSync(dir)) {
+        const files = fs.readdirSync(dir)
+        for (const file of files) {
+          fs.rmSync(path.join(dir, file), { force: true })
+        }
+      }
+    } catch {
+      // ignore
     }
   }
 }

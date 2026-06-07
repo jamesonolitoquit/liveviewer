@@ -2,6 +2,9 @@
 
 Design QA robot for live websites. Audits WCAG contrast, extracts design tokens, detects jank, and generates client-ready reports.
 
+**Web app:** [liveviewer.vercel.app](https://liveviewer.vercel.app) — run audits in your browser, no install needed.  
+**CLI:** `npm install -g liveviewer` — for CI pipelines and local development.
+
 ```bash
 npm install -g liveviewer
 npx playwright install chromium

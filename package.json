@@ -4,7 +4,8 @@
   "private": true,
   "description": "Frame-by-frame visual recording and analysis engine for live websites",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
     "build": "npm -w packages/core run build && npm -w packages/llm run build && npm -w packages/cli run build",
@@ -14,7 +15,9 @@
     "record": "node packages/cli/bin/liveviewer.js record",
     "screenshot": "node packages/cli/bin/liveviewer.js screenshot",
     "analyze": "node packages/cli/bin/liveviewer.js analyze",
-    "mcp": "node packages/cli/bin/liveviewer.js mcp"
+    "mcp": "node packages/cli/bin/liveviewer.js mcp",
+    "web": "npm -w apps/web run dev",
+    "web:build": "npm -w apps/web run build"
   },
   "engines": {
     "node": ">=18"
