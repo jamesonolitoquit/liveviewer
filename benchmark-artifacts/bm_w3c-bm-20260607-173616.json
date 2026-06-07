@@ -1,0 +1,17 @@
+{
+  "filepath": "C:\\Users\\Jaoce\\liveviewer\\audits\\bm_w3c-1780824976545.png",
+  "filename": "bm_w3c-1780824976545.png",
+  "timestamp": 1780824976545,
+  "url": "https://www.w3.org/WAI/ER/tests/",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "wcag": {
+    "totalElements": 69,
+    "failures": [],
+    "passCount": 69,
+    "failCount": 0,
+    "score": 100
+  }
+}

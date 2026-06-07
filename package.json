@@ -1,0 +1,36 @@
+{
+  "name": "liveviewer",
+  "version": "1.0.0",
+  "description": "Frame-by-frame visual recording and analysis engine for live websites",
+  "license": "MIT",
+  "author": "Liveviewer",
+  "bin": {
+    "liveviewer": "bin/liveviewer.js"
+  },
+  "main": "src/index.js",
+  "files": [
+    "bin/",
+    "src/",
+    "lib/",
+    "templates/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node bin/liveviewer.js record https://jaostudio.vercel.app --duration 3000",
+    "record": "node bin/liveviewer.js record",
+    "screenshot": "node bin/liveviewer.js screenshot",
+    "analyze": "node bin/liveviewer.js analyze",
+    "mcp": "node bin/liveviewer.js mcp"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.3.0",
+    "pixelmatch": "^7.0.0",
+    "playwright": "^1.52.0",
+    "sharp": "^0.34.0",
+    "wcag-contrast": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

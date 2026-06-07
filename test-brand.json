@@ -1,0 +1,14 @@
+{
+  "colors": {
+    "primary": "#7c3aed",
+    "primary-foreground": "#ffffff",
+    "secondary": "#a1a1aa",
+    "secondary-foreground": "#09090b",
+    "accent": "#d97706",
+    "border": "#27272a",
+    "background": "#09090b"
+  },
+  "fonts": {
+    "families": ["Geist Sans", "Inter", "system-ui"]
+  }
+}

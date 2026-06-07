@@ -1,0 +1,68 @@
+{
+  "filepath": "C:\\Users\\Jaoce\\liveviewer\\audits\\bm_github-1780825213230.png",
+  "filename": "bm_github-1780825213230.png",
+  "timestamp": 1780825213230,
+  "url": "https://github.com/",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "wcag": {
+    "totalElements": 272,
+    "failures": [
+      {
+        "selector": "sup.NavLink-module__label__bil7n",
+        "text": "New",
+        "foreground": "#0377ff",
+        "background": "#ffffff",
+        "contrastRatio": 4.13,
+        "required": 4.5,
+        "fontSize": 12,
+        "isLarge": false
+      },
+      {
+        "selector": "div.sr-only",
+        "text": "A demonstration animation of a code editor using GitHub Copilot Chat, where the user requests GitHub Copilot to refactor",
+        "foreground": "#ffffff",
+        "background": "#ffffff",
+        "contrastRatio": 1,
+        "required": 4.5,
+        "fontSize": 16,
+        "isLarge": false
+      },
+      {
+        "selector": "span",
+        "text": "Code",
+        "foreground": "#ffffff",
+        "background": "#ffffff",
+        "contrastRatio": 1,
+        "required": 4.5,
+        "fontSize": 16,
+        "isLarge": false
+      },
+      {
+        "selector": "div.sr-only",
+        "text": "A Copilot chat window with the 'Ask' mode enabled. The user switches from 'Ask' mode to 'Agent' mode from a dropdown men",
+        "foreground": "#ffffff",
+        "background": "#ffffff",
+        "contrastRatio": 1,
+        "required": 4.5,
+        "fontSize": 16,
+        "isLarge": false
+      },
+      {
+        "selector": "span",
+        "text": "By industry",
+        "foreground": "#ffffff",
+        "background": "#ffffff",
+        "contrastRatio": 1,
+        "required": 4.5,
+        "fontSize": 16,
+        "isLarge": false
+      }
+    ],
+    "passCount": 267,
+    "failCount": 5,
+    "score": 98.2
+  }
+}

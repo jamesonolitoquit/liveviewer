@@ -1,0 +1,48 @@
+{
+  "filepath": "C:\\Users\\Jaoce\\liveviewer\\audits\\edge_test-1780817142834.png",
+  "filename": "edge_test-1780817142834.png",
+  "timestamp": 1780817142834,
+  "url": "http://localhost:8080/tricky.html",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "wcag": {
+    "totalElements": 5,
+    "failures": [
+      {
+        "selector": "div.transparent-bg",
+        "text": "Transparent background",
+        "foreground": "#000000",
+        "background": "#000000",
+        "contrastRatio": 1,
+        "required": 4.5,
+        "fontSize": 16,
+        "isLarge": false
+      },
+      {
+        "selector": "text",
+        "text": "SVG text",
+        "foreground": "#000000",
+        "background": "#000000",
+        "contrastRatio": 1,
+        "required": 4.5,
+        "fontSize": 16,
+        "isLarge": false
+      },
+      {
+        "selector": "script",
+        "text": "const host = document.getElementById('shadow-host');\n    const shadow = host.attachShadow({mode: 'open'});\n    shadow.in",
+        "foreground": "#000000",
+        "background": "#000000",
+        "contrastRatio": 1,
+        "required": 4.5,
+        "fontSize": 16,
+        "isLarge": false
+      }
+    ],
+    "passCount": 2,
+    "failCount": 3,
+    "score": 40
+  }
+}

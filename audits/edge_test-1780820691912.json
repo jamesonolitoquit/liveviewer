@@ -1,0 +1,28 @@
+{
+  "filepath": "C:\\Users\\Jaoce\\liveviewer\\audits\\edge_test-1780820691912.png",
+  "filename": "edge_test-1780820691912.png",
+  "timestamp": 1780820691912,
+  "url": "http://localhost:8080/tricky.html",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "wcag": {
+    "totalElements": 4,
+    "failures": [
+      {
+        "selector": "div.opacity-text",
+        "text": "Low opacity text",
+        "foreground": "#808080",
+        "background": "#ffffff",
+        "contrastRatio": 3.95,
+        "required": 4.5,
+        "fontSize": 16,
+        "isLarge": false
+      }
+    ],
+    "passCount": 3,
+    "failCount": 1,
+    "score": 75
+  }
+}

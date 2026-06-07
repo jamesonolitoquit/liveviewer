@@ -1,0 +1,28 @@
+{
+  "filepath": "C:\\Users\\Jaoce\\liveviewer\\audits\\bm_accessbd-1780825027273.png",
+  "filename": "bm_accessbd-1780825027273.png",
+  "timestamp": 1780825027273,
+  "url": "https://www.access-board.gov/",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "wcag": {
+    "totalElements": 86,
+    "failures": [
+      {
+        "selector": "span",
+        "text": "U.S. Access Board",
+        "foreground": "#162e51",
+        "background": "#000000",
+        "contrastRatio": 1.54,
+        "required": 3,
+        "fontSize": 34,
+        "isLarge": true
+      }
+    ],
+    "passCount": 85,
+    "failCount": 1,
+    "score": 98.8
+  }
+}

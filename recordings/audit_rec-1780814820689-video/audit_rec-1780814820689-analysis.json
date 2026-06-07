@@ -1,0 +1,1900 @@
+{
+  "tag": "audit_rec-1780814820689",
+  "url": "https://jaostudio.vercel.app",
+  "timestamp": 1780814820689,
+  "duration": 2000,
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "videoPath": "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\page@6fa39e1ada381c7e6ee558d00142d116.webm",
+  "timing": [
+    {
+      "t": 1567,
+      "delta": 556.7
+    },
+    {
+      "t": 1583.7,
+      "delta": 16.7
+    },
+    {
+      "t": 1600.4,
+      "delta": 16.7
+    },
+    {
+      "t": 1617,
+      "delta": 16.6
+    },
+    {
+      "t": 1633.7,
+      "delta": 16.7
+    },
+    {
+      "t": 1650.3,
+      "delta": 16.6
+    },
+    {
+      "t": 1667.1,
+      "delta": 16.8
+    },
+    {
+      "t": 1683.7,
+      "delta": 16.6
+    },
+    {
+      "t": 1700.4,
+      "delta": 16.7
+    },
+    {
+      "t": 1717,
+      "delta": 16.6
+    },
+    {
+      "t": 1733.6,
+      "delta": 16.6
+    },
+    {
+      "t": 1750.3,
+      "delta": 16.7
+    },
+    {
+      "t": 1767,
+      "delta": 16.7
+    },
+    {
+      "t": 1783.7,
+      "delta": 16.7
+    },
+    {
+      "t": 1800.3,
+      "delta": 16.6
+    },
+    {
+      "t": 1817.1,
+      "delta": 16.8
+    },
+    {
+      "t": 1833.7,
+      "delta": 16.6
+    },
+    {
+      "t": 1850.3,
+      "delta": 16.6
+    },
+    {
+      "t": 1867.1,
+      "delta": 16.8
+    },
+    {
+      "t": 1883.7,
+      "delta": 16.6
+    },
+    {
+      "t": 1900.3,
+      "delta": 16.6
+    },
+    {
+      "t": 1917,
+      "delta": 16.7
+    },
+    {
+      "t": 1933.6,
+      "delta": 16.6
+    },
+    {
+      "t": 1950.3,
+      "delta": 16.7
+    },
+    {
+      "t": 1967.1,
+      "delta": 16.8
+    },
+    {
+      "t": 1983.7,
+      "delta": 16.6
+    },
+    {
+      "t": 2000.3,
+      "delta": 16.6
+    },
+    {
+      "t": 2017,
+      "delta": 16.7
+    },
+    {
+      "t": 2033.7,
+      "delta": 16.7
+    },
+    {
+      "t": 2050.4,
+      "delta": 16.7
+    },
+    {
+      "t": 2067,
+      "delta": 16.6
+    },
+    {
+      "t": 2083.7,
+      "delta": 16.7
+    },
+    {
+      "t": 2100.3,
+      "delta": 16.6
+    },
+    {
+      "t": 2117,
+      "delta": 16.7
+    },
+    {
+      "t": 2133.7,
+      "delta": 16.7
+    },
+    {
+      "t": 2150.3,
+      "delta": 16.6
+    },
+    {
+      "t": 2167,
+      "delta": 16.7
+    },
+    {
+      "t": 2217,
+      "delta": 50
+    },
+    {
+      "t": 2233.6,
+      "delta": 16.6
+    },
+    {
+      "t": 2250.3,
+      "delta": 16.7
+    },
+    {
+      "t": 2267,
+      "delta": 16.7
+    },
+    {
+      "t": 2283.6,
+      "delta": 16.6
+    },
+    {
+      "t": 2300.4,
+      "delta": 16.8
+    },
+    {
+      "t": 2317,
+      "delta": 16.6
+    },
+    {
+      "t": 2333.6,
+      "delta": 16.6
+    },
+    {
+      "t": 2350.3,
+      "delta": 16.7
+    },
+    {
+      "t": 2367,
+      "delta": 16.7
+    },
+    {
+      "t": 2383.7,
+      "delta": 16.7
+    },
+    {
+      "t": 2400.4,
+      "delta": 16.7
+    },
+    {
+      "t": 2417,
+      "delta": 16.6
+    },
+    {
+      "t": 2433.7,
+      "delta": 16.7
+    },
+    {
+      "t": 2450.3,
+      "delta": 16.6
+    },
+    {
+      "t": 2467,
+      "delta": 16.7
+    },
+    {
+      "t": 2483.7,
+      "delta": 16.7
+    },
+    {
+      "t": 2500.3,
+      "delta": 16.6
+    },
+    {
+      "t": 2516.9,
+      "delta": 16.6
+    },
+    {
+      "t": 2533.7,
+      "delta": 16.8
+    },
+    {
+      "t": 2550.3,
+      "delta": 16.6
+    },
+    {
+      "t": 2567,
+      "delta": 16.7
+    },
+    {
+      "t": 2583.6,
+      "delta": 16.6
+    },
+    {
+      "t": 2600.3,
+      "delta": 16.7
+    },
+    {
+      "t": 2617,
+      "delta": 16.7
+    },
+    {
+      "t": 2633.6,
+      "delta": 16.6
+    },
+    {
+      "t": 2650.3,
+      "delta": 16.7
+    },
+    {
+      "t": 2667,
+      "delta": 16.7
+    },
+    {
+      "t": 2683.6,
+      "delta": 16.6
+    },
+    {
+      "t": 2700.3,
+      "delta": 16.7
+    },
+    {
+      "t": 2716.9,
+      "delta": 16.6
+    },
+    {
+      "t": 2733.6,
+      "delta": 16.7
+    },
+    {
+      "t": 2750.4,
+      "delta": 16.8
+    },
+    {
+      "t": 2766.9,
+      "delta": 16.5
+    },
+    {
+      "t": 2783.7,
+      "delta": 16.8
+    },
+    {
+      "t": 2800.3,
+      "delta": 16.6
+    },
+    {
+      "t": 2817,
+      "delta": 16.7
+    },
+    {
+      "t": 2833.6,
+      "delta": 16.6
+    },
+    {
+      "t": 2850.3,
+      "delta": 16.7
+    },
+    {
+      "t": 2867,
+      "delta": 16.7
+    },
+    {
+      "t": 2883.6,
+      "delta": 16.6
+    },
+    {
+      "t": 2900.3,
+      "delta": 16.7
+    },
+    {
+      "t": 2916.9,
+      "delta": 16.6
+    },
+    {
+      "t": 2933.6,
+      "delta": 16.7
+    },
+    {
+      "t": 2950.3,
+      "delta": 16.7
+    },
+    {
+      "t": 2967,
+      "delta": 16.7
+    },
+    {
+      "t": 2983.6,
+      "delta": 16.6
+    },
+    {
+      "t": 3000.3,
+      "delta": 16.7
+    },
+    {
+      "t": 3017,
+      "delta": 16.7
+    },
+    {
+      "t": 3033.7,
+      "delta": 16.7
+    },
+    {
+      "t": 3050.3,
+      "delta": 16.6
+    },
+    {
+      "t": 3067,
+      "delta": 16.7
+    },
+    {
+      "t": 3083.7,
+      "delta": 16.7
+    },
+    {
+      "t": 3117,
+      "delta": 33.3
+    },
+    {
+      "t": 3133.6,
+      "delta": 16.6
+    },
+    {
+      "t": 3183.6,
+      "delta": 50
+    },
+    {
+      "t": 3200.3,
+      "delta": 16.7
+    },
+    {
+      "t": 3233.6,
+      "delta": 33.3
+    },
+    {
+      "t": 3266.9,
+      "delta": 33.3
+    },
+    {
+      "t": 3300.3,
+      "delta": 33.4
+    },
+    {
+      "t": 3333.6,
+      "delta": 33.3
+    },
+    {
+      "t": 3383.6,
+      "delta": 50
+    },
+    {
+      "t": 3417,
+      "delta": 33.4
+    },
+    {
+      "t": 3450.3,
+      "delta": 33.3
+    },
+    {
+      "t": 3483.6,
+      "delta": 33.3
+    },
+    {
+      "t": 3517,
+      "delta": 33.4
+    },
+    {
+      "t": 3533.6,
+      "delta": 16.6
+    },
+    {
+      "t": 3567,
+      "delta": 33.4
+    },
+    {
+      "t": 3583.6,
+      "delta": 16.6
+    },
+    {
+      "t": 3616.9,
+      "delta": 33.3
+    },
+    {
+      "t": 3633.6,
+      "delta": 16.7
+    },
+    {
+      "t": 3700.3,
+      "delta": 66.7
+    },
+    {
+      "t": 3717,
+      "delta": 16.7
+    },
+    {
+      "t": 3750.3,
+      "delta": 33.3
+    },
+    {
+      "t": 3783.6,
+      "delta": 33.3
+    },
+    {
+      "t": 3800.2,
+      "delta": 16.6
+    },
+    {
+      "t": 3833.6,
+      "delta": 33.4
+    },
+    {
+      "t": 3850.2,
+      "delta": 16.6
+    },
+    {
+      "t": 3866.9,
+      "delta": 16.7
+    },
+    {
+      "t": 3900.2,
+      "delta": 33.3
+    },
+    {
+      "t": 3916.9,
+      "delta": 16.7
+    },
+    {
+      "t": 3933.5,
+      "delta": 16.6
+    },
+    {
+      "t": 3950.3,
+      "delta": 16.8
+    },
+    {
+      "t": 3966.9,
+      "delta": 16.6
+    },
+    {
+      "t": 3983.6,
+      "delta": 16.7
+    },
+    {
+      "t": 4000.2,
+      "delta": 16.6
+    },
+    {
+      "t": 4017,
+      "delta": 16.8
+    },
+    {
+      "t": 4033.6,
+      "delta": 16.6
+    },
+    {
+      "t": 4050.3,
+      "delta": 16.7
+    },
+    {
+      "t": 4066.9,
+      "delta": 16.6
+    },
+    {
+      "t": 4083.6,
+      "delta": 16.7
+    },
+    {
+      "t": 4100.2,
+      "delta": 16.6
+    },
+    {
+      "t": 4117,
+      "delta": 16.8
+    },
+    {
+      "t": 4133.6,
+      "delta": 16.6
+    },
+    {
+      "t": 4150.2,
+      "delta": 16.6
+    },
+    {
+      "t": 4166.9,
+      "delta": 16.7
+    },
+    {
+      "t": 4183.6,
+      "delta": 16.7
+    },
+    {
+      "t": 4200.2,
+      "delta": 16.6
+    },
+    {
+      "t": 4216.9,
+      "delta": 16.7
+    },
+    {
+      "t": 4233.6,
+      "delta": 16.7
+    },
+    {
+      "t": 4250.2,
+      "delta": 16.6
+    },
+    {
+      "t": 4267,
+      "delta": 16.8
+    },
+    {
+      "t": 4283.6,
+      "delta": 16.6
+    },
+    {
+      "t": 4316.9,
+      "delta": 33.3
+    },
+    {
+      "t": 4350.3,
+      "delta": 33.4
+    },
+    {
+      "t": 4383.6,
+      "delta": 33.3
+    },
+    {
+      "t": 4416.9,
+      "delta": 33.3
+    },
+    {
+      "t": 4450.3,
+      "delta": 33.4
+    },
+    {
+      "t": 4466.9,
+      "delta": 16.6
+    },
+    {
+      "t": 4483.6,
+      "delta": 16.7
+    },
+    {
+      "t": 4500.2,
+      "delta": 16.6
+    },
+    {
+      "t": 4533.5,
+      "delta": 33.3
+    },
+    {
+      "t": 4566.9,
+      "delta": 33.4
+    },
+    {
+      "t": 4600.2,
+      "delta": 33.3
+    },
+    {
+      "t": 4616.9,
+      "delta": 16.7
+    },
+    {
+      "t": 4650.2,
+      "delta": 33.3
+    },
+    {
+      "t": 4683.5,
+      "delta": 33.3
+    },
+    {
+      "t": 4716.9,
+      "delta": 33.4
+    },
+    {
+      "t": 4766.9,
+      "delta": 50
+    },
+    {
+      "t": 4800.3,
+      "delta": 33.4
+    },
+    {
+      "t": 4816.8,
+      "delta": 16.5
+    },
+    {
+      "t": 4850.3,
+      "delta": 33.5
+    },
+    {
+      "t": 4866.8,
+      "delta": 16.5
+    },
+    {
+      "t": 4883.5,
+      "delta": 16.7
+    },
+    {
+      "t": 4916.9,
+      "delta": 33.4
+    },
+    {
+      "t": 4950.2,
+      "delta": 33.3
+    },
+    {
+      "t": 4966.9,
+      "delta": 16.7
+    },
+    {
+      "t": 5000.2,
+      "delta": 33.3
+    },
+    {
+      "t": 5033.6,
+      "delta": 33.4
+    },
+    {
+      "t": 5066.9,
+      "delta": 33.3
+    },
+    {
+      "t": 5083.5,
+      "delta": 16.6
+    },
+    {
+      "t": 5116.9,
+      "delta": 33.4
+    },
+    {
+      "t": 5133.6,
+      "delta": 16.7
+    },
+    {
+      "t": 5150.2,
+      "delta": 16.6
+    },
+    {
+      "t": 5183.5,
+      "delta": 33.3
+    },
+    {
+      "t": 5216.9,
+      "delta": 33.4
+    },
+    {
+      "t": 5233.5,
+      "delta": 16.6
+    },
+    {
+      "t": 5266.9,
+      "delta": 33.4
+    },
+    {
+      "t": 5283.6,
+      "delta": 16.7
+    },
+    {
+      "t": 5316.9,
+      "delta": 33.3
+    },
+    {
+      "t": 5333.5,
+      "delta": 16.6
+    },
+    {
+      "t": 5366.8,
+      "delta": 33.3
+    },
+    {
+      "t": 5383.6,
+      "delta": 16.8
+    },
+    {
+      "t": 5416.9,
+      "delta": 33.3
+    },
+    {
+      "t": 5433.6,
+      "delta": 16.7
+    },
+    {
+      "t": 5466.8,
+      "delta": 33.2
+    },
+    {
+      "t": 5483.6,
+      "delta": 16.8
+    },
+    {
+      "t": 5516.9,
+      "delta": 33.3
+    },
+    {
+      "t": 5533.5,
+      "delta": 16.6
+    },
+    {
+      "t": 5550.2,
+      "delta": 16.7
+    },
+    {
+      "t": 5583.5,
+      "delta": 33.3
+    },
+    {
+      "t": 5600.2,
+      "delta": 16.7
+    },
+    {
+      "t": 5616.8,
+      "delta": 16.6
+    },
+    {
+      "t": 5650.2,
+      "delta": 33.4
+    },
+    {
+      "t": 5666.9,
+      "delta": 16.7
+    },
+    {
+      "t": 5700.2,
+      "delta": 33.3
+    },
+    {
+      "t": 5716.8,
+      "delta": 16.6
+    },
+    {
+      "t": 5750.2,
+      "delta": 33.4
+    },
+    {
+      "t": 5766.8,
+      "delta": 16.6
+    },
+    {
+      "t": 5783.6,
+      "delta": 16.8
+    },
+    {
+      "t": 5816.9,
+      "delta": 33.3
+    },
+    {
+      "t": 5850.2,
+      "delta": 33.3
+    },
+    {
+      "t": 5866.8,
+      "delta": 16.6
+    },
+    {
+      "t": 5900.2,
+      "delta": 33.4
+    },
+    {
+      "t": 5916.9,
+      "delta": 16.7
+    },
+    {
+      "t": 5933.5,
+      "delta": 16.6
+    },
+    {
+      "t": 5966.9,
+      "delta": 33.4
+    },
+    {
+      "t": 5983.5,
+      "delta": 16.6
+    },
+    {
+      "t": 6000.2,
+      "delta": 16.7
+    },
+    {
+      "t": 6016.8,
+      "delta": 16.6
+    },
+    {
+      "t": 6050.1,
+      "delta": 33.3
+    },
+    {
+      "t": 6083.5,
+      "delta": 33.4
+    },
+    {
+      "t": 6100.2,
+      "delta": 16.7
+    },
+    {
+      "t": 6116.9,
+      "delta": 16.7
+    },
+    {
+      "t": 6150.1,
+      "delta": 33.2
+    },
+    {
+      "t": 6166.9,
+      "delta": 16.8
+    },
+    {
+      "t": 6183.5,
+      "delta": 16.6
+    },
+    {
+      "t": 6200.2,
+      "delta": 16.7
+    },
+    {
+      "t": 6233.5,
+      "delta": 33.3
+    },
+    {
+      "t": 6266.9,
+      "delta": 33.4
+    },
+    {
+      "t": 6283.5,
+      "delta": 16.6
+    },
+    {
+      "t": 6316.8,
+      "delta": 33.3
+    },
+    {
+      "t": 6350.1,
+      "delta": 33.3
+    },
+    {
+      "t": 6366.9,
+      "delta": 16.8
+    },
+    {
+      "t": 6383.4,
+      "delta": 16.5
+    },
+    {
+      "t": 6416.8,
+      "delta": 33.4
+    },
+    {
+      "t": 6433.5,
+      "delta": 16.7
+    },
+    {
+      "t": 6450.2,
+      "delta": 16.7
+    },
+    {
+      "t": 6483.5,
+      "delta": 33.3
+    },
+    {
+      "t": 6500.1,
+      "delta": 16.6
+    },
+    {
+      "t": 6516.8,
+      "delta": 16.7
+    },
+    {
+      "t": 6550.1,
+      "delta": 33.3
+    },
+    {
+      "t": 6566.8,
+      "delta": 16.7
+    },
+    {
+      "t": 6600.2,
+      "delta": 33.4
+    },
+    {
+      "t": 6616.8,
+      "delta": 16.6
+    },
+    {
+      "t": 6633.5,
+      "delta": 16.7
+    },
+    {
+      "t": 6666.8,
+      "delta": 33.3
+    },
+    {
+      "t": 6683.5,
+      "delta": 16.7
+    },
+    {
+      "t": 6700.2,
+      "delta": 16.7
+    },
+    {
+      "t": 6733.5,
+      "delta": 33.3
+    },
+    {
+      "t": 6750.1,
+      "delta": 16.6
+    },
+    {
+      "t": 6783.4,
+      "delta": 33.3
+    },
+    {
+      "t": 6816.8,
+      "delta": 33.4
+    },
+    {
+      "t": 6833.4,
+      "delta": 16.6
+    },
+    {
+      "t": 6866.8,
+      "delta": 33.4
+    },
+    {
+      "t": 6883.4,
+      "delta": 16.6
+    },
+    {
+      "t": 6916.8,
+      "delta": 33.4
+    },
+    {
+      "t": 6933.5,
+      "delta": 16.7
+    },
+    {
+      "t": 6966.8,
+      "delta": 33.3
+    },
+    {
+      "t": 7000.1,
+      "delta": 33.3
+    },
+    {
+      "t": 7016.8,
+      "delta": 16.7
+    },
+    {
+      "t": 7050.1,
+      "delta": 33.3
+    }
+  ],
+  "metrics": {
+    "totalFrames": 249,
+    "duration": 5483.1,
+    "meanDelta": 22.11,
+    "maxDelta": 66.7,
+    "jankFrames": 1,
+    "jankRate": 0.4,
+    "stdDev": 8.77,
+    "smoothnessScore": 82.47
+  },
+  "analysis": {
+    "frames": [
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00001.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00002.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00003.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00004.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00005.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00006.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00007.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00008.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00009.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00010.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00011.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00012.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00013.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00014.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00015.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00016.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00017.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00018.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00019.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00020.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00021.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00022.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00023.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00024.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00025.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00026.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00027.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00028.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00029.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00030.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00031.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00032.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00033.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00034.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00035.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00036.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00037.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00038.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00039.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00040.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00041.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00042.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00043.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00044.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00045.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00046.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00047.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00048.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00049.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00050.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00051.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00052.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00053.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00054.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00055.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00056.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00057.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00058.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00059.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00060.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00061.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00062.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00063.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00064.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00065.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00066.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00067.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00068.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00069.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00070.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00071.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00072.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00073.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00074.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00075.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00076.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00077.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00078.png",
+      "C:\\Users\\Jaoce\\liveviewer\\recordings\\audit_rec-1780814820689-video\\frames\\frame_00079.png"
+    ],
+    "diffs": [
+      {
+        "frameA": 0,
+        "frameB": 1,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 1,
+        "frameB": 2,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 2,
+        "frameB": 3,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 3,
+        "frameB": 4,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 4,
+        "frameB": 5,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 5,
+        "frameB": 6,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 6,
+        "frameB": 7,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 7,
+        "frameB": 8,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 8,
+        "frameB": 9,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 9,
+        "frameB": 10,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 10,
+        "frameB": 11,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 11,
+        "frameB": 12,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 12,
+        "frameB": 13,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 13,
+        "frameB": 14,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 14,
+        "frameB": 15,
+        "mismatchedPixels": 1024000,
+        "totalPixels": 1024000,
+        "mismatchPercent": 100,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 15,
+        "frameB": 16,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 16,
+        "frameB": 17,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 17,
+        "frameB": 18,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 18,
+        "frameB": 19,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 19,
+        "frameB": 20,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 20,
+        "frameB": 21,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 21,
+        "frameB": 22,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 22,
+        "frameB": 23,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 23,
+        "frameB": 24,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 24,
+        "frameB": 25,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 25,
+        "frameB": 26,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 26,
+        "frameB": 27,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 27,
+        "frameB": 28,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 28,
+        "frameB": 29,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 29,
+        "frameB": 30,
+        "mismatchedPixels": 8683,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0.85,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 30,
+        "frameB": 31,
+        "mismatchedPixels": 4010,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0.39,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 31,
+        "frameB": 32,
+        "mismatchedPixels": 21620,
+        "totalPixels": 1024000,
+        "mismatchPercent": 2.11,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 32,
+        "frameB": 33,
+        "mismatchedPixels": 29898,
+        "totalPixels": 1024000,
+        "mismatchPercent": 2.92,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 33,
+        "frameB": 34,
+        "mismatchedPixels": 16726,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.63,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 34,
+        "frameB": 35,
+        "mismatchedPixels": 4084,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0.4,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 35,
+        "frameB": 36,
+        "mismatchedPixels": 1359,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0.13,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 36,
+        "frameB": 37,
+        "mismatchedPixels": 7172,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0.7,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 37,
+        "frameB": 38,
+        "mismatchedPixels": 2237,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0.22,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 38,
+        "frameB": 39,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 39,
+        "frameB": 40,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 40,
+        "frameB": 41,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 41,
+        "frameB": 42,
+        "mismatchedPixels": 60184,
+        "totalPixels": 1024000,
+        "mismatchPercent": 5.88,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 42,
+        "frameB": 43,
+        "mismatchedPixels": 72890,
+        "totalPixels": 1024000,
+        "mismatchPercent": 7.12,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 43,
+        "frameB": 44,
+        "mismatchedPixels": 74219,
+        "totalPixels": 1024000,
+        "mismatchPercent": 7.25,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 44,
+        "frameB": 45,
+        "mismatchedPixels": 55150,
+        "totalPixels": 1024000,
+        "mismatchPercent": 5.39,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 45,
+        "frameB": 46,
+        "mismatchedPixels": 22644,
+        "totalPixels": 1024000,
+        "mismatchPercent": 2.21,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 46,
+        "frameB": 47,
+        "mismatchedPixels": 16401,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.6,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 47,
+        "frameB": 48,
+        "mismatchedPixels": 14760,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.44,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 48,
+        "frameB": 49,
+        "mismatchedPixels": 14754,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.44,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 49,
+        "frameB": 50,
+        "mismatchedPixels": 14687,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.43,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 50,
+        "frameB": 51,
+        "mismatchedPixels": 20915,
+        "totalPixels": 1024000,
+        "mismatchPercent": 2.04,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 51,
+        "frameB": 52,
+        "mismatchedPixels": 19461,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.9,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 52,
+        "frameB": 53,
+        "mismatchedPixels": 13900,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.36,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 53,
+        "frameB": 54,
+        "mismatchedPixels": 14374,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.4,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 54,
+        "frameB": 55,
+        "mismatchedPixels": 13491,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.32,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 55,
+        "frameB": 56,
+        "mismatchedPixels": 14062,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.37,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 56,
+        "frameB": 57,
+        "mismatchedPixels": 13407,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.31,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 57,
+        "frameB": 58,
+        "mismatchedPixels": 13734,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.34,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 58,
+        "frameB": 59,
+        "mismatchedPixels": 13520,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.32,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 59,
+        "frameB": 60,
+        "mismatchedPixels": 13918,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.36,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 60,
+        "frameB": 61,
+        "mismatchedPixels": 13104,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.28,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 61,
+        "frameB": 62,
+        "mismatchedPixels": 13200,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.29,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 62,
+        "frameB": 63,
+        "mismatchedPixels": 13201,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.29,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 63,
+        "frameB": 64,
+        "mismatchedPixels": 13467,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.32,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 64,
+        "frameB": 65,
+        "mismatchedPixels": 13030,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.27,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 65,
+        "frameB": 66,
+        "mismatchedPixels": 13084,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.28,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 66,
+        "frameB": 67,
+        "mismatchedPixels": 13131,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.28,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 67,
+        "frameB": 68,
+        "mismatchedPixels": 13209,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.29,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 68,
+        "frameB": 69,
+        "mismatchedPixels": 13136,
+        "totalPixels": 1024000,
+        "mismatchPercent": 1.28,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 69,
+        "frameB": 70,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 70,
+        "frameB": 71,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 71,
+        "frameB": 72,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 72,
+        "frameB": 73,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 73,
+        "frameB": 74,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 74,
+        "frameB": 75,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 75,
+        "frameB": 76,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 76,
+        "frameB": 77,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      },
+      {
+        "frameA": 77,
+        "frameB": 78,
+        "mismatchedPixels": 0,
+        "totalPixels": 1024000,
+        "mismatchPercent": 0,
+        "width": 1280,
+        "height": 800,
+        "resized": false
+      }
+    ],
+    "metrics": {
+      "totalFrames": 249,
+      "duration": 5483.1,
+      "meanDelta": 22.11,
+      "maxDelta": 66.7,
+      "jankFrames": 1,
+      "jankRate": 0.4,
+      "stdDev": 8.77,
+      "smoothnessScore": 82.47
+    },
+    "aggregate": {
+      "totalFramePairs": 78,
+      "avgMismatchPercent": 2.17,
+      "maxMismatchPercent": 100,
+      "totalDiffsGenerated": 38
+    }
+  }
+}
