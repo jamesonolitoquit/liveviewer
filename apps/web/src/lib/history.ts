@@ -16,6 +16,8 @@ interface AuditData {
 
 const RETENTION_DAYS = parseInt(process.env.NEXT_PUBLIC_HISTORY_RETENTION_DAYS || '30', 10)
 const FALLBACK_STORE: Map<string, HistoryEntry[]> = new Map()
+const LS_KEY = 'liveviewer_history'
+const MAX_LS_ENTRIES = 50
 
 function getRedis() {
   const url = process.env.UPSTASH_REDIS_REST_URL
@@ -44,6 +46,47 @@ function normalizeUrl(raw: string): string {
   }
 }
 
+function readLocalStorage(): Record<string, HistoryEntry[]> {
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+function writeLocalStorage(data: Record<string, HistoryEntry[]>) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(data))
+  } catch {
+    // quota exceeded or unavailable
+  }
+}
+
+function saveToLocalStorage(entry: HistoryEntry) {
+  const key = getStorageKey(entry.url)
+  const all = readLocalStorage()
+  const existing = all[key] || []
+  existing.push(entry)
+  const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000
+  all[key] = existing
+    .filter(e => e.timestamp > cutoff)
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, MAX_LS_ENTRIES)
+  writeLocalStorage(all)
+}
+
+export function getLocalHistory(url: string, limit = 30): HistoryEntry[] {
+  const key = getStorageKey(url)
+  const all = readLocalStorage()
+  const entries = all[key] || []
+  const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000
+  return entries
+    .filter(e => e.timestamp > cutoff)
+    .sort((a, b) => a.timestamp - b.timestamp)
+    .slice(-limit)
+}
+
 export async function saveAudit(data: AuditData): Promise<void> {
   if (!data.wcag) return
 
@@ -55,6 +98,8 @@ export async function saveAudit(data: AuditData): Promise<void> {
     failCount: data.wcag.failCount,
     totalElements: data.wcag.totalElements
   }
+
+  saveToLocalStorage(entry)
 
   const key = getStorageKey(data.url)
   const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000

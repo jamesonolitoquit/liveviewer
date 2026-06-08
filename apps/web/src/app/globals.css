@@ -1,75 +1,74 @@
 @import "tailwindcss";
 
 :root {
-  --jao-primary: #7C3AED;
-  --jao-primary-hover: #6D28D9;
-  --jao-accent: #D97706;
-  --jao-accent-hover: #B45309;
-  --jao-success: #16A34A;
+  --jao-primary: #4F46E5;
+  --jao-primary-hover: #4338CA;
+  --jao-accent: #14B8A6;
+  --jao-accent-hover: #0D9488;
+  --jao-success: #15803D;
   --jao-warning: #D97706;
-  --jao-destructive: #F87171;
-  --jao-bg: #0F0F1A;
-  --jao-surface: #1A1A2E;
-  --jao-border: #2D2D44;
-  --jao-border-subtle: #252538;
-  --jao-text: #E4E4ED;
-  --jao-text-secondary: #A1A1AA;
-  --jao-text-tertiary: #A1A1AA;
-  --jao-gradient: linear-gradient(135deg, #7C3AED, #D97706);
-  --jao-gradient-hover: linear-gradient(135deg, #6D28D9, #B45309);
+  --jao-destructive: #DC2626;
+  --jao-bg: #F8F9FA;
+  --jao-surface: #FFFFFF;
+  --jao-border: #E2E8F0;
+  --jao-border-subtle: #F1F5F9;
+  --jao-text: #111827;
+  --jao-text-secondary: #4B5563;
+  --jao-text-tertiary: #6B7280;
+  --jao-gradient: linear-gradient(135deg, #4F46E5, #14B8A6);
+  --jao-gradient-hover: linear-gradient(135deg, #4338CA, #0D9488);
 
-  --primary: #7C3AED;
+  --primary: #4F46E5;
   --primary-foreground: #fff;
-  --background: #0F0F1A;
-  --foreground: #E4E4ED;
-  --muted: #1A1A2E;
-  --muted-foreground: #A1A1AA;
-  --border: #2D2D44;
-  --card: #1A1A2E;
-  --card-foreground: #E4E4ED;
-  --destructive: #F87171;
+  --background: #F8F9FA;
+  --foreground: #111827;
+  --muted: #F1F5F9;
+  --muted-foreground: #4B5563;
+  --border: #E2E8F0;
+  --card: #FFFFFF;
+  --card-foreground: #1F2937;
+  --destructive: #DC2626;
   --destructive-foreground: #fff;
-  --success: #16A34A;
+  --success: #15803D;
   --warning: #D97706;
 }
 
-.light {
-  --jao-primary: #7C3AED;
-  --jao-primary-hover: #6D28D9;
-  --jao-accent: #D97706;
-  --jao-accent-hover: #B45309;
-  --jao-success: #16A34A;
-  --jao-warning: #D97706;
-  --jao-destructive: #DC2626;
-  --jao-bg: #F1EDF7;
-  --jao-surface: #FFFFFF;
-  --jao-border: #E2D9F0;
-  --jao-border-subtle: #EDE6F5;
-  --jao-text: #1F1A2E;
-  --jao-text-secondary: #6B6580;
-  --jao-text-tertiary: #8B85A0;
-  --jao-gradient: linear-gradient(135deg, #7C3AED, #D97706);
-  --jao-gradient-hover: linear-gradient(135deg, #6D28D9, #B45309);
+.dark {
+  --jao-primary: #4F46E5;
+  --jao-primary-hover: #4338CA;
+  --jao-accent: #14B8A6;
+  --jao-accent-hover: #0D9488;
+  --jao-success: #22C55E;
+  --jao-warning: #F59E0B;
+  --jao-destructive: #EF4444;
+  --jao-bg: #0F172A;
+  --jao-surface: #1E293B;
+  --jao-border: #334155;
+  --jao-border-subtle: #1E293B;
+  --jao-text: #F1F5F9;
+  --jao-text-secondary: #94A3B8;
+  --jao-text-tertiary: #64748B;
+  --jao-gradient: linear-gradient(135deg, #4F46E5, #14B8A6);
+  --jao-gradient-hover: linear-gradient(135deg, #4338CA, #0D9488);
 
-  --primary: #7C3AED;
+  --primary: #4F46E5;
   --primary-foreground: #fff;
-  --background: #F1EDF7;
-  --foreground: #1F1A2E;
-  --muted: #EDE6F5;
-  --muted-foreground: #6B6580;
-  --border: #E2D9F0;
-  --card: #FFFFFF;
-  --card-foreground: #1F1A2E;
-  --destructive: #DC2626;
+  --background: #0F172A;
+  --foreground: #F1F5F9;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --border: #334155;
+  --card: #1E293B;
+  --card-foreground: #F1F5F9;
+  --destructive: #EF4444;
   --destructive-foreground: #fff;
-  --success: #16A34A;
-  --warning: #D97706;
+  --success: #22C55E;
+  --warning: #F59E0B;
 }
 
 body {
   background: var(--jao-bg);
   color: var(--jao-text);
-  font-family: 'Geist Variable', 'Geist', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -78,12 +77,13 @@ body {
   border-radius: 12px;
   border: 1px solid var(--jao-border);
   background: var(--jao-surface);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
 }
 
 .failure-card {
   border-radius: 8px;
   border-left: 3px solid var(--jao-destructive);
-  background: var(--jao-surface);
+  background: var(--jao-bg);
 }
 
 .btn-gradient {

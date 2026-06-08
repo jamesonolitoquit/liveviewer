@@ -11,7 +11,7 @@ test.describe('Liveviewer web app', () => {
     await page.goto('/')
 
     const heading = page.locator('h1')
-    await expect(heading).toHaveText('Design QA Intelligence')
+    await expect(heading).toHaveText('Accessibility & Design QA')
 
     const input = page.locator('input[type="url"]')
     await expect(input).toBeVisible()
@@ -83,7 +83,7 @@ test.describe('Liveviewer web app', () => {
     await page.fill('input[type="url"]', 'https://example.com')
     await page.click('button[type="submit"]')
 
-    await expect(page.locator('span.font-bold')).toHaveText('98')
+    await expect(page.getByText('98%', { exact: true })).toBeVisible()
     await expect(page.locator('h3:has-text("failures")')).toBeVisible()
     await expect(page.locator('text=/Welcome/')).toBeVisible()
   })
@@ -140,8 +140,7 @@ test.describe('Liveviewer web app', () => {
     await expect(page.locator('button[type="submit"]')).toBeDisabled()
   })
 
-  test('toggles enhanced analysis panel', async ({ page }) => {
-    // First run an audit to show the results section (which contains LlmPanel)
+  test('toggles enhanced analysis drawer', async ({ page }) => {
     await page.route('**/api/audit', async (route) => {
       await route.fulfill({
         status: 200,
@@ -167,20 +166,23 @@ test.describe('Liveviewer web app', () => {
     await page.goto('/')
     await page.fill('input[type="url"]', 'https://example.com')
     await page.click('button[type="submit"]')
-    await expect(page.locator('span.font-bold')).toHaveText('99')
+    await expect(page.getByText('99%', { exact: true })).toBeVisible()
 
-    await expect(page.locator('h3', { hasText: 'Enhanced Analysis' })).toBeVisible()
+    // Open the smart panel drawer
+    await page.click('button:has-text("Get Smart Fixes")')
 
-    // Check the checkbox state before toggle
-    const checkbox = page.locator('input.peer[type="checkbox"]')
+    // Wait for drawer to appear
+    await expect(page.getByRole('dialog', { name: /Enhanced Analysis/i })).toBeVisible()
+
+    // Check the checkbox inside the drawer
+    const checkbox = page.locator('[role="dialog"] input[type="checkbox"]')
     await expect(checkbox).not.toBeChecked()
 
-    // Click the toggle via evaluate (the custom CSS div intercepts pointer events)
     await checkbox.evaluate(el => (el as HTMLInputElement).click())
     await expect(checkbox).toBeChecked()
 
-    await expect(page.locator('label').filter({ hasText: 'Backend URL' })).toBeVisible()
-    await expect(page.locator('label').filter({ hasText: 'Access Key' })).toBeVisible()
+    await expect(page.locator('[role="dialog"] label').filter({ hasText: 'Backend URL' })).toBeVisible()
+    await expect(page.locator('[role="dialog"] label').filter({ hasText: 'Access Key' })).toBeVisible()
   })
 
   test('shows cancel button during audit', async ({ page }) => {

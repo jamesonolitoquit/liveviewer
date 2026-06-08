@@ -53,9 +53,9 @@ export function SmartFixButton({ failure }: SmartFixButtonProps) {
       <button
         onClick={handleGetFix}
         disabled={loading}
-        className="rounded border border-[var(--jao-border)] px-2 py-0.5 text-[10px] font-medium text-[var(--jao-text-secondary)] transition-colors hover:border-[var(--jao-primary)] hover:text-[var(--jao-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 disabled:opacity-50"
+        className="btn-gradient inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-medium text-white shadow-sm transition-all hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/50 disabled:opacity-50 disabled:hover:scale-100"
       >
-        {loading ? '...' : 'Fix Suggestion'}
+        {loading ? '...' : <><span>✨</span> Fix Suggestion</>}
       </button>
 
       {error && (

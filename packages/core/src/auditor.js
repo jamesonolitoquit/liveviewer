@@ -573,138 +573,152 @@ async function audit(url, options = {}) {
     }
   }
   if (!browser) throw lastLaunchErr;
-  let timedOut = false;
-  let timeoutHandle;
-  const hardTimeout = new Promise((_, reject) => {
-    timeoutHandle = setTimeout(() => {
-      timedOut = true;
-      reject(new Error('Audit exceeded hard timeout'));
-    }, timeout);
-  });
 
-  try {
-    const auditWork = (async () => {
-      const context = await browser.newContext({ viewport: vps[0] });
-      const page = await context.newPage();
+  const MAX_AUDIT_RETRIES = 1;
 
-      if (isVercel) {
-        await applyServerlessOptimizations(context, page, {
-          loadImages,
-          blockFonts,
-          blockMedia,
-          disableJavaScript,
-          navigationTimeout
-        });
-      }
+  for (let attempt = 1; attempt <= MAX_AUDIT_RETRIES + 1; attempt++) {
+    let timedOut = false;
+    let timeoutHandle;
+    const hardTimeout = new Promise((_, reject) => {
+      timeoutHandle = setTimeout(() => {
+        timedOut = true;
+        reject(new Error('Audit exceeded hard timeout'));
+      }, timeout);
+    });
 
-      await page.goto(url, { waitUntil, timeout: navigationTimeout });
-      await page.waitForSelector('body', { timeout: 2000 }).catch(() => {});
-      await page.waitForSelector('h1, main, [role="main"]', { timeout: 5000 }).catch(() => {});
+    try {
+      const auditWork = (async () => {
+        const context = await browser.newContext({ viewport: vps[0] });
+        const page = await context.newPage();
 
-      const viewportResults = [];
-      let lastElements = [];
-      const pageLevelFailures = [];
-      for (let i = 0; i < vps.length; i++) {
-        const vp = vps[i];
-        if (i > 0) {
-          await page.setViewportSize(vp);
-          await waitForLayout(page);
+        if (isVercel) {
+          await applyServerlessOptimizations(context, page, {
+            loadImages,
+            blockFonts,
+            blockMedia,
+            disableJavaScript,
+            navigationTimeout
+          });
         }
-        if (doWcag || doDesign) {
-          const result = await runWcagOnPage(page);
-          if (doWcag) viewportResults.push({ viewport: vp, wcag: result });
-          if (result._elements) lastElements = result._elements;
+
+        await page.goto(url, { waitUntil, timeout: navigationTimeout });
+        await page.waitForSelector('body', { timeout: 2000 }).catch(() => {});
+        await page.waitForSelector('h1, main, [role="main"]', { timeout: 5000 }).catch(() => {});
+
+        const viewportResults = [];
+        let lastElements = [];
+        const pageLevelFailures = [];
+        for (let i = 0; i < vps.length; i++) {
+          const vp = vps[i];
+          if (i > 0) {
+            await page.setViewportSize(vp);
+            await waitForLayout(page);
+          }
+          if (doWcag || doDesign) {
+            const result = await runWcagOnPage(page);
+            if (doWcag) viewportResults.push({ viewport: vp, wcag: result });
+            if (result._elements) lastElements = result._elements;
+          }
+          if (doDesign) {
+            const pageFails = await runDesignPageChecks(page);
+            pageLevelFailures.push(...pageFails);
+            const a11yFails = await runA11yPageChecks(page);
+            pageLevelFailures.push(...a11yFails);
+          }
         }
+
+        let mergedWcag = null;
+        if (doWcag && viewportResults.length > 0) {
+          mergedWcag = mergeWcagResults(viewportResults);
+        }
+
+        let designResult = null;
         if (doDesign) {
-          const pageFails = await runDesignPageChecks(page);
-          pageLevelFailures.push(...pageFails);
-          const a11yFails = await runA11yPageChecks(page);
-          pageLevelFailures.push(...a11yFails);
-        }
-      }
-
-      let mergedWcag = null;
-      if (doWcag && viewportResults.length > 0) {
-        mergedWcag = mergeWcagResults(viewportResults);
-      }
-
-      let designResult = null;
-      if (doDesign) {
-        const allFailures = [...pageLevelFailures];
-        const seen = new Set();
-        for (const f of allFailures) {
-          seen.add(f.selector + '|' + f.ruleId);
-        }
-        if (lastElements.length > 0) {
-          try {
-            const engine = await import('@liveviewer/engine');
-            const elementResult = engine.analyzeDesign(lastElements);
-            for (const f of elementResult.failures) {
-              const key = f.selector + '|' + f.ruleId;
-              if (!seen.has(key)) {
-                seen.add(key);
-                allFailures.push(f);
+          const allFailures = [...pageLevelFailures];
+          const seen = new Set();
+          for (const f of allFailures) {
+            seen.add(f.selector + '|' + f.ruleId);
+          }
+          if (lastElements.length > 0) {
+            try {
+              const engine = await import('@liveviewer/engine');
+              const elementResult = engine.analyzeDesign(lastElements);
+              for (const f of elementResult.failures) {
+                const key = f.selector + '|' + f.ruleId;
+                if (!seen.has(key)) {
+                  seen.add(key);
+                  allFailures.push(f);
+                }
+              }
+              const totalChecks = elementResult.totalChecks + pageLevelFailures.length;
+              const failCount = allFailures.length;
+              designResult = {
+                failures: allFailures,
+                totalChecks,
+                passCount: Math.max(0, totalChecks - failCount),
+                failCount,
+                score: totalChecks > 0
+                  ? Math.round(Math.max(0, totalChecks - failCount) / totalChecks * 1000) / 10
+                  : 0
+              };
+            } catch (_) {
+              if (pageLevelFailures.length > 0) {
+                designResult = {
+                  failures: pageLevelFailures,
+                  totalChecks: pageLevelFailures.length,
+                  passCount: 0,
+                  failCount: pageLevelFailures.length,
+                  score: 0
+                };
               }
             }
-            const totalChecks = elementResult.totalChecks + pageLevelFailures.length;
-            const failCount = allFailures.length;
+          } else if (pageLevelFailures.length > 0) {
             designResult = {
-              failures: allFailures,
-              totalChecks,
-              passCount: Math.max(0, totalChecks - failCount),
-              failCount,
-              score: totalChecks > 0
-                ? Math.round(Math.max(0, totalChecks - failCount) / totalChecks * 1000) / 10
-                : 0
+              failures: pageLevelFailures,
+              totalChecks: pageLevelFailures.length,
+              passCount: 0,
+              failCount: pageLevelFailures.length,
+              score: 0
             };
-          } catch (_) {
-            if (pageLevelFailures.length > 0) {
-              designResult = {
-                failures: pageLevelFailures,
-                totalChecks: pageLevelFailures.length,
-                passCount: 0,
-                failCount: pageLevelFailures.length,
-                score: 0
-              };
-            }
           }
-        } else if (pageLevelFailures.length > 0) {
-          designResult = {
-            failures: pageLevelFailures,
-            totalChecks: pageLevelFailures.length,
-            passCount: 0,
-            failCount: pageLevelFailures.length,
-            score: 0
-          };
         }
+
+        const screenshotPromise = page.screenshot({ path: filepath, fullPage: false });
+        await screenshotPromise;
+        await context.close();
+        return { viewportResults, mergedWcag, designResult };
+      })();
+
+      const { viewportResults, mergedWcag, designResult } = await Promise.race([auditWork, hardTimeout]);
+      return {
+        filepath, filename, timestamp, url,
+        viewport: vps[0],
+        viewports: viewportResults,
+        wcag: mergedWcag,
+        design: designResult,
+        timedOut: false
+      };
+    } catch (err) {
+      clearTimeout(timeoutHandle);
+      if (timedOut) {
+        try { fs.unlinkSync(filepath); } catch (_) {}
+        throw new Error('Audit timeout: page too large or slow. Try the CLI: npm install -g @liveviewer/cli');
       }
-
-      const screenshotPromise = page.screenshot({ path: filepath, fullPage: false });
-      await screenshotPromise;
-      await context.close();
-      return { viewportResults, mergedWcag, designResult };
-    })();
-
-    const { viewportResults, mergedWcag, designResult } = await Promise.race([auditWork, hardTimeout]);
-    return {
-      filepath, filename, timestamp, url,
-      viewport: vps[0],
-      viewports: viewportResults,
-      wcag: mergedWcag,
-      design: designResult,
-      timedOut: false
-    };
-  } catch (err) {
-    if (timedOut) {
-      try { fs.unlinkSync(filepath); } catch (_) {}
-      throw new Error('Audit timeout: page too large or slow. Try the CLI: npm install -g @liveviewer/cli');
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeoutHandle);
-    await browser?.close().catch(() => {});
-    if (chromeTempDir) {
-      fs.rmSync(chromeTempDir, { recursive: true, force: true });
+      const isClosed = err.message?.includes?.('Target page, context or browser has been closed')
+        || err.message?.includes?.('browser has been closed');
+      if (isClosed && attempt <= MAX_AUDIT_RETRIES) {
+        console.warn('Browser closed unexpectedly, retrying...');
+        await browser?.close().catch(() => {});
+        browser = await launcher.launch({
+          args: getArgs(),
+          executablePath: chromePath,
+          headless: true
+        });
+        continue;
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutHandle);
     }
   }
 }
