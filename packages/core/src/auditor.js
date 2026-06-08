@@ -145,9 +145,15 @@ async function runWcagOnPage(page) {
       const el = walker.currentNode;
       const tag = el.tagName.toLowerCase();
       if (tag === 'style' || tag === 'script' || tag === 'noscript') continue;
+      const style = getComputedStyle(el);
+      // Skip visually hidden elements (sr-only pattern)
+      if (style.position === 'absolute') {
+        const rect = el.getBoundingClientRect();
+        if (rect.width <= 1 && rect.height <= 1) continue;
+        if (style.overflow === 'hidden' && rect.width === 0 && rect.height === 0) continue;
+      }
       const text = el.textContent.trim();
       if (!text || el.children.length > 0) continue;
-      const style = getComputedStyle(el);
       const fontSize = parseFloat(style.fontSize);
       const fontWeight = parseInt(style.fontWeight);
       const isLarge = fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700);
@@ -398,6 +404,58 @@ async function runA11yPageChecks(page) {
         value: 'lang="' + (lang || '') + '"',
         expected: 'lang="en" or appropriate language code'
       });
+    }
+
+    // Form labels: check inputs, textareas, selects have accessible labels
+    const formControls = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]), textarea, select');
+    for (const el of formControls) {
+      const id = el.id;
+      let hasLabel = false;
+      if (id && document.querySelector('label[for="' + id.replace(/["\\]/g, '\\$&') + '"]')) hasLabel = true;
+      if (el.getAttribute('aria-label') && el.getAttribute('aria-label').trim()) hasLabel = true;
+      if (el.getAttribute('aria-labelledby') && document.getElementById(el.getAttribute('aria-labelledby'))) hasLabel = true;
+      if (el.getAttribute('title') && el.getAttribute('title').trim()) hasLabel = true;
+      if (el.closest('label')) hasLabel = true;
+      if (!hasLabel) {
+        const tag = el.tagName.toLowerCase() + (el.id ? '#' + el.id : '');
+        const type = el.type ? 'type="' + el.type + '" ' : '';
+        results.push({
+          ruleId: 'missing-label',
+          ruleName: 'Form controls must have associated label',
+          category: 'interactivity',
+          selector: tag,
+          description: el.tagName.toLowerCase() + ' ' + (el.id ? '#' + el.id : '(no id)') + ' missing accessible label',
+          severity: 'high',
+          value: 'no label',
+          expected: 'label element, aria-label, aria-labelledby, or title'
+        });
+      }
+    }
+
+    // Skip navigation / main landmark check
+    const hasMain = document.querySelector('[role="main"], #main, #content, #main-content, main');
+    if (!hasMain) {
+      let hasSkipLink = false;
+      const links = document.querySelectorAll('a[href^="#"]');
+      for (const link of links) {
+        const text = (link.textContent || '').toLowerCase();
+        if (text.includes('skip') || text.includes('main') || text.includes('content') || text.includes('navigation')) {
+          hasSkipLink = true;
+          break;
+        }
+      }
+      if (!hasSkipLink) {
+        results.push({
+          ruleId: 'skip-navigation',
+          ruleName: 'Page should have skip navigation or main landmark',
+          category: 'interactivity',
+          selector: 'body',
+          description: 'No skip link or main landmark found',
+          severity: 'high',
+          value: 'no skip link or role="main"',
+          expected: 'a skip link with href="#main" or role="main" on content area'
+        });
+      }
     }
 
     return results;

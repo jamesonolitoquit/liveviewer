@@ -72,6 +72,24 @@ const RULE_DEFS = {
     helpUri: 'https://www.w3.org/WAI/WCAG21/Understanding/language-of-page',
     defaultLevel: 'error',
     properties: { category: 'accessibility', tags: ['wcag', 'language'] }
+  },
+  'A11Y-MISSING-LABEL': {
+    id: 'A11Y-MISSING-LABEL',
+    name: 'missing-label',
+    shortDescription: 'Form controls must have associated labels',
+    fullDescription: 'Inputs, textareas, and selects must have a label element, aria-label, aria-labelledby, or title attribute.',
+    helpUri: 'https://www.w3.org/WAI/WCAG21/Understanding/labels-or-instructions',
+    defaultLevel: 'error',
+    properties: { category: 'accessibility', tags: ['wcag', 'forms', 'labels'] }
+  },
+  'A11Y-SKIP-NAV': {
+    id: 'A11Y-SKIP-NAV',
+    name: 'skip-navigation',
+    shortDescription: 'Page should have skip navigation or main landmark',
+    fullDescription: 'A skip link or role="main" landmark helps keyboard users bypass repetitive navigation.',
+    helpUri: 'https://www.w3.org/WAI/WCAG21/Understanding/bypass-blocks',
+    defaultLevel: 'error',
+    properties: { category: 'accessibility', tags: ['wcag', 'navigation', 'keyboard'] }
   }
 }
 
@@ -84,6 +102,8 @@ function ruleIdFor(failure) {
   if (failure.ruleId === 'missing-alt') return 'A11Y-MISSING-ALT'
   if (failure.ruleId === 'empty-interactive') return 'A11Y-EMPTY-INTERACTIVE'
   if (failure.ruleId === 'missing-lang') return 'A11Y-MISSING-LANG'
+  if (failure.ruleId === 'missing-label') return 'A11Y-MISSING-LABEL'
+  if (failure.ruleId === 'skip-navigation') return 'A11Y-SKIP-NAV'
   return 'CUSTOM'
 }
 

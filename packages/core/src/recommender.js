@@ -180,6 +180,12 @@ function generateFixSuggestions(auditResult) {
     } else if (d.ruleId === 'missing-lang') {
       recommendation =
         `Add lang attribute to <html>: ${d.description}. Set lang="en" (or the appropriate language code).`;
+    } else if (d.ruleId === 'missing-label') {
+      recommendation =
+        `Add accessible label to "${d.selector}": ${d.description}. Wrap in a <label> element, or add aria-label/aria-labelledby attribute.`;
+    } else if (d.ruleId === 'skip-navigation') {
+      recommendation =
+        `Add skip navigation link: ${d.description}. Add a skip link like <a href="#main-content">Skip to main</a> and a role="main" landmark.`;
     } else {
       recommendation =
         `Fix ${d.ruleName} on "${d.selector}": expected ${d.expected}, found ${d.value}.`;

@@ -31,6 +31,8 @@ describe('toSarifLog', () => {
     expect(ruleIds).toContain('A11Y-MISSING-ALT')
     expect(ruleIds).toContain('A11Y-EMPTY-INTERACTIVE')
     expect(ruleIds).toContain('A11Y-MISSING-LANG')
+    expect(ruleIds).toContain('A11Y-MISSING-LABEL')
+    expect(ruleIds).toContain('A11Y-SKIP-NAV')
   })
 
   it('maps heading-hierarchy failures to DESIGN-HEADING rule', () => {
@@ -120,6 +122,30 @@ describe('toSarifLog', () => {
     expect(results[0].message.text).toContain('Image missing alt attribute')
     expect(results[1].ruleId).toBe('A11Y-EMPTY-INTERACTIVE')
     expect(results[2].ruleId).toBe('A11Y-MISSING-LANG')
+  })
+
+  it('maps missing-label and skip-navigation to SARIF rule IDs', () => {
+    const audit = {
+      ...baseAudit,
+      design: {
+        failures: [
+          { ruleId: 'missing-label', ruleName: 'Form control missing label', selector: 'input#search', description: 'Input missing accessible label', severity: 'high', value: 'no label', expected: 'label element or aria-label' },
+          { ruleId: 'skip-navigation', ruleName: 'No skip navigation', selector: 'body', description: 'No skip link or main landmark found', severity: 'high', value: 'no skip link', expected: 'skip link or role="main"' }
+        ],
+        totalChecks: 2,
+        passCount: 0,
+        failCount: 2,
+        score: 0
+      }
+    }
+    const result = toSarifLog(audit)
+    const results = result.runs[0].results
+    expect(results).toHaveLength(2)
+    expect(results[0].ruleId).toBe('A11Y-MISSING-LABEL')
+    expect(results[0].level).toBe('error')
+    expect(results[0].message.text).toContain('Input missing accessible label')
+    expect(results[1].ruleId).toBe('A11Y-SKIP-NAV')
+    expect(results[1].message.text).toContain('No skip link or main landmark found')
   })
 
   it('merges wcag and design failures in results', () => {

@@ -241,4 +241,43 @@ describe('generateFixSuggestions', () => {
     expect(result[2].type).toBe('missing-lang')
     expect(result[2].recommendation).toContain('Add lang attribute')
   })
+
+  it('returns fix suggestions for missing-label', () => {
+    const result = generateFixSuggestions({
+      url: 'https://example.com',
+      wcag: null,
+      design: {
+        failures: [
+          { ruleId: 'missing-label', ruleName: 'Form control missing label', selector: 'input#search', description: 'Input missing accessible label', severity: 'high', value: 'no label', expected: 'label element or aria-label' }
+        ],
+        totalChecks: 1,
+        passCount: 0,
+        failCount: 1,
+        score: 0
+      }
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].type).toBe('missing-label')
+    expect(result[0].recommendation).toContain('Add accessible label')
+    expect(result[0].recommendation).toContain('input#search')
+  })
+
+  it('returns fix suggestions for skip-navigation', () => {
+    const result = generateFixSuggestions({
+      url: 'https://example.com',
+      wcag: null,
+      design: {
+        failures: [
+          { ruleId: 'skip-navigation', ruleName: 'No skip navigation', selector: 'body', description: 'No skip link or main landmark found', severity: 'high', value: 'no skip link', expected: 'skip link or role="main"' }
+        ],
+        totalChecks: 1,
+        passCount: 0,
+        failCount: 1,
+        score: 0
+      }
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].type).toBe('skip-navigation')
+    expect(result[0].recommendation).toContain('Add skip navigation link')
+  })
 })
