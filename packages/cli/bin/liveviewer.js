@@ -285,6 +285,7 @@ async function main() {
       // Always save audit result JSON
       const metaPath = `audits/${label}-${result.timestamp}.json`;
       fs.writeFileSync(metaPath, JSON.stringify(result, null, 2));
+      console.log(`  JSON:       ${metaPath}`);
 
       if (doAiPrompt) {
         const wcagFails = result.wcag?.failures || [];
@@ -348,7 +349,9 @@ async function main() {
         }
 
         // Re-save audit result with LLM data
-        fs.writeFileSync(metaPath, JSON.stringify(result, null, 2));
+      fs.writeFileSync(metaPath, JSON.stringify(result, null, 2));
+      console.log(`  JSON:       ${metaPath}`);
+
       }
 
       const doSarif = hasFlag('--sarif');
