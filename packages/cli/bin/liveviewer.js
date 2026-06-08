@@ -40,20 +40,20 @@ Options for "audit":
   --viewports <list>  Comma-separated viewports, e.g. "1280x800,375x812" (overrides --width/--height)
   --fail-on <n>       Exit non-zero if WCAG failures exceed n (for CI)
   --timeout <ms>      Navigation timeout (default: 30000)
-  --wait-until <str>  Navigation wait strategy: networkidle (default), load, domcontentloaded
-  --llm-enrich        Enable AI enrichment of audit results (requires API key)
-  --no-llm            Force deterministic only, skip AI even if key present
-  --ai-prompt         Print AI-ready analysis prompt (no API key needed; pipe to AI or copy-paste)
-  --llm-provider <n>  AI provider: openai (default) or ollama
-  --llm-model <name>  Model (default: gpt-3.5-turbo or OPENAI_MODEL env, llama3 for ollama)
-  --llm-api-key <key> API key (or set OPENAI_API_KEY env var)
-  --llm-base-url <u>  Custom API base URL (e.g. https://api.deepseek.com for DeepSeek)
-  --context <text>    Site context/purpose for more relevant AI recommendations (e.g., "Dark mode SaaS dashboard")
-  --context-file <p>  Read context from file
-  --sarif             Output SARIF 2.1 report to stdout (for GitHub Code Scanning)
-  --sarif-output <p>  Write SARIF report to file instead of stdout
-  --llm-cache-ttl <d> Cache duration in days (default: 7)
-  --llm-clear-cache   Clear LLM cache before running
+  --wait-until <str>  Navigation wait strategy: domcontentloaded (default), load, networkidle
+  --smart-enrich        Enable smart enrichment of audit results (requires enhancement key)
+  --no-smart            Force deterministic only, skip enrichment even if key present
+  --smart-prompt        Print enrichment analysis prompt (no key needed; pipe to AI or copy-paste)
+  --provider <n>        Provider: openai (default, works with DeepSeek) or ollama
+  --enhancement-key <k> Enhancement key (or set OPENAI_API_KEY env var)
+  --smart-base-url <u>  Custom API base URL (default: https://api.deepseek.com/v1)
+  --smart-model <n>     Model name (default: deepseek-chat)
+  --context <text>     Site context/purpose for smarter recommendations (e.g., "Dark mode SaaS dashboard")
+  --context-file <p>   Read context from file
+  --sarif              Output SARIF 2.1 report to stdout (for GitHub Code Scanning)
+  --sarif-output <p>   Write SARIF report to file instead of stdout
+  --llm-cache-ttl <d>  Cache duration in days (default: 7)
+  --llm-clear-cache    Clear enrichment cache before running
 
 Options for "extract":
   --width <px>        Viewport width (default: 1280)
@@ -62,7 +62,7 @@ Options for "extract":
   --styles            Extract design tokens (colors, typography, spacing)
   --brand <path>      Brand config JSON for design system violation detection
   --timeout <ms>      Navigation timeout (default: 30000)
-  --wait-until <str>  Navigation wait strategy: networkidle (default), load, domcontentloaded
+  --wait-until <str>  Navigation wait strategy: domcontentloaded (default), load, networkidle
 
 Options for "record":
   --duration <ms>     Recording duration (default: 5000)
@@ -92,9 +92,9 @@ Examples:
   liveviewer record https://jaostudio.vercel.app --interaction "click .btn" --interaction "wait 1000"
   liveviewer screenshot https://jaostudio.vercel.app --full-page --label home
   liveviewer analyze portfolio-1234567890 --fps 5
-  liveviewer audit https://example.com --wcag --llm-enrich
+  liveviewer audit https://example.com --wcag --smart-enrich
   liveviewer audit https://example.com --wcag --mobile --design
-  liveviewer audit https://web.dev --wcag --mobile --design --llm-enrich
+  liveviewer audit https://web.dev --wcag --mobile --design --smart-enrich
   liveviewer mcp
 `);
   process.exit(0);
@@ -204,16 +204,16 @@ async function main() {
         auditViewports = [{ width: 1280, height: 800 }, { width: 375, height: 812 }];
       }
       const timeout = parseInt(parseArg('--timeout') || '30000');
-      const waitUntil = parseArg('--wait-until') || 'networkidle';
+      const waitUntil = parseArg('--wait-until') || 'domcontentloaded';
 
-      const doAiPrompt = hasFlag('--ai-prompt');
-      const llmEnrich = (hasFlag('--llm-enrich') || (!hasFlag('--no-llm') && !!parseArg('--llm-api-key') || !!process.env.OPENAI_API_KEY)) && !doAiPrompt;
-      const llmProvider = parseArg('--llm-provider') || 'openai';
-      const llmModel = parseArg('--llm-model') || process.env.OPENAI_MODEL || (llmProvider === 'ollama' ? 'llama3' : 'gpt-3.5-turbo');
-      const llmApiKey = parseArg('--llm-api-key') || process.env.OPENAI_API_KEY || '';
-      const llmBaseUrl = parseArg('--llm-base-url') || process.env.OPENAI_BASE_URL || '';
-      const llmCacheTtl = parseInt(parseArg('--llm-cache-ttl') || '7');
-      const llmClearCache = hasFlag('--llm-clear-cache');
+      const doSmartPrompt = hasFlag('--smart-prompt') || hasFlag('--ai-prompt');
+      const llmEnrich = (hasFlag('--smart-enrich') || hasFlag('--llm-enrich') || (!hasFlag('--no-smart') && !hasFlag('--no-llm') && (!!parseArg('--enhancement-key') || !!parseArg('--llm-api-key') || !!process.env.OPENAI_API_KEY))) && !doSmartPrompt;
+      const llmProvider = parseArg('--provider') || parseArg('--llm-provider') || 'openai';
+      const llmModel = parseArg('--smart-model') || parseArg('--model') || parseArg('--llm-model') || process.env.OPENAI_MODEL || (llmProvider === 'ollama' ? 'llama3' : 'deepseek-chat');
+      const llmApiKey = parseArg('--enhancement-key') || parseArg('--llm-api-key') || process.env.OPENAI_API_KEY || '';
+      const llmBaseUrl = parseArg('--smart-base-url') || parseArg('--llm-base-url') || process.env.OPENAI_BASE_URL || 'https://api.deepseek.com/v1';
+      const llmCacheTtl = parseInt(parseArg('--cache-ttl') || parseArg('--llm-cache-ttl') || '7');
+      const llmClearCache = hasFlag('--clear-cache') || hasFlag('--llm-clear-cache');
 
       let context = parseArg('--context') || '';
       const contextFile = parseArg('--context-file');
@@ -276,7 +276,7 @@ async function main() {
           console.log(`    ... and ${fixSuggestions.length - 10} more`);
         }
       } else {
-        console.log('\n  \u{2139}\u{FE0F} No simple fixes available \u2014 consider AI enrichment with --llm-enrich');
+        console.log('\n  \u{2139}\u{FE0F} No simple fixes available \u2014 consider smart enrichment with --smart-enrich');
       }
 
       // Always save audit result JSON
@@ -284,7 +284,7 @@ async function main() {
       fs.writeFileSync(metaPath, JSON.stringify(result, null, 2));
       console.log(`  JSON:       ${metaPath}`);
 
-      if (doAiPrompt) {
+      if (doSmartPrompt) {
         const wcagFails = result.wcag?.failures || [];
         const designFails = result.design?.failures || [];
         if (wcagFails.length > 0 || designFails.length > 0) {
@@ -299,7 +299,7 @@ async function main() {
           console.log('='.repeat(50));
           console.log(userPrompt);
           console.log('='.repeat(50));
-          console.log('END AI PROMPT');
+          console.log('END SMART PROMPT');
           console.log('='.repeat(50));
         } else {
           console.log('\n  ✓ No failures to analyze.');
@@ -307,7 +307,7 @@ async function main() {
       }
 
       if (llmEnrich) {
-        console.log('\n  Enriching with LLM...');
+        console.log('\n  Running smart enrichment...');
         try {
           const { enrichWithLLM } = require('@liveviewer/llm');
           const llmResult = await enrichWithLLM(result, {
@@ -324,9 +324,9 @@ async function main() {
           result.llm = llmResult;
 
           if (llmResult.error) {
-            console.warn(`  ⚠ LLM enrichment failed: ${llmResult.error}`);
+            console.warn(`  ⚠ Smart enrichment failed: ${llmResult.error}`);
           } else {
-            console.log(`  LLM:        ${llmResult.provider}/${llmResult.model}`);
+            console.log(`  Smart:      ${llmResult.provider}/${llmResult.model}`);
             console.log(`  Summary:    ${llmResult.summary}`);
             if (llmResult.perFailure?.length > 0) {
               for (const pf of llmResult.perFailure.slice(0, 5)) {
@@ -342,7 +342,7 @@ async function main() {
           }
         } catch (err) {
           result.llm = { error: err.message, provider: llmProvider, model: llmModel };
-          console.warn(`  ⚠ LLM enrichment failed: ${err.message}`);
+          console.warn(`  ⚠ Smart enrichment failed: ${err.message}`);
         }
 
         // Re-save audit result with LLM data
@@ -387,7 +387,7 @@ async function main() {
       const doStyles = hasFlag('--styles');
       const brandPath = parseArg('--brand');
       const timeout = parseInt(parseArg('--timeout') || '30000');
-      const waitUntil = parseArg('--wait-until') || 'networkidle';
+      const waitUntil = parseArg('--wait-until') || 'domcontentloaded';
 
       console.log(`Extracting from ${url} at ${width}x${height}...`);
       const result = await extract(url, {

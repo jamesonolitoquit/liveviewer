@@ -1,11 +1,17 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Liveviewer web app', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('liveviewer_onboarded', '1')
+    })
+  })
+
   test('loads the home page with title and form', async ({ page }) => {
     await page.goto('/')
 
     const heading = page.locator('h1')
-    await expect(heading).toHaveText('Design QA Robot')
+    await expect(heading).toHaveText('Design QA Intelligence')
 
     const input = page.locator('input[type="url"]')
     await expect(input).toBeVisible()
@@ -134,7 +140,7 @@ test.describe('Liveviewer web app', () => {
     await expect(page.locator('button[type="submit"]')).toBeDisabled()
   })
 
-  test('toggles AI enrichment panel', async ({ page }) => {
+  test('toggles enhanced analysis panel', async ({ page }) => {
     // First run an audit to show the results section (which contains LlmPanel)
     await page.route('**/api/audit', async (route) => {
       await route.fulfill({
@@ -163,7 +169,7 @@ test.describe('Liveviewer web app', () => {
     await page.click('button[type="submit"]')
     await expect(page.locator('span.font-bold')).toHaveText('99')
 
-    await expect(page.locator('h3', { hasText: 'AI Enrichment' })).toBeVisible()
+    await expect(page.locator('h3', { hasText: 'Enhanced Analysis' })).toBeVisible()
 
     // Check the checkbox state before toggle
     const checkbox = page.locator('input.peer[type="checkbox"]')
@@ -173,8 +179,8 @@ test.describe('Liveviewer web app', () => {
     await checkbox.evaluate(el => (el as HTMLInputElement).click())
     await expect(checkbox).toBeChecked()
 
-    await expect(page.locator('label').filter({ hasText: 'Provider' })).toBeVisible()
-    await expect(page.locator('label').filter({ hasText: 'API Key' })).toBeVisible()
+    await expect(page.locator('label').filter({ hasText: 'Backend URL' })).toBeVisible()
+    await expect(page.locator('label').filter({ hasText: 'Access Key' })).toBeVisible()
   })
 
   test('shows cancel button during audit', async ({ page }) => {
@@ -237,7 +243,7 @@ test.describe('Liveviewer web app', () => {
     await page.fill('input[type="url"]', 'https://example.com')
     await page.click('button[type="submit"]')
 
-    await expect(page.locator('text=Fix Suggestions')).toBeVisible()
+    await expect(page.locator('summary').filter({ hasText: 'Fix Suggestions' })).toBeVisible()
     await expect(page.locator('text=Increase contrast on "h1"')).toBeVisible()
     await expect(page.locator('text=Increase font-size on ".body-text"')).toBeVisible()
   })

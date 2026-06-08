@@ -2,6 +2,12 @@ import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
 test.describe('Accessibility audit', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('liveviewer_onboarded', '1')
+    })
+  })
+
   async function runAxe(page) {
     return await new AxeBuilder({ page })
       .withTags(['wcag2aa', 'wcag21aa', 'wcag22aa'])

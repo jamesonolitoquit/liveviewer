@@ -101,6 +101,12 @@ export function AuditForm({ onRun, isRunning }: AuditFormProps) {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault()
+      const trimmed = url.trim()
+      if (trimmed) submitUrl(trimmed)
+      return
+    }
     if (!showDropdown || suggestions.length === 0) {
       if (e.key === 'Enter') {
         const trimmed = url.trim()
@@ -216,6 +222,7 @@ export function AuditForm({ onRun, isRunning }: AuditFormProps) {
         type="submit"
         disabled={isRunning || !url.trim()}
         aria-label={isRunning ? 'Audit in progress' : 'Run audit'}
+        title={isRunning ? '' : '⌘Enter to run'}
         className={`btn-gradient inline-flex min-h-11 items-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/50 ${isRunning ? 'btn-pulse' : ''}`}
       >
         {isRunning ? (

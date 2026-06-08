@@ -533,7 +533,7 @@ async function audit(url, options = {}) {
     wcag: doWcag = false,
     design: doDesign = false,
     timeout = 30000,
-    waitUntil = isVercel ? 'domcontentloaded' : 'networkidle',
+    waitUntil = 'domcontentloaded',
     loadImages = false,
     blockFonts = true,
     blockMedia = true,
@@ -599,6 +599,7 @@ async function audit(url, options = {}) {
 
       await page.goto(url, { waitUntil, timeout: navigationTimeout });
       await page.waitForSelector('body', { timeout: 2000 }).catch(() => {});
+      await page.waitForSelector('h1, main, [role="main"]', { timeout: 5000 }).catch(() => {});
 
       const viewportResults = [];
       let lastElements = [];

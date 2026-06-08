@@ -14,11 +14,11 @@ interface WcagFailure {
   isLarge: boolean
 }
 
-interface AiFixButtonProps {
+interface SmartFixButtonProps {
   failure: WcagFailure
 }
 
-export function AiFixButton({ failure }: AiFixButtonProps) {
+export function SmartFixButton({ failure }: SmartFixButtonProps) {
   const [suggestion, setSuggestion] = useState<FixSuggestion | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -35,7 +35,7 @@ export function AiFixButton({ failure }: AiFixButtonProps) {
       const baseUrl = (sessionStorage.getItem('liveviewer_llm_base_url') || '').trim()
 
       if (!key && provider !== 'ollama') {
-        throw new Error('Set your LLM API key in the AI panel above')
+        throw new Error('Set your access key in the settings panel')
       }
 
       const { getFixSuggestion } = await import('@/lib/llm-client')
@@ -55,7 +55,7 @@ export function AiFixButton({ failure }: AiFixButtonProps) {
         disabled={loading}
         className="rounded border border-[var(--jao-border)] px-2 py-0.5 text-[10px] font-medium text-[var(--jao-text-secondary)] transition-colors hover:border-[var(--jao-primary)] hover:text-[var(--jao-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 disabled:opacity-50"
       >
-        {loading ? '...' : 'AI Fix'}
+        {loading ? '...' : 'Fix Suggestion'}
       </button>
 
       {error && (
@@ -72,12 +72,24 @@ export function AiFixButton({ failure }: AiFixButtonProps) {
             }`}>
               {suggestion.priority}
             </span>
-            <span className="text-[10px] text-[var(--muted-foreground)]">AI Suggestion</span>
+            <span className="text-[10px] text-[var(--muted-foreground)]">Suggestion</span>
           </div>
           <p className="text-[10px] text-[var(--muted-foreground)]">{suggestion.explanation}</p>
-          <pre className="mt-1 rounded bg-[var(--card)] p-1.5 text-[10px] font-mono text-[var(--foreground)] overflow-x-auto">
-            {suggestion.cssFix}
-          </pre>
+          <div className="relative mt-1">
+            <pre className="rounded bg-[var(--card)] p-1.5 pr-7 text-[10px] font-mono text-[var(--foreground)] overflow-x-auto">
+              {suggestion.cssFix}
+            </pre>
+            <button
+              onClick={() => navigator.clipboard.writeText(suggestion.cssFix)}
+              className="absolute right-1 top-1 rounded px-1 py-0.5 text-[10px] text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+              title="Copy CSS fix"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
     </div>

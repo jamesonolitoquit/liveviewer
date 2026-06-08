@@ -1,6 +1,6 @@
 {
     "name":  "@liveviewer/cli",
-    "version":  "2.1.3",
+    "version":  "2.3.0",
     "description":  "Liveviewer CLI — design QA for live websites",
     "license":  "MIT",
     "bin":  {

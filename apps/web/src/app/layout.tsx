@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Liveviewer — Design QA Robot',
-  description: 'Audit websites for WCAG contrast with AI enrichment. Built by jaostudio.dev.'
+  description: 'Audit websites for WCAG contrast and design quality. Built by jaostudio.dev.'
 }
 
 export default function RootLayout({
@@ -14,7 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

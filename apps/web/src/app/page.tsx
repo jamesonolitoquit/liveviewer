@@ -5,29 +5,32 @@ import { AuditForm } from '@/components/audit-form'
 import { AuditResults } from '@/components/audit-results'
 import { ExportButtons } from '@/components/export-buttons'
 import { Checklist } from '@/components/checklist'
-import { LlmPanel } from '@/components/llm-panel'
+import { SmartPanel } from '@/components/smart-panel'
 import { LoadingSkeleton } from '@/components/loading-skeleton'
 import { ErrorToast } from '@/components/error-toast'
 import { JaoLogo } from '@/components/jao-logo'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { HistoryDropdown } from '@/components/history-dropdown'
+import { OnboardingModal } from '@/components/onboarding-modal'
 import type { AuditData, DesignData, WcagData } from '@/types/audit'
 
 type AuditStatus = 'idle' | 'running' | 'complete' | 'error'
 
-const VIEWPORT_OPTIONS = [
-  { label: 'Desktop 1280×800', width: 1280, height: 800 },
-  { label: 'Mobile 375×812', width: 375, height: 812 },
-]
+const VIEWPORT_MAP: Record<string, { width: number; height: number }> = {
+  desktop: { width: 1280, height: 800 },
+  mobile: { width: 375, height: 812 },
+}
 
 export default function Home() {
   const [status, setStatus] = useState<AuditStatus>('idle')
   const [data, setData] = useState<AuditData | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [selectedViewports, setSelectedViewports] = useState<Set<string>>(new Set(['1280x800']))
+  const [viewportMode, setViewportMode] = useState<'desktop' | 'mobile' | 'both'>('both')
   const [llmEnabled, setLlmEnabled] = useState(false)
   const [llmResult, setLlmResult] = useState<any>(null)
   const [llmLoading, setLlmLoading] = useState(false)
   const [context, setContext] = useState('')
+  const [showScrollTop, setShowScrollTop] = useState(false)
   const resultsRef = useRef<HTMLDivElement>(null)
   const announceRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -40,18 +43,11 @@ export default function Home() {
     }
   }, [status])
 
-  const toggleViewport = (key: string) => {
-    setSelectedViewports(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) {
-        if (next.size <= 1) return prev
-        next.delete(key)
-      } else {
-        next.add(key)
-      }
-      return next
-    })
-  }
+  useEffect(() => {
+    const handler = () => setShowScrollTop(window.scrollY > 400)
+    window.addEventListener('scroll', handler, { passive: true })
+    return () => window.removeEventListener('scroll', handler)
+  }, [])
 
   const dismissError = useCallback(() => {
     setError(null)
@@ -76,13 +72,10 @@ export default function Home() {
 
     try {
       const body: any = { url }
-      setSelectedViewports(prev => {
-        const vps = VIEWPORT_OPTIONS.filter(v => prev.has(`${v.width}x${v.height}`))
-        if (vps.length > 0) {
-          body.viewports = vps.map(v => ({ width: v.width, height: v.height }))
-        }
-        return prev
-      })
+      const vps = viewportMode === 'both'
+        ? [VIEWPORT_MAP.desktop, VIEWPORT_MAP.mobile]
+        : [VIEWPORT_MAP[viewportMode]]
+      body.viewports = vps
       const res = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -118,7 +111,7 @@ export default function Home() {
       setError(err instanceof Error ? err.message : 'Audit failed')
       setStatus('error')
     }
-  }, [])
+  }, [viewportMode])
 
   const saveToHistory = useCallback(async (auditData: AuditData) => {
     try {
@@ -153,18 +146,16 @@ export default function Home() {
       const { enrichWithLLM } = await import('@/lib/llm-client')
 
       const key = (sessionStorage.getItem('liveviewer_llm_key') || '').trim()
-      const provider = sessionStorage.getItem('liveviewer_llm_provider') || 'openai-compatible'
-      const model = sessionStorage.getItem('liveviewer_llm_model') || 'gpt-4o-mini'
       const baseUrl = (sessionStorage.getItem('liveviewer_llm_base_url') || '').trim()
 
-      if (!key && provider !== 'ollama') {
-        throw new Error('Enter your API key in the AI panel above before enriching')
+      if (!key) {
+        throw new Error('Enter your access key in the settings panel')
       }
 
-      const result = await enrichWithLLM(wcagFails || [], provider, model, key, baseUrl || undefined, designFails || [], context || undefined)
+      const result = await enrichWithLLM(wcagFails || [], 'openai-compatible', 'deepseek-chat', key, baseUrl || 'https://api.deepseek.com/v1', designFails || [], context || undefined)
       setLlmResult({ ...result, cached: false })
     } catch (err) {
-      setLlmResult({ error: err instanceof Error ? err.message : 'LLM enrichment failed', provider: 'client', model: '', perFailure: [], summary: '' })
+      setLlmResult({ error: err instanceof Error ? err.message : 'Enhancement failed', provider: 'client', model: '', perFailure: [], summary: '' })
     } finally {
       setLlmLoading(false)
     }
@@ -175,6 +166,7 @@ export default function Home() {
     status === 'error' ? `Audit failed: ${error}` : ''
 
   return (
+    <>
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-4">
       <header className="flex items-center justify-between border-b border-[var(--jao-border-subtle)] py-4">
         <div className="flex items-center gap-2.5">
@@ -182,19 +174,14 @@ export default function Home() {
           <span className="text-base font-semibold tracking-tight">Liveviewer</span>
         </div>
         <div className="flex items-center gap-1">
-          <a
-            href="/history"
-            className="rounded-full px-3 py-1.5 text-sm text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] hover:text-[var(--jao-text)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
-          >
-            History
-          </a>
+          <HistoryDropdown onSelect={runAudit} />
           <ThemeToggle />
         </div>
       </header>
 
       <main id="main-content" tabIndex={-1} className="flex-1 py-8 sm:py-12">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Design QA Robot</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Design QA Intelligence</h1>
           <p className="mt-1.5 text-base text-[var(--jao-text-secondary)]">
             Audit websites for WCAG contrast, right in your browser.
           </p>
@@ -204,33 +191,54 @@ export default function Home() {
           <AuditForm onRun={runAudit} isRunning={status === 'running'} />
         </div>
 
-        <div className="mt-3 flex items-center justify-center gap-4 text-xs text-[var(--jao-text-secondary)]">
-          {VIEWPORT_OPTIONS.map(v => {
-            const key = `${v.width}x${v.height}`
-            const active = selectedViewports.has(key)
+          <div className="mt-3 flex items-center justify-center gap-0.5 rounded-xl border border-[var(--jao-border)] bg-[var(--jao-surface)] p-0.5" role="radiogroup" aria-label="Viewport mode">
+          {(['desktop', 'mobile', 'both'] as const).map(mode => {
+            const labels: Record<string, string> = { desktop: 'Desktop', mobile: 'Mobile', both: 'Both' }
             return (
-              <label key={key} className="flex cursor-pointer items-center gap-1.5">
-                <input
-                  type="checkbox"
-                  checked={active}
-                  onChange={() => toggleViewport(key)}
-                  disabled={status === 'running'}
-                  className="h-3.5 w-3.5 rounded border-[var(--jao-border)] text-[var(--jao-primary)] focus:ring-[var(--jao-primary)]/30"
-                />
-                {v.label}
-              </label>
+              <button
+                key={mode}
+                role="radio"
+                aria-checked={viewportMode === mode}
+                onClick={() => setViewportMode(mode)}
+                disabled={status === 'running'}
+                className={`rounded-lg px-3 py-1.5 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 ${
+                  viewportMode === mode
+                    ? 'bg-[var(--jao-primary)] text-white shadow-sm'
+                    : 'text-[var(--jao-text-secondary)] hover:text-[var(--jao-text)]'
+                }`}
+              >
+                {labels[mode]}
+              </button>
             )
           })}
         </div>
 
-        <textarea
-          value={context}
-          onChange={e => setContext(e.target.value)}
-          placeholder="Site context (optional) — e.g., Dark mode SaaS dashboard for engineers, data-dense UX"
-          rows={2}
-          className="mt-3 w-full rounded-xl border border-[var(--jao-border)] bg-[var(--jao-surface)] px-4 py-2.5 text-xs outline-none transition-all placeholder:text-[var(--jao-text-tertiary)] focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
-          aria-label="Site context for AI recommendations"
-        />
+        <details className="mt-3 group">
+          <summary className="flex cursor-pointer items-center gap-1.5 text-base text-[var(--jao-text-secondary)] transition-colors hover:text-[var(--jao-text)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 rounded-lg px-2 py-1">
+            <span>✨ Advanced</span>
+            <span className="text-base leading-normal text-[var(--jao-text-tertiary)] group-open:hidden">— site context</span>
+          </summary>
+          <textarea
+            value={context}
+            onChange={e => setContext(e.target.value)}
+            placeholder="Describe your site — e.g., Dark mode SaaS dashboard for engineers, data-dense UX"
+            rows={2}
+            className="mt-2 w-full rounded-xl border border-[var(--jao-border)] bg-[var(--jao-surface)] px-4 py-2.5 text-sm outline-none transition-all placeholder:text-[var(--jao-text-tertiary)] focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
+            aria-label="Site context"
+          />
+
+        </details>
+
+        {status === 'idle' && !data && (
+          <div className="mt-3 flex justify-center">
+            <button
+              onClick={() => runAudit('https://web.dev')}
+              className="rounded-full border border-dashed border-[var(--jao-border)] px-4 py-2 text-base text-[var(--jao-text-tertiary)] transition-colors hover:border-[var(--jao-primary)] hover:text-[var(--jao-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
+            >
+              Try a demo → web.dev (has known issues)
+            </button>
+          </div>
+        )}
 
         <div
           ref={announceRef}
@@ -281,7 +289,7 @@ export default function Home() {
 
             <Checklist currentUrl={data.url} />
 
-            <LlmPanel
+            <SmartPanel
               enabled={llmEnabled}
               onToggle={setLlmEnabled}
               hasFailures={(data.wcag?.failures?.length ?? 0) > 0}
@@ -294,14 +302,14 @@ export default function Home() {
                   disabled={llmLoading}
                   className="btn-gradient inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/50"
                 >
-                  {llmLoading ? 'Enriching...' : 'Enrich with AI'}
+                  {llmLoading ? 'Analyzing...' : 'Get Smart Fixes'}
                 </button>
               </div>
             )}
 
             {llmResult && !llmLoading && (
               <div className="card p-5 text-sm">
-                <h3 className="mb-2 font-semibold">AI Insights</h3>
+                <h3 className="mb-2 font-semibold">Recommendations</h3>
                 {llmResult.error ? (
                   <p className="text-[var(--jao-destructive)]">Error: {llmResult.error}</p>
                 ) : (
@@ -368,7 +376,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-[var(--jao-border-subtle)] py-6 text-center">
-        <p className="inline-flex items-center gap-1.5 text-sm text-[var(--jao-text-tertiary)]">
+        <p className="inline-flex items-center gap-1.5 text-base text-[var(--jao-text-tertiary)]">
           <JaoLogo size={12} className="opacity-40" />
           Made with ⚡ by{' '}
           <a
@@ -379,9 +387,22 @@ export default function Home() {
           >
             jaostudio.dev
           </a>
-          {' — '}AI-powered WCAG audits
+          {' — '}WCAG & Design QA audits
         </p>
       </footer>
     </div>
+    <OnboardingModal />
+    {showScrollTop && (
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-6 right-6 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--jao-primary)] text-white shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/50"
+        aria-label="Scroll to top"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="18 15 12 9 6 15" />
+        </svg>
+      </button>
+    )}
+    </>
   )
 }

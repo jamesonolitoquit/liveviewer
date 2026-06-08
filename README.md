@@ -1,6 +1,6 @@
-# Liveviewer v2.2.1
+# Liveviewer v2.3.0
 
-Design QA robot for live websites. Audits WCAG contrast, detects design issues, validates ARIA accessibility, and generates deterministic fix suggestions — **no API key required**. Optional AI enrichment with your own key.
+Design QA robot for live websites. Audits WCAG contrast, detects design issues, validates ARIA accessibility, and generates deterministic fix suggestions — **no API key required**. Optional smart enrichment with your own key.
 
 **Web app:** [jao-liveviewer.vercel.app](https://jao-liveviewer.vercel.app) — run audits in your browser, no install needed.  
 **CLI:** `npm install -g @liveviewer/cli` — for CI pipelines and local development.
@@ -50,11 +50,11 @@ liveviewer audit https://example.com --wcag --design
 liveviewer audit https://example.com --wcag --design --sarif
 liveviewer audit https://example.com --wcag --design --sarif-output ./results.sarif
 
-# Contextual AI enrichment — tell the AI about your site's purpose
-liveviewer audit https://example.com --wcag --llm-enrich --context "SaaS dashboard for engineers, dark mode"
+# Contextual smart enrichment — describe your site for better suggestions
+liveviewer audit https://example.com --wcag --smart-enrich --context "SaaS dashboard for engineers, dark mode"
 
 # Read context from file
-liveviewer audit https://example.com --wcag --llm-enrich --context-file ./site-brief.txt
+liveviewer audit https://example.com --wcag --smart-enrich --context-file ./site-brief.txt
 
 # Exit non-zero if WCAG failures exceed threshold (for CI)
 liveviewer audit https://example.com --wcag --fail-on 0
@@ -62,7 +62,7 @@ liveviewer audit https://example.com --wcag --fail-on 0
 
 The `--mobile` flag runs both `1280x800` and `375x812` viewports and merges failures (deduplicated by selector+colors, tagged by viewport origin with D/M badges). `--viewports` accepts a comma-separated list for custom combinations.
 
-**CLI and web app produce identical deterministic results** (WCAG failures, Design QA scores, ARIA failures) when using the same URL and viewport configuration. The only difference is optional AI enrichment.
+**CLI and web app produce identical deterministic results** (WCAG failures, Design QA scores, ARIA failures) when using the same URL and viewport configuration. The only difference is optional smart enrichment.
 
 Reports: `<url>-<timestamp>.png` (screenshot) + `.json` with all failures and fix suggestions.
 
@@ -72,7 +72,7 @@ Includes:
 - **ARIA rules** – missing alt text, empty interactive elements, missing `lang` attribute, missing form labels, skip navigation / main landmark detection
 - **Deterministic fix suggestions** – rule-based fixes for every failure, shown automatically in CLI and web app (no API key required)
 - **SARIF 2.1 output** – 10 rule IDs compatible with GitHub Code Scanning upload
-- **AI enrichment** (optional) – `--llm-enrich` sends failures to an LLM. Use `--context` to provide site purpose for more relevant suggestions. Use `--ai-prompt` to print the prompt without calling an API.
+- **Smart enrichment** (optional) – `--smart-enrich` sends failures to a backend service. Use `--context` to provide site purpose for more relevant suggestions. Use `--smart-prompt` to print the prompt without calling an API.
 
 ### `extract` — Design token inventory
 
@@ -156,43 +156,36 @@ When a site uses `color-mix()` or CSS variables to create semi-transparent backg
 
 This affects **decorative elements only** (badges, tags, carousel arrows). Content text contrast is always accurate thanks to the alpha channel blending fix. Sites using traditional hex/rgb colors report accurate scores.
 
-## AI-Enriched Audits (Optional)
+## Smart Enrichment (Optional)
 
-Liveviewer can enrich WCAG audits with natural-language explanations and fix suggestions using LLMs.
+Liveviewer can enrich WCAG audits with natural-language explanations and fix suggestions.
 
-### Quick Start (OpenAI)
+### Quick Start
 ```bash
 export OPENAI_API_KEY=sk-...
-export OPENAI_MODEL=gpt-4o-mini    # optional, defaults to gpt-4o-mini
-liveviewer audit https://example.com --wcag --llm-enrich
+liveviewer audit https://example.com --wcag --smart-enrich
 ```
 
 **Tip:** For heavy pages (e.g., web.dev, nytimes.com), add `--wait-until domcontentloaded` to avoid timeouts:
 ```bash
-liveviewer audit https://web.dev --wcag --design --llm-enrich --wait-until domcontentloaded
+liveviewer audit https://web.dev --wcag --design --smart-enrich --wait-until domcontentloaded
 ```
 
-### Quick Start (Ollama — local, free)
-```bash
-ollama pull llama3
-liveviewer audit https://example.com --wcag --llm-enrich --llm-provider ollama
-```
-
-### LLM Flags
+### Smart Enrichment Flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--llm-enrich` | off | Enable AI enrichment |
-| `--no-llm` | — | Force deterministic only |
-| `--llm-provider` | `openai` | Provider: `openai`, `anthropic`, `google`, `ollama`, or `openai-compatible` |
-| `--llm-model` | `gpt-4o-mini` or `OPENAI_MODEL` env | Model name |
-| `--llm-api-key` | `OPENAI_API_KEY` env | API key |
-| `--llm-base-url` | provider default or `OPENAI_BASE_URL` env | Custom base URL (e.g., `https://openrouter.ai/api/v1`) |
+| `--smart-enrich` | off | Enable smart enrichment |
+| `--no-smart` | — | Force deterministic only |
+| `--enhancement-key` | `OPENAI_API_KEY` env | Enhancement key |
+| `--llm-base-url` | provider default or `OPENAI_BASE_URL` env | Custom backend URL (e.g., `https://api.deepseek.com/v1`) |
 | `--llm-cache-ttl` | `7` | Cache duration in days |
 | `--llm-clear-cache` | off | Clear cache before run |
 | `--context` | — | Site purpose/audience description for more relevant suggestions |
 | `--context-file` | — | Read context from file |
-| `--ai-prompt` | off | Print the AI prompt to stdout without calling an API (useful for manual review) |
+| `--smart-prompt` | off | Print the enrichment prompt to stdout without calling an API (useful for manual review) |
+
+> **Legacy flags** `--llm-enrich`, `--no-llm`, `--llm-api-key`, `--llm-provider`, `--llm-model`, and `--ai-prompt` still work as hidden aliases for backward compatibility.
 
 ### Audit Flags
 
@@ -230,17 +223,16 @@ liveviewer audit https://example.com --wcag --llm-enrich --llm-provider ollama
 }
 ```
 
-If the LLM call fails (e.g., missing key or network error), the audit still succeeds and returns `llm.error`.
+If the enrichment call fails (e.g., missing key or network error), the audit still succeeds and returns `llm.error`.
 
 ### Privacy
 
-- API keys are sent directly to the provider from your machine — never to a Liveviewer backend.
+- Enhancement keys are sent directly to the backend from your machine — never to a Liveviewer server.
 - Only failure summaries (selectors, colors, ratios) are sent, never full page DOM.
-- For complete privacy, use `--llm-provider ollama` for fully local processing.
 
 ### Caching
 
-LLM responses are cached in `./llm-cache/` to avoid repeated API calls. TTL defaults to 7 days. Use `--llm-clear-cache` to force fresh analysis.
+Smart enrichment responses are cached in `./llm-cache/` to avoid repeated API calls. TTL defaults to 7 days. Use `--llm-clear-cache` to force fresh analysis.
 
 ## Interaction Syntax
 
@@ -265,10 +257,10 @@ const result = await audit(url, { wcag: true, viewport: { width: 1280, height: 8
 const fixes = generateFixSuggestions(result);
 console.log(fixes);
 
-// Optional AI enrichment with context
+// Optional smart enrichment with context
 const llmResult = await enrichWithLLM(result, {
-  provider: 'openai',
-  model: 'gpt-4o-mini',
+  provider: 'openai-compatible',
+  model: 'deepseek-chat',
   llmEnrich: true,
   apiKey: process.env.OPENAI_API_KEY,
   context: 'Marketing landing page for a fintech startup'
@@ -327,9 +319,9 @@ npx vercel --prod
 
 | Var | Required | Purpose |
 |-----|----------|---------|
-| `OPENAI_API_KEY` | For AI enrichment | API key for LLM provider (also `--llm-api-key`) |
-| `OPENAI_BASE_URL` | For custom LLM endpoints | Override API base URL (also `--llm-base-url`) |
-| `OPENAI_MODEL` | For custom LLM endpoints | Override default model name (also `--llm-model`) |
+| `OPENAI_API_KEY` | For smart enrichment | Enhancement key (also `--enhancement-key`, legacy `--llm-api-key`) |
+| `OPENAI_BASE_URL` | For custom endpoints | Override API base URL (also `--llm-base-url`) |
+| `OPENAI_MODEL` | For custom model | Override default model name (legacy `--llm-model`, kept for compatibility) |
 | `CHROMIUM_PACK_URL` | No | Override the GitHub release URL for the chromium pack (use a faster CDN if needed) |
 | `UPSTASH_REDIS_REST_URL` | No | Enables persistent rate-limit counters across cold starts |
 | `UPSTASH_REDIS_REST_TOKEN` | No | Paired with `UPSTASH_REDIS_REST_URL` |

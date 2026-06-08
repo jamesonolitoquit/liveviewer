@@ -86,14 +86,14 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         <AuditResults data={data} />
       </main>
       <footer className="border-t border-[var(--jao-border-subtle)] py-6 text-center">
-        <p className="inline-flex items-center gap-1.5 text-xs text-[var(--jao-text-tertiary)]">
+        <p className="inline-flex items-center gap-1.5 text-sm text-[var(--jao-text-tertiary)]">
           <JaoLogo size={12} className="opacity-40" />
           Made with ⚡ by{' '}
           <a href="https://jaostudio.dev" target="_blank" rel="noopener noreferrer"
             className="underline decoration-dotted underline-offset-2 transition-colors hover:text-[var(--jao-primary)]">
             jaostudio.dev
           </a>
-          {' — '}AI-powered WCAG audits
+          {' — '}WCAG & Design QA audits
         </p>
       </footer>
     </div>
