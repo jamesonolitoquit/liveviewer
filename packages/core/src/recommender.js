@@ -168,6 +168,18 @@ function generateFixSuggestions(auditResult) {
     } else if (d.ruleId === 'horizontal-scroll') {
       recommendation =
         `Prevent overflow on "${d.selector}": set max-width: 100% or add overflow-x: hidden (detected ${d.value}).`;
+    } else if (d.ruleId === 'heading-hierarchy') {
+      recommendation =
+        `Fix heading hierarchy on "${d.selector}": ${d.description}. Ensure heading levels are not skipped.`;
+    } else if (d.ruleId === 'missing-alt') {
+      recommendation =
+        `Add alt text to "${d.selector}": ${d.description}. Provide descriptive text or add role="presentation" for decorative images.`;
+    } else if (d.ruleId === 'empty-interactive') {
+      recommendation =
+        `Add accessible name to "${d.selector}": ${d.description}. Add text content or an aria-label attribute.`;
+    } else if (d.ruleId === 'missing-lang') {
+      recommendation =
+        `Add lang attribute to <html>: ${d.description}. Set lang="en" (or the appropriate language code).`;
     } else {
       recommendation =
         `Fix ${d.ruleName} on "${d.selector}": expected ${d.expected}, found ${d.value}.`;

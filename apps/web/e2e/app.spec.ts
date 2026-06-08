@@ -101,6 +101,9 @@ test.describe('Liveviewer web app', () => {
   test('supports keyboard navigation through form', async ({ page }) => {
     await page.goto('/')
 
+    // Clear any URL history from prior tests that could show autocomplete dropdown
+    await page.evaluate(() => localStorage.removeItem('liveviewer_recent_urls'))
+
     // Tab 1: skip-to-content link (hidden, only visible on focus)
     await page.keyboard.press('Tab')
 

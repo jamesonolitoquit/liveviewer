@@ -85,7 +85,7 @@ export default function Home() {
     setStatus('idle')
   }, [])
 
-  const runAudit = useCallback(async (url: string) => {
+  const runAudit = useCallback(async (url: string, attempt = 1) => {
     auditUrlRef.current = url
     setStatus('running')
     setError(null)
@@ -114,6 +114,13 @@ export default function Home() {
       const json = await res.json()
 
       if (!res.ok || !json.success) {
+        const isRetryable = res.status === 503 || res.status === 429 || !res.ok
+        if (isRetryable && attempt < 2 && json.reason === 'serverless_constraint') {
+          setProgressStage(-1)
+          await new Promise(r => setTimeout(r, 2000))
+          if (cancelledRef.current) return
+          return runAudit(url, attempt + 1)
+        }
         throw new Error(json.error || 'Audit failed')
       }
 
@@ -124,6 +131,12 @@ export default function Home() {
       if (err instanceof DOMException && err.name === 'AbortError') {
         setStatus('idle')
         return
+      }
+      if (err instanceof TypeError && attempt < 2) {
+        setProgressStage(-1)
+        await new Promise(r => setTimeout(r, 2000))
+        if (cancelledRef.current) return
+        return runAudit(url, attempt + 1)
       }
       setError(err instanceof Error ? err.message : 'Audit failed')
       setStatus('error')
@@ -265,7 +278,7 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--jao-primary)] border-t-transparent" />
               <span className="text-sm text-[var(--jao-text-secondary)]">
-                {PROGRESS_STAGES[progressStage]?.label ?? 'Auditing...'}
+                {progressStage === -1 ? 'Retrying...' : (PROGRESS_STAGES[progressStage]?.label ?? 'Auditing...')}
               </span>
             </div>
             <div className="flex items-center gap-2">

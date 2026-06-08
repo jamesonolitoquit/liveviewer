@@ -194,4 +194,51 @@ describe('generateFixSuggestions', () => {
     expect(result[0].type).toBe('contrast')
     expect(result[1].type).toBe('font-size-legible')
   })
+
+  it('returns fix suggestions for heading-hierarchy', () => {
+    const result = generateFixSuggestions({
+      url: 'https://example.com',
+      wcag: null,
+      design: {
+        failures: [
+          { ruleId: 'heading-hierarchy', ruleName: 'Heading hierarchy', selector: 'h3', description: 'Heading level skipped (h1 → h3)', severity: 'medium', value: 'h1 → h3', expected: 'no skipped levels' }
+        ],
+        totalChecks: 3,
+        passCount: 2,
+        failCount: 1,
+        score: 67
+      }
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].type).toBe('heading-hierarchy')
+    expect(result[0].recommendation).toContain('Fix heading hierarchy')
+    expect(result[0].recommendation).toContain('h3')
+  })
+
+  it('returns fix suggestions for a11y rules', () => {
+    const result = generateFixSuggestions({
+      url: 'https://example.com',
+      wcag: null,
+      design: {
+        failures: [
+          { ruleId: 'missing-alt', ruleName: 'Missing alt text', selector: 'img.logo', description: 'Image missing alt attribute', severity: 'high', value: '', expected: 'descriptive alt text or role="presentation"' },
+          { ruleId: 'empty-interactive', ruleName: 'Empty interactive element', selector: 'button.submit', description: 'Button has no text or aria-label', severity: 'high', value: '', expected: 'text content or aria-label' },
+          { ruleId: 'missing-lang', ruleName: 'Missing lang attribute', selector: 'html', description: 'Page has no lang attribute', severity: 'high', value: '', expected: 'lang="en"' }
+        ],
+        totalChecks: 3,
+        passCount: 0,
+        failCount: 3,
+        score: 0
+      }
+    })
+    expect(result).toHaveLength(3)
+    expect(result[0].type).toBe('missing-alt')
+    expect(result[0].recommendation).toContain('Add alt text')
+    expect(result[0].recommendation).toContain('img.logo')
+    expect(result[1].type).toBe('empty-interactive')
+    expect(result[1].recommendation).toContain('Add accessible name')
+    expect(result[1].recommendation).toContain('button.submit')
+    expect(result[2].type).toBe('missing-lang')
+    expect(result[2].recommendation).toContain('Add lang attribute')
+  })
 })

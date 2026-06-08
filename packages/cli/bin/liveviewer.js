@@ -52,6 +52,8 @@ Options for "audit":
   --llm-api-key <key> API key (or set OPENAI_API_KEY env var)
   --context <text>    Site context/purpose for more relevant AI recommendations (e.g., "Dark mode SaaS dashboard")
   --context-file <p>  Read context from file
+  --sarif             Output SARIF 2.1 report to stdout (for GitHub Code Scanning)
+  --sarif-output <p>  Write SARIF report to file instead of stdout
   --llm-cache-ttl <d> Cache duration in days (default: 7)
   --llm-clear-cache   Clear LLM cache before running
 
@@ -108,6 +110,7 @@ async function main() {
   const { extract, checkBrandViolations } = require('@liveviewer/core/src/extractor');
   const { recommend, generateFixSuggestions } = require('@liveviewer/core/src/recommender');
   const { renderHtml } = require('@liveviewer/core/src/report');
+  const { toSarifLog } = require('@liveviewer/core/src/sarif');
 
   switch (command) {
     case 'record': {
@@ -336,6 +339,19 @@ async function main() {
         // Re-save audit result with LLM data
         const metaPath = `audits/${label}-${result.timestamp}.json`;
         fs.writeFileSync(metaPath, JSON.stringify(result, null, 2));
+      }
+
+      const doSarif = hasFlag('--sarif');
+      const sarifOutput = parseArg('--sarif-output');
+      if (doSarif || sarifOutput) {
+        const sarifLog = toSarifLog(result);
+        const sarifStr = JSON.stringify(sarifLog, null, 2);
+        if (sarifOutput) {
+          fs.writeFileSync(sarifOutput, sarifStr, 'utf-8');
+          console.log(`\n  SARIF report written to ${sarifOutput}`);
+        } else {
+          console.log('\n' + sarifStr);
+        }
       }
 
       const failOn = parseArg('--fail-on');

@@ -134,6 +134,10 @@ export function AuditForm({ onRun, isRunning }: AuditFormProps) {
         setShowDropdown(false)
         setSelectedIdx(-1)
         break
+      case 'Tab':
+        setShowDropdown(false)
+        setSelectedIdx(-1)
+        break
     }
   }
 

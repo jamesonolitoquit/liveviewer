@@ -254,6 +254,7 @@ async function runDesignPageChecks(page) {
     const viewWidth = window.innerWidth;
     const results = [];
 
+    // Horizontal scroll check
     if (docWidth > viewWidth) {
       let selector = 'body';
       const all = document.querySelectorAll('*');
@@ -277,6 +278,132 @@ async function runDesignPageChecks(page) {
         severity: 'high',
         value: (docWidth - viewWidth) + 'px overflow',
         expected: '0px overflow'
+      });
+    }
+
+    // Heading hierarchy check
+    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    let prevLevel = 0;
+    let h1Count = 0;
+    for (const h of headings) {
+      const level = parseInt(h.tagName[1]);
+      if (level === 1) h1Count++;
+      if (prevLevel > 0 && level > prevLevel + 1) {
+        const tag = h.tagName.toLowerCase();
+        const id = h.id ? '#' + h.id : '';
+        const cls = typeof h.className === 'string' ? h.className : (h.getAttribute('class') || '');
+        const clsStr = cls ? '.' + cls.trim().split(/\s+/).filter(Boolean).join('.') : '';
+        results.push({
+          ruleId: 'heading-hierarchy',
+          ruleName: 'Heading hierarchy not skipped',
+          category: 'typography',
+          selector: tag + id + clsStr,
+          description: 'Heading level skipped from h' + prevLevel + ' to h' + level + ' (' + (h.textContent || '').trim().slice(0, 40) + ')',
+          severity: 'medium',
+          value: 'h' + prevLevel + ' → h' + level,
+          expected: 'no skipped levels'
+        });
+      }
+      prevLevel = level;
+    }
+    if (h1Count === 0) {
+      results.push({
+        ruleId: 'heading-hierarchy',
+        ruleName: 'Page should have one h1',
+        category: 'typography',
+        selector: 'body',
+        description: 'No h1 element found on the page',
+        severity: 'high',
+        value: '0 h1 elements',
+        expected: '1 h1 element'
+      });
+    } else if (h1Count > 1) {
+      results.push({
+        ruleId: 'heading-hierarchy',
+        ruleName: 'Page should have exactly one h1',
+        category: 'typography',
+        selector: 'body',
+        description: 'Multiple h1 elements found (' + h1Count + ')',
+        severity: 'medium',
+        value: h1Count + ' h1 elements',
+        expected: '1 h1 element'
+      });
+    }
+
+    return results;
+  });
+}
+
+async function runA11yPageChecks(page) {
+  return page.evaluate(() => {
+    const results = [];
+
+    // Missing alt text on images
+    const imgs = document.querySelectorAll('img:not([role="presentation"])');
+    for (const img of imgs) {
+      const alt = img.getAttribute('alt');
+      if (alt === null) {
+        const tag = 'img' + (img.id ? '#' + img.id : '');
+        results.push({
+          ruleId: 'missing-alt',
+          ruleName: 'Images require alt text',
+          category: 'media',
+          selector: tag,
+          description: 'Image is missing alt attribute',
+          severity: 'high',
+          value: 'no alt attribute',
+          expected: 'alt="..."'
+        });
+      } else if (alt.trim() === '') {
+        const tag = 'img' + (img.id ? '#' + img.id : '');
+        results.push({
+          ruleId: 'missing-alt',
+          ruleName: 'Images require alt text',
+          category: 'media',
+          selector: tag,
+          description: 'Image has empty alt text',
+          severity: 'medium',
+          value: 'alt=""',
+          expected: 'descriptive alt text or role="presentation"'
+        });
+      }
+    }
+
+    // Empty interactive elements (buttons, links)
+    const buttons = document.querySelectorAll('button, a[href]');
+    for (const el of buttons) {
+      const text = (el.textContent || '').trim();
+      const ariaLabel = el.getAttribute('aria-label');
+      const ariaLabelledby = el.getAttribute('aria-labelledby');
+      const hasAria = (ariaLabel && ariaLabel.trim()) || (ariaLabelledby && ariaLabelledby.trim());
+      if (!text && !hasAria) {
+        const tag = el.tagName.toLowerCase() + (el.id ? '#' + el.id : '');
+        results.push({
+          ruleId: 'empty-interactive',
+          ruleName: 'Interactive elements must have accessible name',
+          category: 'interactivity',
+          selector: tag,
+          description: el.tagName.toLowerCase() + ' has no text content or aria-label',
+          severity: 'high',
+          value: 'no accessible name',
+          expected: 'text content or aria-label'
+        });
+      }
+    }
+
+    // Missing lang attribute on html
+    const html = document.documentElement;
+    const lang = html.getAttribute('lang');
+    if (!lang || lang.trim() === '') {
+      results.push({
+        ruleId: 'missing-lang',
+        ruleName: 'Page must have lang attribute',
+        category: 'interactivity',
+        selector: 'html',
+        description: 'html element is missing lang attribute',
+        severity: 'high',
+        value: 'lang="' + (lang || '') + '"',
+        expected: 'lang="en" or appropriate language code'
       });
     }
 
@@ -363,6 +490,8 @@ async function audit(url, options = {}) {
         if (doDesign) {
           const pageFails = await runDesignPageChecks(page);
           pageLevelFailures.push(...pageFails);
+          const a11yFails = await runA11yPageChecks(page);
+          pageLevelFailures.push(...a11yFails);
         }
       }
 
