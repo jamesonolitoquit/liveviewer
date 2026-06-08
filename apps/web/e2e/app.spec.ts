@@ -110,13 +110,10 @@ test.describe('Liveviewer web app', () => {
     // Tab 2: History link in header
     await page.keyboard.press('Tab')
 
-    // Tab 3: Extension link in header
+    // Tab 3: Theme toggle in header
     await page.keyboard.press('Tab')
 
-    // Tab 4: Theme toggle in header
-    await page.keyboard.press('Tab')
-
-    // Tab 5: URL input
+    // Tab 4: URL input
     await page.keyboard.press('Tab')
     await expect(page.locator('input[type="url"]')).toBeFocused()
 

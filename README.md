@@ -315,7 +315,7 @@ npx vercel --prod
 | **Resource blocking** | Images, fonts, media blocked by default to fit `domcontentloaded` budget |
 | **Caching** | LRU in-memory cache, 50 entries max, 7-day TTL |
 | **Rate limiting** | 10 req/min/IP via Upstash Redis (sliding window); in-memory fallback |
-| **Fallback** | 503 with extension link if cold start > 10s or OOM |
+| **Fallback** | 503 with CLI suggestion if cold start > 10s or OOM |
 
 ### Environment Variables
 
@@ -339,7 +339,7 @@ This runs real audits against `example.com`, `web.dev`, and `github.com` and rep
 
 ### Known Limitations (Vercel)
 
-- **Heavy pages time out** (e.g. `nytimes.com`, `amazon.com`). Use the [browser extension](#browser-extension) for those.
+- **Heavy pages time out** (e.g. `nytimes.com`, `amazon.com`). Use the CLI (`npm install -g @liveviewer/cli`) for those.
 - **Cold start** can be 5–10s on the first request after a long idle period while the chromium pack is downloaded.
 - **Function size** is at the Hobby 50MB limit. Don't add large image-processing libraries to the web workspace.
 
@@ -347,11 +347,4 @@ This runs real audits against `example.com`, `web.dev`, and `github.com` and rep
 
 Move the `/api/audit` route to a dedicated service (Fly.io, Render, Railway) that allows 30s+ timeouts and 1GB+ memory. The core audit code in `packages/core` is platform-agnostic — only `auditor.js`'s `getChromium()` function needs to swap implementations.
 
-## Browser Extension
 
-The Liveviewer browser extension performs audits locally in the user's browser, bypassing serverless constraints entirely. Use it for:
-- Local/staging sites (no cross-origin issues)
-- Very large pages (no timeout limits)
-- Behind-firewall intranet apps
-
-See `packages/extension/` for build instructions.

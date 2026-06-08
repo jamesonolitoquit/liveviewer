@@ -696,7 +696,7 @@ async function audit(url, options = {}) {
   } catch (err) {
     if (timedOut) {
       try { fs.unlinkSync(filepath); } catch (_) {}
-      throw new Error('Audit timeout: page too large or slow. Try the browser extension for this URL.');
+      throw new Error('Audit timeout: page too large or slow. Try the CLI: npm install -g @liveviewer/cli');
     }
     throw err;
   } finally {

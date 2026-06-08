@@ -188,14 +188,6 @@ export default function Home() {
           >
             History
           </a>
-          <a
-            href="https://github.com/jamesonolitoquit/liveviewer#browser-extension"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full border border-[var(--jao-accent)]/40 px-3 py-1.5 text-xs text-[var(--jao-accent)] transition-colors hover:bg-[var(--jao-accent)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
-          >
-            + Extension
-          </a>
           <ThemeToggle />
         </div>
       </header>

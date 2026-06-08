@@ -179,9 +179,8 @@ export async function POST(request: NextRequest) {
     if (reason === 'serverless_constraint') {
       return NextResponse.json(
         {
-          error: 'Server-side audit unavailable. Use the Liveviewer browser extension for this URL.',
+          error: 'Server-side audit unavailable. Try the CLI: npm install -g @liveviewer/cli',
           reason: 'serverless_constraint',
-          extensionUrl: 'https://github.com/anomalyco/liveviewer#browser-extension',
           fallback: true
         },
         { status: 503 }
@@ -193,7 +192,7 @@ export async function POST(request: NextRequest) {
         error: message,
         reason: 'audit_failed',
         fallback: true,
-        message: 'Page may be too large or slow. Try the browser extension for this URL.'
+        message: 'Page may be too large or slow. Try the CLI: npm install -g @liveviewer/cli'
       },
       { status: 500 }
     )
