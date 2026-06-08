@@ -3,9 +3,6 @@
 const path = require('path');
 const fs = require('fs');
 
-// chdir to monorepo root so relative paths resolve correctly
-process.chdir(path.resolve(__dirname, '..', '..', '..'));
-
 const command = process.argv[2];
 
 if (command === '--version' || command === '-v') {
