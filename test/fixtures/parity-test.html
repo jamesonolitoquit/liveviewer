@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head><title>Liveviewer parity test</title></head>
+<body>
+  <h1>Test page</h1>
+
+  <!-- 1. Missing alt -->
+  <img src="x.jpg">
+  <img src="y.jpg" alt="">
+
+  <!-- 2. Empty interactive -->
+  <button></button>
+  <button aria-label="OK">OK</button>
+  <a href="#"> </a>
+
+  <!-- 3. Missing lang — covered by <html> above having no lang attribute -->
+
+  <!-- 4. sr-only: should NOT be flagged -->
+  <span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">Skip to content</span>
+
+  <!-- 5. Normal text to ensure audit runs -->
+  <p>Hello world</p>
+
+  <!-- Very small font (should flag) -->
+  <p style="font-size:10px">This is 10px text</p>
+
+  <!-- Line height issue -->
+  <p style="line-height:1.2">Tight line height</p>
+</body>
+</html>
