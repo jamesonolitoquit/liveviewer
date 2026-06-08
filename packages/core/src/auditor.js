@@ -42,24 +42,17 @@ async function getChromium() {
     const executablePath = await chromiumMin.executablePath(CHROMIUM_PACK_URL);
     return {
       launcher: playwrightCore.chromium,
-      launchOptions: {
-        args: [...chromiumMin.args, ...SERVERLESS_LAUNCH_ARGS],
-        executablePath,
-        headless: true
-      }
+      getArgs: () => [...chromiumMin.args, ...SERVERLESS_LAUNCH_ARGS],
+      executablePath,
+      tempDir: null
     };
   }
   const playwright = require('playwright');
   return {
     launcher: playwright.chromium,
-    launchOptions: {
-      headless: true,
-      args: [
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--no-sandbox'
-      ]
-    }
+    getArgs: () => ['--disable-dev-shm-usage', '--disable-gpu', '--no-sandbox'],
+    executablePath: undefined,
+    tempDir: null
   };
 }
 
@@ -444,8 +437,28 @@ async function audit(url, options = {}) {
   const filename = `${label}-${timestamp}.png`;
   const filepath = path.join(absOutput, filename);
 
-  const { launcher, launchOptions } = await getChromium();
-  const browser = await launcher.launch(launchOptions);
+  const { launcher, getArgs, executablePath: chromePath, tempDir: chromeTempDir } = await getChromium();
+
+  let browser;
+  let lastLaunchErr;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      browser = await launcher.launch({
+        args: getArgs(),
+        executablePath: chromePath,
+        headless: true
+      });
+      break;
+    } catch (err) {
+      lastLaunchErr = err;
+      if (err?.message?.includes?.('ETXTBSY') || err?.message?.includes?.('EBUSY')) {
+        await new Promise(r => setTimeout(r, 500 * attempt));
+        continue;
+      }
+      throw err;
+    }
+  }
+  if (!browser) throw lastLaunchErr;
   let timedOut = false;
   let timeoutHandle;
   const hardTimeout = new Promise((_, reject) => {
@@ -550,7 +563,10 @@ async function audit(url, options = {}) {
     throw err;
   } finally {
     clearTimeout(timeoutHandle);
-    await browser.close().catch(() => {});
+    await browser?.close().catch(() => {});
+    if (chromeTempDir) {
+      fs.rmSync(chromeTempDir, { recursive: true, force: true });
+    }
   }
 }
 

@@ -7,4 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Warm Vercel function
-        run: curl -sSf "${{ vars.VERCEL_URL || 'https://liveviewer.vercel.app' }}/api/audit?warmup=true" > /dev/null
+        run: |
+          curl -sSf -X POST \
+            -H 'Content-Type: application/json' \
+            -d '{"url":"https://example.com","wcag":false,"design":false}' \
+            "${{ vars.VERCEL_URL || 'https://jao-liveviewer.vercel.app' }}/api/audit" \
+            > /dev/null
