@@ -45,7 +45,7 @@ async function getChromium() {
       launchOptions: {
         args: [...chromiumMin.args, ...SERVERLESS_LAUNCH_ARGS],
         executablePath,
-        headless: 'shell'
+        headless: true
       }
     };
   }
