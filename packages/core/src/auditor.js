@@ -329,6 +329,62 @@ async function runDesignPageChecks(page) {
       });
     }
 
+    // Typography: font-size and line-height checks
+    const BODY_TAGS = new Set(['p', 'li', 'td', 'th', 'dd', 'dt', 'figcaption', 'label', 'span', 'a', 'button', 'div']);
+    const walker = document.createTreeWalker(document.body, 4 /* NodeFilter.SHOW_TEXT */, null, false);
+    while (walker.nextNode()) {
+      const el = walker.currentNode.parentElement;
+      if (!el) continue;
+      const tag = el.tagName.toLowerCase();
+      if (!BODY_TAGS.has(tag)) continue;
+      const text = el.textContent.trim();
+      if (!text || el.children.length > 0) continue;
+      const style = getComputedStyle(el);
+      // Skip visually hidden elements (sr-only pattern)
+      if (style.position === 'absolute') {
+        const rect = el.getBoundingClientRect();
+        if (rect.width <= 1 && rect.height <= 1) continue;
+        if (style.overflow === 'hidden' && rect.width === 0 && rect.height === 0) continue;
+      }
+      const fontSize = parseFloat(style.fontSize);
+      if (isNaN(fontSize) || fontSize === 0) continue;
+      const fontWeight = parseInt(style.fontWeight);
+      const isLarge = fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700);
+      const rawCls = typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
+      const cls = rawCls ? '.' + rawCls.trim().split(/\s+/).filter(Boolean).join('.') : '';
+      const sel = tag + (el.id ? '#' + el.id : '') + cls;
+
+      if (fontSize < 16 && !isLarge) {
+        results.push({
+          ruleId: 'font-size-legible',
+          ruleName: 'Body text minimum 16px',
+          category: 'typography',
+          selector: sel,
+          description: 'Text "' + text.slice(0, 40) + '" has font-size ' + fontSize + 'px; minimum for legible body text is 16px',
+          severity: fontSize < 12 ? 'high' : 'medium',
+          value: fontSize + 'px',
+          expected: '\u2265 16px'
+        });
+      }
+
+      const lh = parseFloat(style.lineHeight);
+      if (!isNaN(lh) && lh > 0) {
+        const ratio = lh / fontSize;
+        if (ratio < 1.4 || ratio > 1.6) {
+          results.push({
+            ruleId: 'line-height-readable',
+            ruleName: 'Line height between 1.4 and 1.6',
+            category: 'typography',
+            selector: sel,
+            description: '"' + text.slice(0, 40) + '" has line-height ' + ratio.toFixed(2) + ' (' + lh + 'px at ' + fontSize + 'px font)',
+            severity: ratio < 1.2 || ratio > 2 ? 'high' : 'medium',
+            value: ratio.toFixed(2),
+            expected: '1.4\u20131.6'
+          });
+        }
+      }
+    }
+
     return results;
   });
 }
@@ -574,19 +630,40 @@ async function audit(url, options = {}) {
       let designResult = null;
       if (doDesign) {
         const allFailures = [...pageLevelFailures];
+        const seen = new Set();
+        for (const f of allFailures) {
+          seen.add(f.selector + '|' + f.ruleId);
+        }
         if (lastElements.length > 0) {
           try {
             const engine = await import('@liveviewer/engine');
             const elementResult = engine.analyzeDesign(lastElements);
-            allFailures.push(...elementResult.failures);
+            for (const f of elementResult.failures) {
+              const key = f.selector + '|' + f.ruleId;
+              if (!seen.has(key)) {
+                seen.add(key);
+                allFailures.push(f);
+              }
+            }
+            const totalChecks = elementResult.totalChecks + (pageLevelFailures.length > 0 ? 1 : 0);
             designResult = {
               failures: allFailures,
-              totalChecks: elementResult.totalChecks + (pageLevelFailures.length > 0 ? 1 : 0),
+              totalChecks,
               passCount: elementResult.passCount,
               failCount: allFailures.length,
               score: Math.round((elementResult.totalChecks - elementResult.failures.length + (pageLevelFailures.length > 0 ? 0 : 1)) / (elementResult.totalChecks + 1) * 1000) / 10
             };
-          } catch (_) {}
+          } catch (_) {
+            if (pageLevelFailures.length > 0) {
+              designResult = {
+                failures: pageLevelFailures,
+                totalChecks: pageLevelFailures.length,
+                passCount: 0,
+                failCount: pageLevelFailures.length,
+                score: 0
+              };
+            }
+          }
         } else if (pageLevelFailures.length > 0) {
           designResult = {
             failures: pageLevelFailures,
