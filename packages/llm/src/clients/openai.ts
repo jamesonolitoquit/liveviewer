@@ -56,10 +56,9 @@ export async function createOpenAIClient(options: {
     )
   }
 
-  const client = new OpenAI({
-    apiKey: options.apiKey,
-    baseURL: options.baseUrl
-  })
+  const clientOptions: { apiKey: string; baseURL?: string } = { apiKey: options.apiKey };
+  if (options.baseUrl) clientOptions.baseURL = options.baseUrl;
+  const client = new OpenAI(clientOptions);
 
   return {
     async complete<T>(prompt: string): Promise<T> {

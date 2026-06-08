@@ -95,7 +95,7 @@ test.describe('Liveviewer web app', () => {
     await page.fill('input[type="url"]', 'https://example.com')
     await page.click('button[type="submit"]')
 
-    await expect(page.locator('#audit-error')).toHaveText('Failed to load page')
+    await expect(page.locator('#audit-error')).toContainText('Failed to load page')
   })
 
   test('supports keyboard navigation through form', async ({ page }) => {
@@ -195,8 +195,7 @@ test.describe('Liveviewer web app', () => {
     await page.click('button[type="submit"]')
 
     await expect(page.locator('text=Cancel')).toBeVisible()
-    await expect(page.getByText('Fetching page...', { exact: true })).toBeVisible()
-    await expect(page.locator('text=/https:\\/\\/example.com/')).toBeVisible()
+    await expect(page.getByRole('status', { name: 'Loading audit results' })).toBeVisible()
   })
 
   test('shows fix suggestions for audit with wcag and design failures', async ({ page }) => {

@@ -6,6 +6,8 @@ import { AuditResults } from '@/components/audit-results'
 import { ExportButtons } from '@/components/export-buttons'
 import { Checklist } from '@/components/checklist'
 import { LlmPanel } from '@/components/llm-panel'
+import { LoadingSkeleton } from '@/components/loading-skeleton'
+import { ErrorToast } from '@/components/error-toast'
 import { JaoLogo } from '@/components/jao-logo'
 import { ThemeToggle } from '@/components/theme-toggle'
 import type { AuditData, DesignData, WcagData } from '@/types/audit'
@@ -17,12 +19,6 @@ const VIEWPORT_OPTIONS = [
   { label: 'Mobile 375×812', width: 375, height: 812 },
 ]
 
-const PROGRESS_STAGES = [
-  { label: 'Fetching page...', duration: 3000 },
-  { label: 'Analyzing elements...', duration: 5000 },
-  { label: 'Calculating contrast ratios...', duration: 5000 },
-]
-
 export default function Home() {
   const [status, setStatus] = useState<AuditStatus>('idle')
   const [data, setData] = useState<AuditData | null>(null)
@@ -31,37 +27,16 @@ export default function Home() {
   const [llmEnabled, setLlmEnabled] = useState(false)
   const [llmResult, setLlmResult] = useState<any>(null)
   const [llmLoading, setLlmLoading] = useState(false)
-  const [progressStage, setProgressStage] = useState(0)
   const [context, setContext] = useState('')
   const resultsRef = useRef<HTMLDivElement>(null)
   const announceRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
-  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const auditUrlRef = useRef<string>('')
   const cancelledRef = useRef(false)
 
   useEffect(() => {
     if (status === 'complete' || status === 'error') {
       resultsRef.current?.focus()
-    }
-  }, [status])
-
-  useEffect(() => {
-    if (status === 'running') {
-      cancelledRef.current = false
-      let stage = 0
-      setProgressStage(0)
-      progressTimerRef.current = setInterval(() => {
-        stage++
-        if (stage < PROGRESS_STAGES.length) {
-          setProgressStage(stage)
-        } else {
-          if (progressTimerRef.current) clearInterval(progressTimerRef.current)
-        }
-      }, PROGRESS_STAGES[0]?.duration ?? 3000)
-    }
-    return () => {
-      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
     }
   }, [status])
 
@@ -78,10 +53,14 @@ export default function Home() {
     })
   }
 
+  const dismissError = useCallback(() => {
+    setError(null)
+    setStatus('idle')
+  }, [])
+
   const cancelAudit = useCallback(() => {
     cancelledRef.current = true
     abortRef.current?.abort()
-    if (progressTimerRef.current) clearInterval(progressTimerRef.current)
     setStatus('idle')
   }, [])
 
@@ -116,7 +95,6 @@ export default function Home() {
       if (!res.ok || !json.success) {
         const isRetryable = res.status === 503 || res.status === 429 || !res.ok
         if (isRetryable && attempt < 2 && json.reason === 'serverless_constraint') {
-          setProgressStage(-1)
           await new Promise(r => setTimeout(r, 2000))
           if (cancelledRef.current) return
           return runAudit(url, attempt + 1)
@@ -133,7 +111,6 @@ export default function Home() {
         return
       }
       if (err instanceof TypeError && attempt < 2) {
-        setProgressStage(-1)
         await new Promise(r => setTimeout(r, 2000))
         if (cancelledRef.current) return
         return runAudit(url, attempt + 1)
@@ -193,7 +170,7 @@ export default function Home() {
     }
   }, [data, llmEnabled])
 
-  const liveMessage = status === 'running' ? `Audit in progress: ${PROGRESS_STAGES[progressStage]?.label ?? ''}` :
+  const liveMessage = status === 'running' ? `Auditing ${auditUrlRef.current}...` :
     status === 'complete' ? `Audit completed with ${data?.wcag?.score ?? 0}% score` :
     status === 'error' ? `Audit failed: ${error}` : ''
 
@@ -274,35 +251,21 @@ export default function Home() {
         </div>
 
         {status === 'running' && (
-          <div className="card mt-6 p-5 space-y-3">
-            <div className="flex items-center gap-3">
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--jao-primary)] border-t-transparent" />
-              <span className="text-sm text-[var(--jao-text-secondary)]">
-                {progressStage === -1 ? 'Retrying...' : (PROGRESS_STAGES[progressStage]?.label ?? 'Auditing...')}
-              </span>
+          <div className="relative">
+            <LoadingSkeleton />
+            <div className="flex justify-center pt-3">
+              <button
+                onClick={cancelAudit}
+                className="rounded-full border border-[var(--jao-border)] px-3 py-1.5 text-xs text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
+              >
+                Cancel
+              </button>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--jao-border)]">
-                <div
-                  className="h-full rounded-full bg-[var(--jao-gradient)] transition-all duration-500"
-                  style={{ width: `${Math.min((progressStage + 1) / PROGRESS_STAGES.length * 100, 100)}%` }}
-                />
-              </div>
-              <span className="text-xs text-[var(--jao-text-tertiary)]">{auditUrlRef.current}</span>
-            </div>
-            <button
-              onClick={cancelAudit}
-              className="rounded-full border border-[var(--jao-border)] px-3 py-1.5 text-xs text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
-            >
-              Cancel
-            </button>
           </div>
         )}
 
-        {status === 'error' && (
-          <div id="audit-error" className="mt-6 rounded-xl border border-[var(--jao-destructive)]/30 bg-[var(--jao-destructive)]/5 p-4 text-sm text-[var(--jao-destructive)]" role="alert">
-            {error}
-          </div>
+        {status === 'error' && error && (
+          <ErrorToast message={error} onDismiss={dismissError} />
         )}
 
         {status === 'idle' && !data && (
@@ -358,7 +321,7 @@ export default function Home() {
                         <h4 className="mb-2 text-xs font-semibold text-[var(--jao-destructive)]">Accessibility (WCAG)</h4>
                         <div className="mb-4 space-y-2">
                           {llmResult.perFailure.map((pf: any, i: number) => (
-                            <div key={i} className="rounded-lg border border-[var(--jao-border)] p-3">
+                            <div key={i} className="rounded-lg border border-[var(--jao-border)] sm:p-3 p-2.5">
                               <div className="mb-1 flex items-center gap-2">
                                 <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase ${
                                   pf.severity === 'high' ? 'bg-red-900/30 text-red-300' :

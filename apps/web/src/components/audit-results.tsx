@@ -41,6 +41,13 @@ function vpLabel(vp: { width: number; height: number }): string {
   return `${vp.width}×${vp.height}`
 }
 
+function vpBadge(vp: { width: number; height: number }): string {
+  if (vp.width === 1280) return 'bg-blue-900/30 text-blue-300'
+  if (vp.width === 375) return 'bg-emerald-900/30 text-emerald-300'
+  if (vp.width === 768) return 'bg-purple-900/30 text-purple-300'
+  return 'bg-[var(--jao-border)] text-[var(--jao-text-secondary)]'
+}
+
 function SeverityBadge({ severity }: { severity: string }) {
   const colors: Record<string, string> = {
     high: 'bg-red-900/30 text-red-300',
@@ -114,7 +121,7 @@ export function AuditResults({ data }: AuditResultsProps) {
           </h3>
           <div className="space-y-2 max-h-96 overflow-y-auto" role="list" aria-label="WCAG failure details">
             {wcag.failures.map((f, i) => (
-              <div key={i} className="failure-card bg-[var(--jao-bg)] p-3 pr-4 text-xs" role="listitem">
+              <div key={i} className="failure-card bg-[var(--jao-bg)] sm:p-3 p-2.5 pr-4 text-xs" role="listitem">
                 <div className="mb-1 flex items-center gap-2">
                   <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${
                     f.contrastRatio < 3 ? 'bg-red-900/30 text-red-300' :
@@ -131,7 +138,7 @@ export function AuditResults({ data }: AuditResultsProps) {
                       {(f as any).viewports.map((vp: any, vi: number) => (
                         <span
                           key={vi}
-                          className="inline-block rounded-full bg-[var(--jao-border)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--jao-text-secondary)]"
+                          className={`inline-block rounded-full px-1.5 py-0.5 text-[9px] font-medium ${vpBadge(vp)}`}
                         >
                           {vpLabel(vp)}
                         </span>
@@ -179,7 +186,7 @@ export function AuditResults({ data }: AuditResultsProps) {
           </div>
           <div className="space-y-2 max-h-96 overflow-y-auto" role="list" aria-label="Design QA failure details">
             {design.failures.map((f: DesignFailure, i: number) => (
-              <div key={i} className="rounded-lg border-l-2 border-[var(--jao-accent)] bg-[var(--jao-bg)] p-3 text-xs" role="listitem">
+              <div key={i} className="rounded-lg border-l-2 border-[var(--jao-accent)] bg-[var(--jao-bg)] sm:p-3 p-2.5 text-xs" role="listitem">
                 <div className="mb-1 flex items-center gap-2">
                   <SeverityBadge severity={f.severity} />
                   <span className="text-[var(--jao-text-secondary)]">{f.ruleName}</span>
@@ -209,7 +216,7 @@ export function AuditResults({ data }: AuditResultsProps) {
           </h3>
           <div className="space-y-2" role="list" aria-label="Deterministic fix suggestions">
             {data.recommendations.map((r: FixSuggestion, i: number) => (
-              <div key={i} className="rounded-lg border-l-2 border-[var(--jao-primary)] bg-[var(--jao-bg)] p-3 text-xs" role="listitem">
+              <div key={i} className="rounded-lg border-l-2 border-[var(--jao-primary)] bg-[var(--jao-bg)] sm:p-3 p-2.5 text-xs" role="listitem">
                 <div className="mb-1 flex items-center gap-2">
                   <SeverityBadge severity={r.severity} />
                   <span className="font-mono text-[10px] text-[var(--jao-text-secondary)]">{r.selector}</span>

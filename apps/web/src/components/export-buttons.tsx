@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { csvFromAudit, jsonFromAudit, downloadFile } from '@/lib/export'
+import { csvFromAudit, jsonFromAudit, textFromAudit, downloadFile } from '@/lib/export'
 import { PdfExportButton } from './pdf-export-button'
 import type { AuditData } from '@/types/audit'
 
@@ -21,6 +21,7 @@ function sanitizeFilename(url: string): string {
 export function ExportButtons({ data }: ExportButtonsProps) {
   const [error, setError] = useState<string | null>(null)
   const [shareState, setShareState] = useState<'idle' | 'saving' | 'copied' | 'error'>('idle')
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
   const prefix = sanitizeFilename(data.url)
 
   const handleCsv = () => {
@@ -40,6 +41,18 @@ export function ExportButtons({ data }: ExportButtonsProps) {
       setError(null)
     } catch {
       setError('Failed to generate JSON')
+    }
+  }
+
+  const handleCopy = () => {
+    try {
+      const text = textFromAudit(data)
+      navigator.clipboard.writeText(text)
+      setCopyState('copied')
+      setTimeout(() => setCopyState('idle'), 3000)
+    } catch {
+      setCopyState('error')
+      setTimeout(() => setCopyState('idle'), 3000)
     }
   }
 
@@ -79,6 +92,18 @@ export function ExportButtons({ data }: ExportButtonsProps) {
         JSON
       </button>
       <PdfExportButton data={data} prefix={prefix} />
+      <button
+        onClick={handleCopy}
+        className={`rounded-lg border px-3 py-1.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 ${
+          copyState === 'copied'
+            ? 'border-[var(--jao-success)] text-[var(--jao-success)]'
+            : copyState === 'error'
+            ? 'border-[var(--jao-destructive)] text-[var(--jao-destructive)]'
+            : 'border-[var(--jao-border)] text-[var(--jao-text-secondary)] hover:bg-[var(--jao-border-subtle)]'
+        }`}
+      >
+        {copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Failed' : 'Copy'}
+      </button>
       <button
         onClick={handleShare}
         disabled={shareState === 'saving'}

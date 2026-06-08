@@ -17,9 +17,10 @@ export function analyzeDesign(elements: ElementDatum[]): DesignResult {
     ...checkLineHeight(elements)
   ]
 
-  const totalChecks = elements.length
+  // TODO(v2.4): exclude hidden/skipped elements from count
+  const totalChecks = elements.length * 2
   const failCount = failures.length
-  const passCount = totalChecks - failCount
+  const passCount = Math.max(0, totalChecks - failCount)
 
   return {
     failures,
@@ -27,7 +28,7 @@ export function analyzeDesign(elements: ElementDatum[]): DesignResult {
     passCount,
     failCount,
     score: totalChecks > 0
-      ? Math.round((totalChecks - failCount) / totalChecks * 1000) / 10
+      ? Math.round(Math.max(0, totalChecks - failCount) / totalChecks * 1000) / 10
       : 100
   }
 }

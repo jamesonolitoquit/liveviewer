@@ -1,12 +1,12 @@
-# Liveviewer v2.1
+# Liveviewer v2.2.1
 
-Design QA robot for live websites. Audits WCAG contrast, detects design issues, and generates fix suggestions — **no API key required**. Optional AI enrichment with your own key.
+Design QA robot for live websites. Audits WCAG contrast, detects design issues, validates ARIA accessibility, and generates deterministic fix suggestions — **no API key required**. Optional AI enrichment with your own key.
 
 **Web app:** [jao-liveviewer.vercel.app](https://jao-liveviewer.vercel.app) — run audits in your browser, no install needed.  
 **CLI:** `npm install -g @liveviewer/cli` — for CI pipelines and local development.
 
 ```bash
-npm install -g liveviewer
+npm install -g @liveviewer/cli
 npx playwright install chromium
 ```
 
@@ -31,20 +31,24 @@ liveviewer record https://example.com --interaction "click .menu" --interaction 
 
 Reports: totalFrames, meanDelta, jankFrames, smoothnessScore (0–100).
 
-### `audit` — WCAG accessibility + Design QA analysis
+### `audit` — WCAG accessibility + Design QA + ARIA analysis
 
 ```bash
 # WCAG contrast audit (single desktop viewport)
-liveviewer audit https://example.com --wcag --label audit1
+liveviewer audit https://example.com --wcag
 
-# WCAG + Design QA at both Desktop & Mobile viewports (merged results)
+# WCAG + Design QA + ARIA rules at both Desktop & Mobile viewports (merged)
 liveviewer audit https://web.dev --wcag --design --mobile
 
 # Explicit viewport list (overrides --width/--height)
-liveviewer audit https://example.com --wcag --viewports 1280x800,375x812
+liveviewer audit https://example.com --wcag --design --viewports 1280x800,375x812
 
 # Deterministic fix suggestions (no API key needed) — shown automatically
 liveviewer audit https://example.com --wcag --design
+
+# SARIF 2.1 output (compatible with GitHub Code Scanning)
+liveviewer audit https://example.com --wcag --design --sarif
+liveviewer audit https://example.com --wcag --design --sarif-output ./results.sarif
 
 # Contextual AI enrichment — tell the AI about your site's purpose
 liveviewer audit https://example.com --wcag --llm-enrich --context "SaaS dashboard for engineers, dark mode"
@@ -56,17 +60,19 @@ liveviewer audit https://example.com --wcag --llm-enrich --context-file ./site-b
 liveviewer audit https://example.com --wcag --fail-on 0
 ```
 
-The `--mobile` flag runs both `1280x800` and `375x812` viewports and merges failures (deduplicated by selector+colors, tagged by viewport origin). `--viewports` accepts a comma-separated list for custom combinations.
+The `--mobile` flag runs both `1280x800` and `375x812` viewports and merges failures (deduplicated by selector+colors, tagged by viewport origin with D/M badges). `--viewports` accepts a comma-separated list for custom combinations.
 
-**CLI and web app produce identical deterministic results** (WCAG failures, Design QA scores) when using the same URL and viewport configuration. The only difference is optional AI enrichment.
+**CLI and web app produce identical deterministic results** (WCAG failures, Design QA scores, ARIA failures) when using the same URL and viewport configuration. The only difference is optional AI enrichment.
 
-Reports: `<url>-<timestamp>.png` (screenshot) + `.json` with per-element contrast ratios and Design QA issues.
+Reports: `<url>-<timestamp>.png` (screenshot) + `.json` with all failures and fix suggestions.
 
 Includes:
-- **WCAG contrast** – per-element contrast ratios with background ancestor walk (correct alpha blending for `rgba`)
-- **Design QA** – typography (font-size ≥16px, line-height 1.4–1.6), horizontal scroll detection
+- **WCAG contrast** – per-element contrast ratios with background ancestor walk (correct alpha blending for `rgba`), `sr-only` elements automatically filtered
+- **Design QA** – typography (font-size ≥16px, line-height 1.4–1.6), horizontal scroll detection, heading hierarchy validation
+- **ARIA rules** – missing alt text, empty interactive elements, missing `lang` attribute, missing form labels, skip navigation / main landmark detection
 - **Deterministic fix suggestions** – rule-based fixes for every failure, shown automatically in CLI and web app (no API key required)
-- **AI enrichment** (optional) – `--llm-enrich` sends failures to an LLM. Use `--context` to provide site purpose for more relevant suggestions
+- **SARIF 2.1 output** – 10 rule IDs compatible with GitHub Code Scanning upload
+- **AI enrichment** (optional) – `--llm-enrich` sends failures to an LLM. Use `--context` to provide site purpose for more relevant suggestions. Use `--ai-prompt` to print the prompt without calling an API.
 
 ### `extract` — Design token inventory
 
@@ -113,18 +119,36 @@ liveviewer mcp
 ## CI Integration
 
 ```bash
+# Fail if any WCAG violations exist
 liveviewer audit https://mysite.com --wcag --fail-on 0
+
+# Generate SARIF for GitHub Code Scanning
+liveviewer audit https://mysite.com --wcag --design --sarif-output results.sarif
+# Then upload with: gh api /repos/:owner/:repo/code-scanning/sarifs --input results.sarif
 ```
 
-Exits with code 1 if WCAG failures exceed the threshold. Plug into GitHub Actions, GitLab CI, etc.
+Exits with code 1 if WCAG failures exceed the threshold. SARIF output is compatible with GitHub Code Scanning upload (10 rule IDs across WCAG, Design QA, and ARIA categories). Plug into GitHub Actions, GitLab CI, etc.
+
+## Web App Export Features
+
+The web app at [jao-liveviewer.vercel.app](https://jao-liveviewer.vercel.app) includes multiple export options after an audit:
+
+| Action | Description |
+|--------|-------------|
+| **Copy** | Copies a structured markdown report with all WCAG + Design + Fix suggestions (ideal for AI prompts) |
+| **CSV** | Download failures as CSV with columns: Type, Selector, Value, Expected, Severity |
+| **JSON** | Download full audit data as JSON (includes WCAG, design, recommendations, viewports) |
+| **PDF** | Generate a printable PDF report with score gauges, violation tables, and fix suggestions |
+| **Share** | Create a shareable 8-character link (7-day expiry) — opens same results in incognito |
 
 ## Known Limitations
 
 | Gap | Impact | Status |
 |-----|--------|--------|
-| CSS variable opacity (`color-mix()`) | `getComputedStyle` resolves to fully opaque — causes 1:1 false positives on badge elements | Low priority (v1.1) |
+| CSS variable opacity (`color-mix()`) | `getComputedStyle` resolves to fully opaque — causes 1:1 false positives on badge elements | Low priority |
 | SVG `<text>` elements | Not traversed by TreeWalker | Low priority |
 | Shadow DOM | Not traversed by TreeWalker | Low priority |
+| Overlapping elements | Not yet detected (experimental, planned for v2.3) | Planned |
 
 ### CSS Variable Opacity False Positives
 
@@ -154,13 +178,28 @@ liveviewer audit https://example.com --wcag --llm-enrich --llm-provider ollama
 |------|---------|-------------|
 | `--llm-enrich` | off | Enable AI enrichment |
 | `--no-llm` | — | Force deterministic only |
-| `--llm-provider` | `openai` | `openai` or `ollama` |
-| `--llm-model` | `gpt-3.5-turbo` | Model name |
+| `--llm-provider` | `openai` | Provider: `openai`, `anthropic`, `google`, `ollama`, or `openai-compatible` |
+| `--llm-model` | `gpt-4o-mini` | Model name |
 | `--llm-api-key` | `OPENAI_API_KEY` env | API key |
+| `--llm-base-url` | provider default | Custom base URL (e.g., `https://openrouter.ai/api/v1`) |
 | `--llm-cache-ttl` | `7` | Cache duration in days |
 | `--llm-clear-cache` | off | Clear cache before run |
 | `--context` | — | Site purpose/audience description for more relevant suggestions |
 | `--context-file` | — | Read context from file |
+| `--ai-prompt` | off | Print the AI prompt to stdout without calling an API (useful for manual review) |
+
+### Audit Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--wcag` | off | Enable WCAG contrast analysis |
+| `--design` | off | Enable Design QA + ARIA rules |
+| `--mobile` | off | Run both 1280×800 and 375×812 viewports (merged results) |
+| `--viewports` | — | Comma-separated viewport list (e.g., `1280x800,375x812,768x1024`) |
+| `--sarif` | off | Output SARIF 2.1 JSON to stdout |
+| `--sarif-output` | — | Write SARIF 2.1 JSON to file |
+| `--fail-on` | — | Exit code 1 if WCAG failures exceed this threshold |
+| `--output` | — | Write audit JSON to file |
 
 ### Output
 

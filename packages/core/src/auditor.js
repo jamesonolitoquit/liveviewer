@@ -645,13 +645,16 @@ async function audit(url, options = {}) {
                 allFailures.push(f);
               }
             }
-            const totalChecks = elementResult.totalChecks + (pageLevelFailures.length > 0 ? 1 : 0);
+            const totalChecks = elementResult.totalChecks + pageLevelFailures.length;
+            const failCount = allFailures.length;
             designResult = {
               failures: allFailures,
               totalChecks,
-              passCount: elementResult.passCount,
-              failCount: allFailures.length,
-              score: Math.round((elementResult.totalChecks - elementResult.failures.length + (pageLevelFailures.length > 0 ? 0 : 1)) / (elementResult.totalChecks + 1) * 1000) / 10
+              passCount: Math.max(0, totalChecks - failCount),
+              failCount,
+              score: totalChecks > 0
+                ? Math.round(Math.max(0, totalChecks - failCount) / totalChecks * 1000) / 10
+                : 0
             };
           } catch (_) {
             if (pageLevelFailures.length > 0) {
@@ -667,7 +670,7 @@ async function audit(url, options = {}) {
         } else if (pageLevelFailures.length > 0) {
           designResult = {
             failures: pageLevelFailures,
-            totalChecks: 1,
+            totalChecks: pageLevelFailures.length,
             passCount: 0,
             failCount: pageLevelFailures.length,
             score: 0

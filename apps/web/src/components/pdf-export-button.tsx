@@ -21,11 +21,42 @@ interface WcagData {
   score: number
 }
 
+interface DesignFailure {
+  ruleId: string
+  ruleName: string
+  category: string
+  selector: string
+  description: string
+  severity: string
+  value: string
+  expected: string
+}
+
+interface DesignData {
+  failures: DesignFailure[]
+  totalChecks: number
+  passCount: number
+  failCount: number
+  score: number
+}
+
+interface FixSuggestion {
+  type: string
+  severity: string
+  selector: string
+  text?: string
+  currentValue?: string
+  suggestedValue?: string
+  recommendation: string
+}
+
 interface AuditData {
   url: string
   timestamp: number
   viewport: { width: number; height: number }
   wcag: WcagData | null
+  design?: DesignData | null
+  recommendations?: FixSuggestion[]
 }
 
 interface PdfExportButtonProps {

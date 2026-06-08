@@ -27,11 +27,42 @@ interface WcagData {
   score: number
 }
 
+interface DesignFailure {
+  ruleId: string
+  ruleName: string
+  category: string
+  selector: string
+  description: string
+  severity: string
+  value: string
+  expected: string
+}
+
+interface DesignData {
+  failures: DesignFailure[]
+  totalChecks: number
+  passCount: number
+  failCount: number
+  score: number
+}
+
+interface FixSuggestion {
+  type: string
+  severity: string
+  selector: string
+  text?: string
+  currentValue?: string
+  suggestedValue?: string
+  recommendation: string
+}
+
 interface AuditData {
   url: string
   timestamp: number
   viewport: { width: number; height: number }
   wcag: WcagData | null
+  design?: DesignData | null
+  recommendations?: FixSuggestion[]
 }
 
 const styles = StyleSheet.create({
@@ -131,11 +162,13 @@ export function AuditPdfDocument({ data }: { data: AuditData }) {
   const wcag = data.wcag
   const date = new Date(data.timestamp)
 
+  const design = data.design
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.title}>WCAG Contrast Audit Report</Text>
+          <Text style={styles.title}>Accessibility & Design Audit Report</Text>
           <Text style={styles.subtitle}>URL: {data.url}</Text>
           <Text style={styles.subtitle}>Date: {date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</Text>
           <Text style={styles.subtitle}>Viewport: {data.viewport.width}x{data.viewport.height}</Text>
@@ -196,6 +229,69 @@ export function AuditPdfDocument({ data }: { data: AuditData }) {
 
         {!wcag && (
           <Text style={{ color: '#525252', marginTop: 16 }}>No WCAG data available.</Text>
+        )}
+
+        {design && (
+          <>
+            <Text style={styles.sectionTitle}>Design QA (score: {design.score}%)</Text>
+            <View style={styles.scoreRow}>
+              <View>
+                <Text style={styles.scoreLabel}>Design Score</Text>
+                <Text style={styles.scoreLabel}>{design.totalChecks} checks</Text>
+              </View>
+              <Text style={[styles.scoreValue, { color: scoreColor(design.score) }]}>{design.score}%</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+              <View style={{ flex: 1, padding: 8, backgroundColor: '#f0fdf4', borderRadius: 4 }}>
+                <Text style={{ fontSize: 8, color: '#525252' }}>Passing</Text>
+                <Text style={{ fontSize: 16, fontWeight: 700, color: '#15803d' }}>{design.passCount}</Text>
+              </View>
+              <View style={{ flex: 1, padding: 8, backgroundColor: '#fef2f2', borderRadius: 4 }}>
+                <Text style={{ fontSize: 8, color: '#525252' }}>Failing</Text>
+                <Text style={{ fontSize: 16, fontWeight: 700, color: '#dc2626' }}>{design.failCount}</Text>
+              </View>
+            </View>
+            {design.failures.length > 0 && (
+              <View style={styles.table}>
+                <View style={styles.tableHeader}>
+                  <Text style={styles.colSelector}>Rule</Text>
+                  <Text style={styles.colText}>Selector</Text>
+                  <Text style={styles.colColors}>Severity</Text>
+                  <Text style={styles.colRatio}>Found</Text>
+                  <Text style={styles.colRequired}>Expected</Text>
+                </View>
+                {design.failures.map((f, i) => (
+                  <View key={i} style={styles.tableRow}>
+                    <Text style={styles.colSelector}>{f.ruleName}</Text>
+                    <Text style={styles.colText}>{f.selector}</Text>
+                    <Text style={[styles.colColors, { color: f.severity === 'high' ? '#dc2626' : '#b45309' }]}>{f.severity}</Text>
+                    <Text style={styles.colRatio}>{f.value}</Text>
+                    <Text style={styles.colRequired}>{f.expected}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+            {design.failures.length === 0 && (
+              <Text style={{ color: '#15803d', marginTop: 8 }}>All design checks pass.</Text>
+            )}
+          </>
+        )}
+
+        {data.recommendations && data.recommendations.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Fix Suggestions ({data.recommendations.length})</Text>
+            {data.recommendations.map((r, i) => (
+              <View key={i} style={{ paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' }}>
+                <Text style={{ fontSize: 8, fontWeight: 700 }}>{r.selector}</Text>
+                <Text style={{ fontSize: 8, color: '#525252', marginTop: 2 }}>{r.recommendation}</Text>
+                {(r.currentValue || r.suggestedValue) && (
+                  <Text style={{ fontSize: 7, color: '#a3a3a3', marginTop: 1 }}>
+                    {r.currentValue}{r.suggestedValue ? ` → ${r.suggestedValue}` : ''}
+                  </Text>
+                )}
+              </View>
+            ))}
+          </>
         )}
 
         <Text style={styles.footer}>
