@@ -184,7 +184,7 @@ export default function Home() {
         <div className="flex items-center gap-1">
           <a
             href="/history"
-            className="rounded-full px-3 py-1.5 text-xs text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] hover:text-[var(--jao-text)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
+            className="rounded-full px-3 py-1.5 text-sm text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] hover:text-[var(--jao-text)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
           >
             History
           </a>
@@ -195,7 +195,7 @@ export default function Home() {
       <main id="main-content" tabIndex={-1} className="flex-1 py-8 sm:py-12">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Design QA Robot</h1>
-          <p className="mt-1.5 text-sm text-[var(--jao-text-secondary)]">
+          <p className="mt-1.5 text-base text-[var(--jao-text-secondary)]">
             Audit websites for WCAG contrast, right in your browser.
           </p>
         </div>
@@ -263,7 +263,7 @@ export default function Home() {
         {status === 'idle' && !data && (
           <div className="mt-16 text-center">
             <JaoLogo size={48} className="mx-auto text-[var(--jao-border)] opacity-40" />
-            <p className="mt-4 text-sm text-[var(--jao-text-tertiary)]">
+            <p className="mt-4 text-base text-[var(--jao-text-tertiary)]">
               Enter a URL above to start auditing
             </p>
           </div>
@@ -368,7 +368,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-[var(--jao-border-subtle)] py-6 text-center">
-        <p className="inline-flex items-center gap-1.5 text-xs text-[var(--jao-text-tertiary)]">
+        <p className="inline-flex items-center gap-1.5 text-sm text-[var(--jao-text-tertiary)]">
           <JaoLogo size={12} className="opacity-40" />
           Made with ⚡ by{' '}
           <a

@@ -1,49 +1,49 @@
 {
-  "name": "@liveviewer/llm",
-  "version": "2.1.0",
-  "description": "Liveviewer LLM adapter — optional AI enrichment for WCAG audits",
-  "license": "MIT",
-  "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
-  },
-  "files": [
-    "dist/"
-  ],
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
-  },
-  "peerDependencies": {
-    "ollama": "^0.5.0",
-    "openai": "^4.0.0"
-  },
-  "peerDependenciesMeta": {
-    "openai": {
-      "optional": true
-    },
-    "ollama": {
-      "optional": true
-    }
-  },
-  "dependencies": {
-    "@liveviewer/core": "*"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "ollama": "^0.5.0",
-    "openai": "^4.0.0",
-    "tsup": "^8.5.1",
-    "typescript": "^6.0.3",
-    "vitest": "^3.1.0"
-  }
+    "name":  "@liveviewer/llm",
+    "version":  "2.1.1",
+    "description":  "Liveviewer LLM adapter — optional AI enrichment for WCAG audits",
+    "license":  "MIT",
+    "type":  "module",
+    "main":  "./dist/index.cjs",
+    "module":  "./dist/index.js",
+    "types":  "./dist/index.d.ts",
+    "exports":  {
+                    ".":  {
+                              "import":  "./dist/index.js",
+                              "require":  "./dist/index.cjs"
+                          }
+                },
+    "files":  [
+                  "dist/"
+              ],
+    "scripts":  {
+                    "build":  "tsup",
+                    "dev":  "tsup --watch",
+                    "test":  "vitest run",
+                    "test:watch":  "vitest",
+                    "typecheck":  "tsc --noEmit"
+                },
+    "peerDependencies":  {
+                             "ollama":  "^0.5.0",
+                             "openai":  "^4.0.0"
+                         },
+    "peerDependenciesMeta":  {
+                                 "openai":  {
+                                                "optional":  true
+                                            },
+                                 "ollama":  {
+                                                "optional":  true
+                                            }
+                             },
+    "dependencies":  {
+                         "@liveviewer/core":  "*"
+                     },
+    "devDependencies":  {
+                            "@types/node":  "^22.0.0",
+                            "ollama":  "^0.5.0",
+                            "openai":  "^4.0.0",
+                            "tsup":  "^8.5.1",
+                            "typescript":  "^6.0.3",
+                            "vitest":  "^3.1.0"
+                        }
 }

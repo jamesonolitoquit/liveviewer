@@ -9,7 +9,7 @@ process.chdir(path.resolve(__dirname, '..', '..', '..'));
 const command = process.argv[2];
 
 if (command === '--version' || command === '-v') {
-  console.log(require('../../../package.json').version);
+  console.log(require('../package.json').version);
   process.exit(0);
 }
 

@@ -73,7 +73,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           <span className="text-base font-semibold tracking-tight">Liveviewer</span>
         </div>
         <div className="flex items-center gap-1">
-          <a href="/" className="rounded-full px-3 py-1.5 text-xs text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] hover:text-[var(--jao-text)]">
+          <a href="/" className="rounded-full px-3 py-1.5 text-sm text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] hover:text-[var(--jao-text)]">
             New Audit
           </a>
           <ThemeToggle />

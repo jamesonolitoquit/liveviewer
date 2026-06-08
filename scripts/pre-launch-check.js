@@ -139,8 +139,8 @@ function checkCli() {
 
   // 4a. --version
   const ver = runCli('--version')
-  if (ver.stdout === '2.1.1') ok('CLI --version returns 2.1.1')
-  else fail('CLI --version', `expected 2.1.1, got "${ver.stdout}"`)
+  if (ver.stdout === '2.1.2') ok('CLI --version returns 2.1.2')
+  else fail('CLI --version', `expected 2.1.2, got "${ver.stdout}"`)
 
   // 4b. --help (or no args)
   const help = runCli('')

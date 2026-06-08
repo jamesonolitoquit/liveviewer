@@ -132,7 +132,7 @@ body {
   padding: 0.5rem 1rem;
   background: var(--jao-primary);
   color: white;
-  font-size: 0.875rem;
+  font-size: 1rem;
   transition: top 0.1s;
 }
 
