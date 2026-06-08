@@ -137,21 +137,32 @@ function severityForDesign(ruleId, value) {
   return 'medium';
 }
 
+function viewportSummary(viewports) {
+  if (!viewports || viewports.length === 0) return '';
+  const hasD = viewports.some(v => v.width >= 1280);
+  const hasM = viewports.some(v => v.width <= 767);
+  if (hasD && hasM) return ' on Desktop and Mobile';
+  if (hasD) return ' on Desktop only';
+  if (hasM) return ' on Mobile only';
+  return '';
+}
+
 function generateFixSuggestions(auditResult) {
   const wcagFails = (auditResult.wcag && auditResult.wcag.failures) || [];
   const designFails = (auditResult.design && auditResult.design.failures) || [];
   const suggestions = [];
 
   for (const f of wcagFails) {
+    const vp = viewportSummary(f.viewports);
     suggestions.push({
       type: 'contrast',
       severity: severityForContrast(f.contrastRatio),
       selector: f.selector,
       text: f.text ? f.text.slice(0, 60) : '',
       currentValue: `fg ${f.foreground} / bg ${f.background} (ratio ${f.contrastRatio}:1)`,
-      suggestedValue: `needs ≥ ${f.required}:1`,
+      suggestedValue: `needs ≥ ${f.required}:1${vp}`,
       recommendation:
-        `Increase contrast on "${f.selector}": change ${f.foreground} or ${f.background} to achieve ratio ≥ ${f.required}:1 (current ${f.contrastRatio}:1).`
+        `Increase contrast on "${f.selector}": change ${f.foreground} or ${f.background} to achieve ratio ≥ ${f.required}:1 (current ${f.contrastRatio}:1).${vp}`
     });
   }
 

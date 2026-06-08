@@ -102,7 +102,7 @@ export function ExportButtons({ data }: ExportButtonsProps) {
             : 'border-[var(--jao-border)] text-[var(--jao-text-secondary)] hover:bg-[var(--jao-border-subtle)]'
         }`}
       >
-        {copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Failed' : 'Copy'}
+        {copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Failed' : 'Copy Summary'}
       </button>
       <button
         onClick={handleShare}

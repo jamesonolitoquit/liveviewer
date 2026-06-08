@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
-import { formatTimestamp } from '@/lib/history'
+import { AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area } from 'recharts'
+import { formatTimestamp, getLocalHistory } from '@/lib/history'
 
 interface HistoryEntry {
   url: string
@@ -19,6 +19,18 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searched, setSearched] = useState(false)
+  const [colors, setColors] = useState({ primary: '#4F46E5', border: '#E2E8F0', textSecondary: '#4B5563', surface: '#FFFFFF' })
+
+  useEffect(() => {
+    const el = document.documentElement
+    const isDark = el.classList.contains('dark')
+    setColors({
+      primary: getComputedStyle(el).getPropertyValue('--jao-primary').trim() || '#4F46E5',
+      border: isDark ? '#334155' : '#E2E8F0',
+      textSecondary: isDark ? '#94A3B8' : '#4B5563',
+      surface: isDark ? '#1E293B' : '#FFFFFF',
+    })
+  }, [])
 
   const fetchHistory = useCallback(async (u: string) => {
     if (!u.trim()) return
@@ -26,13 +38,22 @@ export default function HistoryPage() {
     setError(null)
     setSearched(true)
 
+    let localEntries = getLocalHistory(u.trim())
+    if (localEntries.length > 0) {
+      setEntries(localEntries)
+      setLoading(false)
+      return
+    }
+
     try {
       const res = await fetch(`/api/history?url=${encodeURIComponent(u.trim())}`)
       const json = await res.json()
       if (!json.success) throw new Error(json.error || 'Failed to load history')
       setEntries(json.data || [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load history')
+      if (localEntries.length === 0) {
+        setError(err instanceof Error ? err.message : 'Failed to load history')
+      }
     } finally {
       setLoading(false)
     }
@@ -135,22 +156,23 @@ export default function HistoryPage() {
                 <AreaChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                   <defs>
                     <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                      <stop offset="5%" stopColor={colors.primary} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={colors.primary} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#525252' }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#525252' }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: colors.textSecondary }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: colors.textSecondary }} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#ffffff',
-                      border: '1px solid #d4d4d4',
+                      backgroundColor: colors.surface,
+                      border: `1px solid ${colors.border}`,
                       borderRadius: '4px',
-                      fontSize: '12px'
+                      fontSize: '12px',
+                      color: colors.textSecondary,
                     }}
                   />
-                  <Area type="monotone" dataKey="score" stroke="#2563eb" fill="url(#scoreGradient)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="score" stroke={colors.primary} fill="url(#scoreGradient)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

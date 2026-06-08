@@ -1,0 +1,76 @@
+name: Feedback
+description: Report a bug, request a feature, or share UX feedback
+labels: [feedback]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - Bug Report
+        - Feature Request
+        - UX Feedback
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical
+        - Major
+        - Minor
+        - Cosmetic
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: component
+    attributes:
+      label: Component
+      options:
+        - label: CLI
+        - label: Web App
+        - label: Core Engine
+        - label: Documentation
+        - label: Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: A clear and concise description of the feedback
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Only needed for bug reports
+      placeholder: |
+        1. Run 'liveviewer audit ...'
+        2. ...
+        3. See error
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Environment & Context
+      description: CLI version, URL audited, viewport, OS, any relevant details
+      placeholder: |
+        Version: 2.3.0
+        URL: https://example.com
+        OS: Windows 11
+        Flags: --wcag --design
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs Actual
+      description: What did you expect to happen, and what happened instead?

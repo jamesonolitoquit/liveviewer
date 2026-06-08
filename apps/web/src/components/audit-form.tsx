@@ -5,6 +5,7 @@ import { useState, FormEvent, useRef, useEffect, useCallback } from 'react'
 interface AuditFormProps {
   onRun: (url: string) => void
   isRunning: boolean
+  defaultUrl?: string
 }
 
 const RECENT_URLS_KEY = 'liveviewer_recent_urls'
@@ -33,8 +34,8 @@ function matchUrl(input: string, url: string): boolean {
   return urlLower.includes(lower) && urlLower !== lower
 }
 
-export function AuditForm({ onRun, isRunning }: AuditFormProps) {
-  const [url, setUrl] = useState('')
+export function AuditForm({ onRun, isRunning, defaultUrl }: AuditFormProps) {
+  const [url, setUrl] = useState(defaultUrl || '')
   const [shaking, setShaking] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [selectedIdx, setSelectedIdx] = useState(-1)
@@ -157,7 +158,7 @@ export function AuditForm({ onRun, isRunning }: AuditFormProps) {
   }, [selectedIdx])
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-3" role="search" aria-label="Audit a website">
+    <form onSubmit={handleSubmit} className="flex gap-2 sm:gap-3" role="search" aria-label="Audit a website">
       <label htmlFor="audit-url" className="sr-only">
         Website URL to audit
       </label>
@@ -191,7 +192,7 @@ export function AuditForm({ onRun, isRunning }: AuditFormProps) {
           aria-autocomplete="list"
           autoComplete="off"
           role="combobox"
-          className="w-full rounded-full border border-[var(--jao-border)] bg-[var(--jao-surface)] px-5 py-3 text-sm outline-none transition-all placeholder:text-[var(--jao-text-tertiary)] focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
+          className="w-full rounded-full border border-[var(--jao-border)] bg-[var(--jao-surface)] px-5 py-3.5 text-base outline-none shadow-sm transition-all placeholder:text-[var(--jao-text-tertiary)] focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
         />
         {showDropdown && suggestions.length > 0 && (
           <ul
@@ -223,7 +224,7 @@ export function AuditForm({ onRun, isRunning }: AuditFormProps) {
         disabled={isRunning || !url.trim()}
         aria-label={isRunning ? 'Audit in progress' : 'Run audit'}
         title={isRunning ? '' : '⌘Enter to run'}
-        className={`btn-gradient inline-flex min-h-11 items-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/50 ${isRunning ? 'btn-pulse' : ''}`}
+        className={`btn-gradient inline-flex min-h-12 items-center gap-2 rounded-full px-6 py-3 text-base font-medium text-white shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/50 ${isRunning ? 'btn-pulse' : ''}`}
       >
         {isRunning ? (
           <>
@@ -232,11 +233,8 @@ export function AuditForm({ onRun, isRunning }: AuditFormProps) {
           </>
         ) : (
           <>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
-              <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
-              <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
-              <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
             </svg>
             Run Audit
           </>

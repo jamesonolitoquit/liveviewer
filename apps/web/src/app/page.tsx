@@ -31,6 +31,15 @@ export default function Home() {
   const [llmLoading, setLlmLoading] = useState(false)
   const [context, setContext] = useState('')
   const [showScrollTop, setShowScrollTop] = useState(false)
+  const [demoUrl, setDemoUrl] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem('liveviewer_onboarded')) {
+        setDemoUrl('https://web.dev')
+      }
+    } catch {}
+  }, [])
   const resultsRef = useRef<HTMLDivElement>(null)
   const announceRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -167,31 +176,30 @@ export default function Home() {
 
   return (
     <>
-    <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-4">
-      <header className="flex items-center justify-between border-b border-[var(--jao-border-subtle)] py-4">
+    <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-6">
+      <header className="flex items-center justify-between py-6">
         <div className="flex items-center gap-2.5">
-          <JaoLogo size={24} className="text-[var(--jao-text-secondary)]" />
-          <span className="text-base font-semibold tracking-tight">Liveviewer</span>
+          <JaoLogo size={24} className="text-[var(--jao-primary)]" />
+          <span className="text-lg font-semibold tracking-tight">Liveviewer</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <HistoryDropdown onSelect={runAudit} />
           <ThemeToggle />
         </div>
       </header>
 
-      <main id="main-content" tabIndex={-1} className="flex-1 py-8 sm:py-12">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Design QA Intelligence</h1>
-          <p className="mt-1.5 text-base text-[var(--jao-text-secondary)]">
-            Audit websites for WCAG contrast, right in your browser.
+      <main id="main-content" tabIndex={-1} className="flex-1 pb-16">
+        <div className="mb-10 text-center">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Accessibility &amp; Design QA</h1>
+          <p className="mt-2 text-base text-[var(--jao-text-secondary)] mx-auto">
+            Audit any website for WCAG contrast, typography, layout, and ARIA rules.
           </p>
         </div>
 
-        <div aria-describedby={status === 'error' ? 'audit-error' : undefined}>
-          <AuditForm onRun={runAudit} isRunning={status === 'running'} />
-        </div>
+        <div className="card mx-auto p-6 shadow-sm" aria-describedby={status === 'error' ? 'audit-error' : undefined}>
+          <AuditForm onRun={runAudit} isRunning={status === 'running'} defaultUrl={demoUrl} />
 
-          <div className="mt-3 flex items-center justify-center gap-0.5 rounded-xl border border-[var(--jao-border)] bg-[var(--jao-surface)] p-0.5" role="radiogroup" aria-label="Viewport mode">
+          <div className="mt-4 flex items-center justify-center gap-0.5 rounded-lg border border-[var(--jao-border)] bg-[var(--jao-bg)] p-0.5" role="radiogroup" aria-label="Viewport mode">
           {(['desktop', 'mobile', 'both'] as const).map(mode => {
             const labels: Record<string, string> = { desktop: 'Desktop', mobile: 'Mobile', both: 'Both' }
             return (
@@ -201,44 +209,44 @@ export default function Home() {
                 aria-checked={viewportMode === mode}
                 onClick={() => setViewportMode(mode)}
                 disabled={status === 'running'}
-                className={`rounded-lg px-3 py-1.5 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 ${
-                  viewportMode === mode
-                    ? 'bg-[var(--jao-primary)] text-white shadow-sm'
-                    : 'text-[var(--jao-text-secondary)] hover:text-[var(--jao-text)]'
-                }`}
+                className={`rounded-md px-3 py-1.5 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 ${
+                   viewportMode === mode
+                     ? 'bg-[var(--jao-primary)] text-white shadow-sm'
+                     : 'text-[var(--jao-text-secondary)] hover:text-[var(--jao-text)]'
+                 }`}
               >
                 {labels[mode]}
               </button>
             )
           })}
-        </div>
-
-        <details className="mt-3 group">
-          <summary className="flex cursor-pointer items-center gap-1.5 text-base text-[var(--jao-text-secondary)] transition-colors hover:text-[var(--jao-text)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 rounded-lg px-2 py-1">
-            <span>✨ Advanced</span>
-            <span className="text-base leading-normal text-[var(--jao-text-tertiary)] group-open:hidden">— site context</span>
-          </summary>
-          <textarea
-            value={context}
-            onChange={e => setContext(e.target.value)}
-            placeholder="Describe your site — e.g., Dark mode SaaS dashboard for engineers, data-dense UX"
-            rows={2}
-            className="mt-2 w-full rounded-xl border border-[var(--jao-border)] bg-[var(--jao-surface)] px-4 py-2.5 text-sm outline-none transition-all placeholder:text-[var(--jao-text-tertiary)] focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
-            aria-label="Site context"
-          />
-
-        </details>
-
-        {status === 'idle' && !data && (
-          <div className="mt-3 flex justify-center">
-            <button
-              onClick={() => runAudit('https://web.dev')}
-              className="rounded-full border border-dashed border-[var(--jao-border)] px-4 py-2 text-base text-[var(--jao-text-tertiary)] transition-colors hover:border-[var(--jao-primary)] hover:text-[var(--jao-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
-            >
-              Try a demo → web.dev (has known issues)
-            </button>
           </div>
-        )}
+
+          <details className="mt-3 group">
+            <summary className="flex cursor-pointer items-center gap-1.5 text-base text-[var(--jao-text-secondary)] transition-colors hover:text-[var(--jao-text)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 rounded-lg px-2 py-1">
+              <span>✨ Advanced</span>
+              <span className="text-base leading-normal text-[var(--jao-text-tertiary)] group-open:hidden">— site context</span>
+            </summary>
+            <textarea
+              value={context}
+              onChange={e => setContext(e.target.value)}
+              placeholder="Describe your site — e.g., Dark mode SaaS dashboard for engineers, data-dense UX"
+              rows={2}
+              className="mt-2 w-full rounded-lg border border-[var(--jao-border)] bg-[var(--jao-bg)] px-3 py-2 text-sm outline-none transition-all placeholder:text-[var(--jao-text-tertiary)] focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
+              aria-label="Site context"
+            />
+          </details>
+
+          {status === 'idle' && !data && (
+            <div className="mt-3 flex justify-center">
+              <button
+                onClick={() => runAudit('https://web.dev')}
+                className="rounded-full border border-dashed border-[var(--jao-border)] px-4 py-2 text-base text-[var(--jao-text-tertiary)] transition-colors hover:border-[var(--jao-primary)] hover:text-[var(--jao-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
+              >
+                Try a demo → web.dev (has known issues)
+              </button>
+            </div>
+          )}
+        </div>
 
         <div
           ref={announceRef}
@@ -251,12 +259,12 @@ export default function Home() {
         </div>
 
         {status === 'running' && (
-          <div className="relative">
+          <div className="relative mt-8">
             <LoadingSkeleton />
-            <div className="flex justify-center pt-3">
+            <div className="flex justify-center pt-4">
               <button
                 onClick={cancelAudit}
-                className="rounded-full border border-[var(--jao-border)] px-3 py-1.5 text-xs text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
+                className="rounded-full border border-[var(--jao-border)] px-4 py-2 text-sm text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
               >
                 Cancel
               </button>
@@ -269,8 +277,8 @@ export default function Home() {
         )}
 
         {status === 'idle' && !data && (
-          <div className="mt-16 text-center">
-            <JaoLogo size={48} className="mx-auto text-[var(--jao-border)] opacity-40" />
+          <div className="mt-20 text-center">
+            <JaoLogo size={48} className="mx-auto text-[var(--jao-border)] opacity-30" />
             <p className="mt-4 text-base text-[var(--jao-text-tertiary)]">
               Enter a URL above to start auditing
             </p>
@@ -281,7 +289,7 @@ export default function Home() {
           <div
             ref={resultsRef}
             tabIndex={-1}
-            className="mt-6 space-y-5 focus:outline-none"
+            className="mt-8 space-y-6 focus:outline-none"
           >
             <AuditResults data={data} />
 
@@ -289,96 +297,25 @@ export default function Home() {
 
             <Checklist currentUrl={data.url} />
 
-            <SmartPanel
-              enabled={llmEnabled}
-              onToggle={setLlmEnabled}
-              hasFailures={(data.wcag?.failures?.length ?? 0) > 0}
-            />
-
-            {llmEnabled && ((data.wcag?.failures?.length ?? 0) > 0 || (data.design?.failures?.length ?? 0) > 0) && (
-              <div className="flex justify-end">
-                <button
-                  onClick={runLlmEnrichment}
-                  disabled={llmLoading}
-                  className="btn-gradient inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/50"
-                >
-                  {llmLoading ? 'Analyzing...' : 'Get Smart Fixes'}
-                </button>
-              </div>
-            )}
-
-            {llmResult && !llmLoading && (
-              <div className="card p-5 text-sm">
-                <h3 className="mb-2 font-semibold">Recommendations</h3>
-                {llmResult.error ? (
-                  <p className="text-[var(--jao-destructive)]">Error: {llmResult.error}</p>
-                ) : (
-                  <>
-                    <p className="mb-3 text-[var(--jao-text-secondary)]">{llmResult.summary}</p>
-
-                    {llmResult.perFailure?.length > 0 && (
-                      <>
-                        <h4 className="mb-2 text-xs font-semibold text-[var(--jao-destructive)]">Accessibility (WCAG)</h4>
-                        <div className="mb-4 space-y-2">
-                          {llmResult.perFailure.map((pf: any, i: number) => (
-                            <div key={i} className="rounded-lg border border-[var(--jao-border)] sm:p-3 p-2.5">
-                              <div className="mb-1 flex items-center gap-2">
-                                <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase ${
-                                  pf.severity === 'high' ? 'bg-red-900/30 text-red-300' :
-                                  pf.severity === 'medium' ? 'bg-yellow-900/30 text-yellow-300' :
-                                  'bg-green-900/30 text-green-300'
-                                }`}>
-                                  {pf.severity}
-                                </span>
-                                <code className="break-all text-xs text-[var(--jao-text-secondary)]">{pf.selector}</code>
-                              </div>
-                              <p className="text-xs text-[var(--jao-text-tertiary)]">{pf.explanation}</p>
-                              <p className="mt-1 text-xs font-medium text-[var(--jao-primary)]">{pf.suggestion}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-
-                    {llmResult.designFixes?.length > 0 && (
-                      <>
-                        <h4 className="mb-2 text-xs font-semibold text-[var(--jao-accent)]">Design Quality</h4>
-                        <div className="space-y-2">
-                          {llmResult.designFixes.map((df: any, i: number) => (
-                            <div key={i} className="rounded-lg border-l-2 border-[var(--jao-accent)] border-[var(--jao-border)] p-3">
-                              <div className="mb-1 flex items-center gap-2">
-                                <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase ${
-                                  df.severity === 'high' ? 'bg-red-900/30 text-red-300' :
-                                  df.severity === 'medium' ? 'bg-yellow-900/30 text-yellow-300' :
-                                  'bg-green-900/30 text-green-300'
-                                }`}>
-                                  {df.severity}
-                                </span>
-                                <code className="break-all text-xs text-[var(--jao-text-secondary)]">{df.selector}</code>
-                              </div>
-                              <p className="text-xs text-[var(--jao-text-tertiary)]">{df.explanation}</p>
-                              <p className="mt-1 text-xs font-medium text-[var(--jao-accent)]">{df.suggestion}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-
-                    {llmResult.cached && (
-                      <p className="mt-2 text-xs text-[var(--jao-text-tertiary)]">(cached result)</p>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
           </div>
         )}
       </main>
 
-      <footer className="border-t border-[var(--jao-border-subtle)] py-6 text-center">
+      {data && (
+        <SmartPanel
+          enabled={llmEnabled}
+          onToggle={setLlmEnabled}
+          hasFailures={(data.wcag?.failures?.length ?? 0) > 0}
+          onEnrich={runLlmEnrichment}
+          llmLoading={llmLoading}
+          llmResult={llmResult}
+        />
+      )}
+
+      <footer className="border-t border-[var(--jao-border-subtle)] py-8 text-center">
         <p className="inline-flex items-center gap-1.5 text-base text-[var(--jao-text-tertiary)]">
-          <JaoLogo size={12} className="opacity-40" />
-          Made with ⚡ by{' '}
+          <JaoLogo size={14} className="opacity-30" />
+          Built by{' '}
           <a
             href="https://jaostudio.dev"
             target="_blank"
@@ -395,7 +332,7 @@ export default function Home() {
     {showScrollTop && (
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-6 right-6 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--jao-primary)] text-white shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/50"
+        className="fixed bottom-24 right-6 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--jao-primary)] text-white shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/50"
         aria-label="Scroll to top"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

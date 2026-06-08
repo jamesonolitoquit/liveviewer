@@ -1,9 +1,13 @@
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
+import { FeedbackButton } from '../components/feedback-button'
+
+const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'Liveviewer — Design QA Robot',
-  description: 'Audit websites for WCAG contrast and design quality. Built by jaostudio.dev.'
+  title: 'Liveviewer — Accessibility & Design QA',
+  description: 'Audit websites for WCAG contrast and design quality.'
 }
 
 export default function RootLayout({
@@ -12,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <script
@@ -20,9 +24,9 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('liveviewer_theme');
-                  if (theme === 'light') {
-                    document.documentElement.classList.add('light');
+                  var theme = localStorage.getItem('theme');
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
                   }
                 } catch(e) {}
               })();
@@ -30,11 +34,12 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen">
+      <body className="min-h-screen" style={{ fontFamily: 'var(--font-inter), system-ui, -apple-system, sans-serif' }}>
         <a href="#main-content" className="skip-to-content">
           Skip to content
         </a>
         {children}
+        <FeedbackButton />
       </body>
     </html>
   )

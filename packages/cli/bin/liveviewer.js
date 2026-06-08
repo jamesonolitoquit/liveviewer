@@ -22,6 +22,7 @@ Usage:
   liveviewer extract <url> [options]   Extract design tokens (colors, typography, spacing)
   liveviewer recommend <audit-json> [options]  Generate recommendations from audit data
   liveviewer mcp                       Start MCP server (for OpenCode integration)
+  liveviewer feedback [--copy]         Open GitHub Issues for feedback (or copy URL to clipboard)
   liveviewer --help                    Show this help
 
 Options for "recommend":
@@ -240,7 +241,21 @@ async function main() {
         waitUntil
       };
       if (auditViewports) auditOpts.viewports = auditViewports;
-      const result = await audit(url, auditOpts);
+
+      // Start spinner
+      const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+      let spinnerIdx = 0;
+      const spinnerInterval = setInterval(() => {
+        process.stdout.write(`\r${spinnerFrames[spinnerIdx++ % spinnerFrames.length]} Auditing...`);
+      }, 80);
+
+      let result;
+      try {
+        result = await audit(url, auditOpts);
+      } finally {
+        clearInterval(spinnerInterval);
+        process.stdout.write('\r');
+      }
 
       console.log('\nAudit complete!');
       console.log(`  Screenshot: ${result.filepath}`);
@@ -526,6 +541,61 @@ async function main() {
     case 'mcp': {
       console.error('Starting Liveviewer MCP server...');
       startServer();
+      break;
+    }
+
+    case 'feedback': {
+      const GH_ISSUES = 'https://github.com/jamesonolitoquit/liveviewer/issues/new';
+      const pkg = require('../package.json');
+      const body = `Version: ${pkg.version}
+OS: ${process.platform}
+Node: ${process.version}
+Command: ${process.argv.slice(2).join(' ')}
+
+**Description:**
+[Please describe your feedback]
+
+**Steps to reproduce (if bug):**
+1.
+2.
+3.
+
+**Expected vs actual:**
+`;
+      const url = `${GH_ISSUES}?template=feedback.yml&title=[CLI]+Feedback&body=${encodeURIComponent(body)}`;
+
+      if (hasFlag('--copy')) {
+        const { execSync } = require('child_process');
+        try {
+          if (process.platform === 'win32') {
+            const psCmd = `Set-Clipboard -Value '${url.replace(/'/g, "''")}'`;
+            execSync(psCmd, { shell: 'powershell.exe' });
+          } else if (process.platform === 'darwin') {
+            execSync(`echo "${url}" | pbcopy`);
+          } else {
+            execSync(`echo "${url}" | xclip -selection clipboard`);
+          }
+          console.log('Feedback URL copied to clipboard.');
+        } catch {
+          console.log('Could not copy to clipboard. URL:');
+          console.log(url);
+        }
+      } else {
+        console.log('Opening GitHub Issues for feedback...');
+        const { execSync } = require('child_process');
+        try {
+          if (process.platform === 'win32') {
+            execSync(`start "" "${url}"`, { shell: 'cmd.exe' });
+          } else if (process.platform === 'darwin') {
+            execSync(`open "${url}"`);
+          } else {
+            execSync(`xdg-open "${url}"`);
+          }
+        } catch {
+          console.log('Could not open browser. URL:');
+          console.log(url);
+        }
+      }
       break;
     }
 

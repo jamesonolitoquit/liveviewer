@@ -69,23 +69,23 @@ export function HistoryDropdown({ onSelect }: { onSelect: (url: string) => void 
               </button>
             ))
           )}
-          {urls.length > 0 && (
-            <div className="border-t border-[var(--jao-border-subtle)] px-2 py-1.5 space-y-1">
+          <div className="border-t border-[var(--jao-border-subtle)] px-2 py-1.5 space-y-1">
+            {urls.length > 0 && (
               <button
                 onClick={() => { clearRecent(); setUrls([]) }}
                 className="w-full rounded px-2 py-1 text-xs text-[var(--jao-text-tertiary)] transition-colors hover:text-[var(--jao-destructive)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--jao-primary)]/30"
               >
                 Clear history
               </button>
-              <Link
-                href="/history"
-                onClick={() => setOpen(false)}
-                className="block w-full rounded px-2 py-1 text-xs text-[var(--jao-primary)] transition-colors hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--jao-primary)]/30"
-              >
-                View full history →
-              </Link>
-            </div>
-          )}
+            )}
+            <Link
+              href="/history"
+              onClick={() => setOpen(false)}
+              className="block w-full rounded px-2 py-1 text-xs text-[var(--jao-primary)] transition-colors hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--jao-primary)]/30"
+            >
+              View full history →
+            </Link>
+          </div>
         </div>
       )}
     </div>

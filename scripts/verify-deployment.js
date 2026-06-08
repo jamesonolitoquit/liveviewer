@@ -96,7 +96,8 @@ async function main() {
       continue
     }
 
-    const wcag = res.body?.data?.wcag
+    const data = res.body?.data
+    const wcag = data?.wcag
     const score = wcag?.score
     const failCount = wcag?.failCount
 
@@ -114,6 +115,19 @@ async function main() {
     console.log(`${ok ? 'OK' : 'FAIL'} (score=${score}, failures=${failCount}) [${fmt(res.elapsed)}]`)
     summary.push({ test: testName, ok, score, failCount, elapsed: res.elapsed })
     if (!ok) allPassed = false
+
+    // v2.3.0: Verify deterministic fix suggestions
+    const recommendations = data?.recommendations
+    const hasRecommendations = Array.isArray(recommendations) && recommendations.length > 0
+    const hasViewportWording = hasRecommendations && recommendations.some(
+      r => typeof r.recommendation === 'string' && /on (Desktop|Mobile|Tablet)/i.test(r.recommendation)
+    )
+    if (hasRecommendations && !hasViewportWording) {
+      console.log(`  WARN (recommendations present but no viewport wording)`)
+    }
+    if (!hasRecommendations && failCount > 0) {
+      console.log(`  WARN (failures=${failCount} but no recommendations in response)`)
+    }
   }
 
   console.log(`\n${'='.repeat(50)}`)
