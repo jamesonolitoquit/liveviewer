@@ -42,6 +42,16 @@ export interface DesignData {
   score: number
 }
 
+export interface FixSuggestion {
+  type: string
+  severity: 'high' | 'medium' | 'low'
+  selector: string
+  text?: string
+  currentValue?: string
+  suggestedValue?: string
+  recommendation: string
+}
+
 export interface AuditData {
   url: string
   timestamp: number
@@ -50,4 +60,5 @@ export interface AuditData {
   viewports?: ViewportResult[]
   multiViewport?: boolean
   design?: DesignData | null
+  recommendations?: FixSuggestion[]
 }

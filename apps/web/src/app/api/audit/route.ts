@@ -64,7 +64,8 @@ export async function POST(request: NextRequest) {
       timeout = 8000,
       waitUntil = 'domcontentloaded',
       bypassCache,
-      loadImages = false
+      loadImages = false,
+      context: bodyContext
     } = body
 
     let viewports: { width: number; height: number }[] | undefined
@@ -122,6 +123,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { audit } = require('@liveviewer/core/src/auditor')
+    const { generateFixSuggestions } = require('@liveviewer/core/src/recommender')
 
     const auditOptions: any = {
       viewport: { width: 1024, height: 768 },
@@ -160,6 +162,11 @@ export async function POST(request: NextRequest) {
     }
     if (viewports && viewports.length >= 2) {
       sanitized.multiViewport = true
+    }
+
+    const fixSuggestions = generateFixSuggestions(result)
+    if (fixSuggestions.length > 0) {
+      sanitized.recommendations = fixSuggestions
     }
 
     setCachedAudit(cacheKey, sanitized, undefined, viewports)

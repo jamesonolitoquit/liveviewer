@@ -119,6 +119,24 @@ describe('buildPrompt', () => {
     expect(prompt).toContain('A'.repeat(60))
     expect(prompt).not.toContain('A'.repeat(61))
   })
+
+  it('includes context block when context is provided', () => {
+    const failures = [makeFailure()]
+    const prompt = buildPrompt(failures, 'default', undefined, 'Dark mode SaaS dashboard for engineers')
+    expect(prompt).toContain('USER CONTEXT')
+    expect(prompt).toContain('Dark mode SaaS dashboard for engineers')
+    expect(prompt).toContain('END USER CONTEXT')
+  })
+
+  it('includes context before failure details in combined prompt', () => {
+    const failures = [makeFailure()]
+    const designFails = [{ ruleId: 'font-size-legible', ruleName: 'Font Size', selector: 'p', description: 'Small text', severity: 'medium', value: '12px', expected: '>= 16px' }]
+    const prompt = buildPrompt(failures, 'default', designFails, 'E-commerce product page')
+    const ctxIdx = prompt.indexOf('E-commerce product page')
+    const wcagIdx = prompt.indexOf('Accessibility (WCAG Contrast)')
+    expect(ctxIdx).toBeGreaterThan(-1)
+    expect(wcagIdx).toBeGreaterThan(ctxIdx)
+  })
 })
 
 describe('createMockClient', () => {
@@ -219,6 +237,20 @@ describe('enrichWithLLM', () => {
 
     const second = await enrichWithLLM(results, baseOptions)
     expect(second).toHaveProperty('cached', true)
+  })
+
+  it('uses different cache keys for different context values', async () => {
+    const failures = [makeFailure()]
+    const results = makeResults(failures)
+
+    const first = await enrichWithLLM(results, { ...baseOptions, context: 'Dashboard' })
+    expect(first).toHaveProperty('cached', false)
+
+    const second = await enrichWithLLM(results, { ...baseOptions, context: 'Blog' })
+    expect(second).toHaveProperty('cached', false)
+
+    const third = await enrichWithLLM(results, { ...baseOptions, context: 'Dashboard' })
+    expect(third).toHaveProperty('cached', true)
   })
 
   it('clears cache when clearCache option is set', async () => {

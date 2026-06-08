@@ -196,6 +196,53 @@ test.describe('Liveviewer web app', () => {
     await expect(page.locator('text=/https:\\/\\/example.com/')).toBeVisible()
   })
 
+  test('shows fix suggestions for audit with wcag and design failures', async ({ page }) => {
+    await page.route('**/api/audit', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            url: 'https://example.com',
+            timestamp: Date.now(),
+            viewport: { width: 1280, height: 800 },
+            wcag: {
+              totalElements: 100,
+              failures: [
+                { selector: 'h1', text: 'Welcome', foreground: '#ffffff', background: '#eeeeee', contrastRatio: 2.1, required: 4.5, fontSize: 24, isLarge: true }
+              ],
+              passCount: 99,
+              failCount: 1,
+              score: 99
+            },
+            design: {
+              failures: [
+                { ruleId: 'font-size-legible', ruleName: 'Font Size Legibility', category: 'typography', selector: '.body-text', description: 'Text too small', severity: 'medium', value: '12px', expected: '\u2265 16px' }
+              ],
+              totalChecks: 10,
+              passCount: 9,
+              failCount: 1,
+              score: 90
+            },
+            recommendations: [
+              { type: 'contrast', severity: 'high', selector: 'h1', text: 'Welcome', currentValue: 'fg #ffffff / bg #eeeeee (ratio 2.1:1)', suggestedValue: 'needs \u2265 4.5:1', recommendation: 'Increase contrast on "h1": change #ffffff or #eeeeee to achieve ratio \u2265 4.5:1 (current 2.1:1).' },
+              { type: 'font-size-legible', severity: 'medium', selector: '.body-text', text: 'Text too small', currentValue: '12px', suggestedValue: '\u2265 16px', recommendation: 'Increase font-size on ".body-text" from 12px to at least \u2265 16px for legibility.' }
+            ]
+          }
+        })
+      })
+    })
+
+    await page.goto('/')
+    await page.fill('input[type="url"]', 'https://example.com')
+    await page.click('button[type="submit"]')
+
+    await expect(page.locator('text=Fix Suggestions')).toBeVisible()
+    await expect(page.locator('text=Increase contrast on "h1"')).toBeVisible()
+    await expect(page.locator('text=Increase font-size on ".body-text"')).toBeVisible()
+  })
+
   test('cancel button resets form to idle', async ({ page }) => {
     await page.route('**/api/audit', async (route) => {
       await new Promise(r => setTimeout(r, 5000))

@@ -67,8 +67,12 @@ Respond ONLY with valid JSON matching this exact schema:
   ]
 }`
 
-function buildPrompt(failures: Failure[], designFailures?: DesignFailureCtx[]): string {
+function buildPrompt(failures: Failure[], designFailures?: DesignFailureCtx[], context?: string): string {
   const parts: string[] = []
+
+  if (context && context.trim()) {
+    parts.push(`--- USER CONTEXT ---\n${context.trim()}\n--- END USER CONTEXT ---`)
+  }
 
   if (failures.length > 0) {
     const lines = failures.map(f =>
@@ -307,9 +311,10 @@ export async function enrichWithLLM(
   model: string,
   apiKey: string,
   baseUrl?: string,
-  designFailures?: DesignFailureCtx[]
+  designFailures?: DesignFailureCtx[],
+  context?: string
 ): Promise<LlmResult> {
-  const prompt = buildPrompt(failures.slice(0, 50), designFailures?.slice(0, 30))
+  const prompt = buildPrompt(failures.slice(0, 50), designFailures?.slice(0, 30), context)
   switch (provider) {
     case 'openai-compatible': {
       const url = baseUrl || 'https://api.openai.com/v1'

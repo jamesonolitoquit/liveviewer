@@ -1,6 +1,6 @@
 {
   "name": "@liveviewer/llm",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "Liveviewer LLM adapter — optional AI enrichment for WCAG audits",
   "license": "MIT",
   "type": "module",

@@ -1,9 +1,9 @@
-# Liveviewer
+# Liveviewer v2.1
 
-Design QA robot for live websites. Audits WCAG contrast, extracts design tokens, detects jank, and generates client-ready reports.
+Design QA robot for live websites. Audits WCAG contrast, detects design issues, and generates fix suggestions — **no API key required**. Optional AI enrichment with your own key.
 
-**Web app:** [liveviewer.vercel.app](https://liveviewer.vercel.app) — run audits in your browser, no install needed.  
-**CLI:** `npm install -g liveviewer` — for CI pipelines and local development.
+**Web app:** [jao-liveviewer.vercel.app](https://jao-liveviewer.vercel.app) — run audits in your browser, no install needed.  
+**CLI:** `npm install -g @liveviewer/cli` — for CI pipelines and local development.
 
 ```bash
 npm install -g liveviewer
@@ -43,6 +43,15 @@ liveviewer audit https://web.dev --wcag --design --mobile
 # Explicit viewport list (overrides --width/--height)
 liveviewer audit https://example.com --wcag --viewports 1280x800,375x812
 
+# Deterministic fix suggestions (no API key needed) — shown automatically
+liveviewer audit https://example.com --wcag --design
+
+# Contextual AI enrichment — tell the AI about your site's purpose
+liveviewer audit https://example.com --wcag --llm-enrich --context "SaaS dashboard for engineers, dark mode"
+
+# Read context from file
+liveviewer audit https://example.com --wcag --llm-enrich --context-file ./site-brief.txt
+
 # Exit non-zero if WCAG failures exceed threshold (for CI)
 liveviewer audit https://example.com --wcag --fail-on 0
 ```
@@ -56,7 +65,8 @@ Reports: `<url>-<timestamp>.png` (screenshot) + `.json` with per-element contras
 Includes:
 - **WCAG contrast** – per-element contrast ratios with background ancestor walk (correct alpha blending for `rgba`)
 - **Design QA** – typography (font-size ≥16px, line-height 1.4–1.6), horizontal scroll detection
-- **AI enrichment** (optional) – `--llm-enrich` sends failures to an LLM for fix suggestions, returning `perFailure` (WCAG) and `designFixes` (Design QA) sections
+- **Deterministic fix suggestions** – rule-based fixes for every failure, shown automatically in CLI and web app (no API key required)
+- **AI enrichment** (optional) – `--llm-enrich` sends failures to an LLM. Use `--context` to provide site purpose for more relevant suggestions
 
 ### `extract` — Design token inventory
 
@@ -149,6 +159,8 @@ liveviewer audit https://example.com --wcag --llm-enrich --llm-provider ollama
 | `--llm-api-key` | `OPENAI_API_KEY` env | API key |
 | `--llm-cache-ttl` | `7` | Cache duration in days |
 | `--llm-clear-cache` | off | Clear cache before run |
+| `--context` | — | Site purpose/audience description for more relevant suggestions |
+| `--context-file` | — | Read context from file |
 
 ### Output
 
@@ -199,16 +211,22 @@ LLM responses are cached in `./llm-cache/` to avoid repeated API calls. TTL defa
 ## API
 
 ```javascript
-const { audit, extract, recommend, renderHtml } = require('@liveviewer/core');
+const { audit, recommend, generateFixSuggestions } = require('@liveviewer/core');
 const { enrichWithLLM } = require('@liveviewer/llm');
 
 const result = await audit(url, { wcag: true, viewport: { width: 1280, height: 800 } });
 
+// Deterministic fix suggestions (no API key needed)
+const fixes = generateFixSuggestions(result);
+console.log(fixes);
+
+// Optional AI enrichment with context
 const llmResult = await enrichWithLLM(result, {
   provider: 'openai',
-  model: 'gpt-3.5-turbo',
+  model: 'gpt-4o-mini',
   llmEnrich: true,
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
+  context: 'Marketing landing page for a fintech startup'
 });
 ```
 
@@ -216,13 +234,20 @@ const llmResult = await enrichWithLLM(result, {
 
 ```bash
 # Via npm global
-npm install -g liveviewer
+npm install -g @liveviewer/cli
 
 # Or from monorepo
 git clone https://github.com/jamesonolitoquit/liveviewer.git
 cd liveviewer
 npm install
 npx playwright install chromium
+```
+
+## Quick Start
+
+```bash
+# Deterministic audit with fix suggestions (no API key needed)
+liveviewer audit https://example.com --wcag --design
 ```
 
 ## License

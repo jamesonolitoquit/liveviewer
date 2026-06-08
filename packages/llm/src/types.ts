@@ -8,6 +8,7 @@ export interface LLMOptions {
   cacheTtlDays?: number
   cacheDir?: string
   clearCache?: boolean
+  context?: string
 }
 
 export interface FailureAnalysis {

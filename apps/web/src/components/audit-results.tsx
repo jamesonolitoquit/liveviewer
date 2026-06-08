@@ -1,4 +1,4 @@
-import type { AuditData, DesignFailure } from '@/types/audit'
+import type { AuditData, DesignFailure, FixSuggestion } from '@/types/audit'
 import { AiFixButton } from './ai-fix-button'
 
 interface AuditResultsProps {
@@ -199,6 +199,31 @@ export function AuditResults({ data }: AuditResultsProps) {
       {design && design.failures.length === 0 && wcag && (
         <div className="border-t border-[var(--jao-border)] p-4 text-center text-xs text-[var(--jao-success)]">
           Design QA: all typography checks pass
+        </div>
+      )}
+
+      {data.recommendations && data.recommendations.length > 0 && (
+        <div className="border-t border-[var(--jao-border)] p-5">
+          <h3 className="mb-3 text-sm font-medium text-[var(--jao-text)]">
+            Fix Suggestions
+          </h3>
+          <div className="space-y-2" role="list" aria-label="Deterministic fix suggestions">
+            {data.recommendations.map((r: FixSuggestion, i: number) => (
+              <div key={i} className="rounded-lg border-l-2 border-[var(--jao-primary)] bg-[var(--jao-bg)] p-3 text-xs" role="listitem">
+                <div className="mb-1 flex items-center gap-2">
+                  <SeverityBadge severity={r.severity} />
+                  <span className="font-mono text-[10px] text-[var(--jao-text-secondary)]">{r.selector}</span>
+                </div>
+                <p className="text-[var(--jao-text)]">{r.recommendation}</p>
+                {(r.currentValue || r.suggestedValue) && (
+                  <div className="mt-1 flex gap-3 text-[10px] text-[var(--jao-text-tertiary)]">
+                    {r.currentValue && <span>{r.currentValue}</span>}
+                    {r.suggestedValue && <span>&rarr; {r.suggestedValue}</span>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </section>

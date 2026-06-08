@@ -35,28 +35,6 @@ export function chunkFailures<T>(items: T[], chunkSize: number = DEFAULT_CHUNK_S
   return chunks
 }
 
-function buildWcagPrompt(failures: AuditFailure[], template: string): string {
-  const failureLines = failures.map(f =>
-    `- ${f.selector}: "${f.text.slice(0, 60)}" — foreground ${f.foreground} on background ${f.background}, ratio ${f.contrastRatio}:1 (needs ${f.required}:1, ${f.isLarge ? 'large text' : 'normal text'})`
-  ).join('\n')
-
-  const basePrompt = `You are an accessibility expert. Analyze these WCAG contrast failures and suggest specific fixes.
-
-Failures:
-${failureLines}
-
-For each failure, provide:
-1. A clear explanation of why it fails
-2. A specific fix suggestion with exact color values (e.g., "change foreground to #333" or "darken background to #1a1a2e")
-3. A severity rating (high if ratio < 3.0, medium if ratio < 4.5, low otherwise)`
-
-  if (template === 'simple') {
-    return `List these WCAG failures and their fixes briefly:\n${failureLines}`
-  }
-
-  return basePrompt
-}
-
 function buildDesignPrompt(designFails: DesignFailure[]): string {
   const lines = designFails.map(d =>
     `- ${d.selector}: ${d.description} (value: ${d.value}, expected: ${d.expected}, severity: ${d.severity})`
@@ -76,9 +54,14 @@ For each issue, provide:
 function buildCombinedPrompt(
   wcagFailures: AuditFailure[],
   designFails: DesignFailure[],
-  template: string
+  template: string,
+  context?: string
 ): string {
   const parts: string[] = []
+
+  if (context && context.trim()) {
+    parts.push(`--- USER CONTEXT ---\n${context.trim()}\n--- END USER CONTEXT ---`)
+  }
 
   if (wcagFailures.length > 0) {
     const lines = wcagFailures.map(f =>
@@ -112,15 +95,42 @@ For each failure, provide:
   return prompt
 }
 
+function buildWcagPrompt(failures: AuditFailure[], template: string, context?: string): string {
+  const failureLines = failures.map(f =>
+    `- ${f.selector}: "${f.text.slice(0, 60)}" — foreground ${f.foreground} on background ${f.background}, ratio ${f.contrastRatio}:1 (needs ${f.required}:1, ${f.isLarge ? 'large text' : 'normal text'})`
+  ).join('\n')
+
+  const parts: string[] = []
+  if (context && context.trim()) {
+    parts.push(`--- USER CONTEXT ---\n${context.trim()}\n--- END USER CONTEXT ---`)
+  }
+  parts.push(`You are an accessibility expert. Analyze these WCAG contrast failures and suggest specific fixes.
+
+Failures:
+${failureLines}
+
+For each failure, provide:
+1. A clear explanation of why it fails
+2. A specific fix suggestion with exact color values (e.g., "change foreground to #333" or "darken background to #1a1a2e")
+3. A severity rating (high if ratio < 3.0, medium if ratio < 4.5, low otherwise)`)
+
+  if (template === 'simple') {
+    return `List these WCAG failures and their fixes briefly:\n${failureLines}`
+  }
+
+  return parts.join('\n\n')
+}
+
 export function buildPrompt(
   failures: AuditFailure[],
   template: string = 'default',
-  designFails?: DesignFailure[]
+  designFails?: DesignFailure[],
+  context?: string
 ): string {
   if (designFails && designFails.length > 0) {
-    return buildCombinedPrompt(failures, designFails, template)
+    return buildCombinedPrompt(failures, designFails, template, context)
   }
-  return buildWcagPrompt(failures, template)
+  return buildWcagPrompt(failures, template, context)
 }
 
 async function getLLMClient(options: LLMOptions): Promise<LLMClient> {
@@ -199,7 +209,7 @@ export async function enrichWithLLM(
   const promptTemplate = options.promptTemplate ?? 'default'
 
   // Build combined prompt with both WCAG and design failures
-  const combinedPrompt = buildPrompt(summarized, promptTemplate, designFails.slice(0, 30))
+  const combinedPrompt = buildPrompt(summarized, promptTemplate, designFails.slice(0, 30), options.context)
 
   try {
     const client = await getLLMClient(options)

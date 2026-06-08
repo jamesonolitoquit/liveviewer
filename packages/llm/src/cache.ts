@@ -27,7 +27,8 @@ export async function getCacheKey(auditResults: object, options: LLMOptions): Pr
     failures: ar.wcag?.failures ?? [],
     designFailures: ar.design?.failures ?? [],
     template: options.promptTemplate ?? 'default',
-    model: options.model
+    model: options.model,
+    context: options.context ?? ''
   })
   return hash(payload)
 }

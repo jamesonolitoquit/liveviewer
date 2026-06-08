@@ -117,4 +117,79 @@ function renderMarkdown(audit, groups) {
   return lines.join('\n');
 }
 
-module.exports = { recommend };
+function severityForContrast(ratio) {
+  if (ratio < 3) return 'high';
+  if (ratio < 4.5) return 'medium';
+  return 'low';
+}
+
+function severityForDesign(ruleId, value) {
+  if (ruleId === 'font-size-legible') {
+    const px = parseFloat(value);
+    if (px < 12) return 'high';
+    return 'medium';
+  }
+  if (ruleId === 'line-height-readable') {
+    const num = parseFloat(value);
+    if (num < 1.2 || num > 2) return 'high';
+    return 'medium';
+  }
+  return 'medium';
+}
+
+function generateFixSuggestions(auditResult) {
+  const wcagFails = (auditResult.wcag && auditResult.wcag.failures) || [];
+  const designFails = (auditResult.design && auditResult.design.failures) || [];
+  const suggestions = [];
+
+  for (const f of wcagFails) {
+    suggestions.push({
+      type: 'contrast',
+      severity: severityForContrast(f.contrastRatio),
+      selector: f.selector,
+      text: f.text ? f.text.slice(0, 60) : '',
+      currentValue: `fg ${f.foreground} / bg ${f.background} (ratio ${f.contrastRatio}:1)`,
+      suggestedValue: `needs ≥ ${f.required}:1`,
+      recommendation:
+        `Increase contrast on "${f.selector}": change ${f.foreground} or ${f.background} to achieve ratio ≥ ${f.required}:1 (current ${f.contrastRatio}:1).`
+    });
+  }
+
+  for (const d of designFails) {
+    const sev = severityForDesign(d.ruleId, d.value);
+    let recommendation = '';
+
+    if (d.ruleId === 'font-size-legible') {
+      recommendation =
+        `Increase font-size on "${d.selector}" from ${d.value} to at least ${d.expected} for legibility.`;
+    } else if (d.ruleId === 'line-height-readable') {
+      recommendation =
+        `Adjust line-height on "${d.selector}" from ${d.value} to between ${d.expected} for readability.`;
+    } else if (d.ruleId === 'horizontal-scroll') {
+      recommendation =
+        `Prevent overflow on "${d.selector}": set max-width: 100% or add overflow-x: hidden (detected ${d.value}).`;
+    } else {
+      recommendation =
+        `Fix ${d.ruleName} on "${d.selector}": expected ${d.expected}, found ${d.value}.`;
+    }
+
+    suggestions.push({
+      type: d.ruleId,
+      severity: sev,
+      selector: d.selector,
+      text: d.description || '',
+      currentValue: d.value,
+      suggestedValue: d.expected,
+      recommendation
+    });
+  }
+
+  suggestions.sort((a, b) => {
+    const order = { high: 0, medium: 1, low: 2 };
+    return (order[a.severity] ?? 2) - (order[b.severity] ?? 2);
+  });
+
+  return suggestions;
+}
+
+module.exports = { recommend, generateFixSuggestions };

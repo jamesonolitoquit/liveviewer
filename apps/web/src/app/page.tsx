@@ -32,6 +32,7 @@ export default function Home() {
   const [llmResult, setLlmResult] = useState<any>(null)
   const [llmLoading, setLlmLoading] = useState(false)
   const [progressStage, setProgressStage] = useState(0)
+  const [context, setContext] = useState('')
   const resultsRef = useRef<HTMLDivElement>(null)
   const announceRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -136,6 +137,17 @@ export default function Home() {
     } catch {
       // best-effort
     }
+    try {
+      const RECENT_KEY = 'liveviewer_recent_urls'
+      const raw = localStorage.getItem(RECENT_KEY)
+      const recent: string[] = raw ? JSON.parse(raw) : []
+      const normalized = auditData.url.replace(/\/$/, '')
+      const filtered = recent.filter(u => u !== normalized)
+      filtered.unshift(normalized)
+      localStorage.setItem(RECENT_KEY, JSON.stringify(filtered.slice(0, 20)))
+    } catch {
+      // best-effort
+    }
   }, [])
 
   const runLlmEnrichment = useCallback(async () => {
@@ -159,7 +171,7 @@ export default function Home() {
         throw new Error('Enter your API key in the AI panel above before enriching')
       }
 
-      const result = await enrichWithLLM(wcagFails || [], provider, model, key, baseUrl || undefined, designFails || [])
+      const result = await enrichWithLLM(wcagFails || [], provider, model, key, baseUrl || undefined, designFails || [], context || undefined)
       setLlmResult({ ...result, cached: false })
     } catch (err) {
       setLlmResult({ error: err instanceof Error ? err.message : 'LLM enrichment failed', provider: 'client', model: '', perFailure: [], summary: '' })
@@ -228,6 +240,15 @@ export default function Home() {
             )
           })}
         </div>
+
+        <textarea
+          value={context}
+          onChange={e => setContext(e.target.value)}
+          placeholder="Site context (optional) — e.g., Dark mode SaaS dashboard for engineers, data-dense UX"
+          rows={2}
+          className="mt-3 w-full rounded-xl border border-[var(--jao-border)] bg-[var(--jao-surface)] px-4 py-2.5 text-xs outline-none transition-all placeholder:text-[var(--jao-text-tertiary)] focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
+          aria-label="Site context for AI recommendations"
+        />
 
         <div
           ref={announceRef}

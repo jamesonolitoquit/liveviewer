@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import os from 'os'
 
-const { recommend } = require('./recommender.js')
+const { recommend, generateFixSuggestions } = require('./recommender.js')
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lv-rec-'))
 
@@ -69,5 +69,129 @@ describe('recommend', () => {
     const token = result.recommendations.find(r => r.type === 'token')
     expect(token).toBeDefined()
     expect(token.totalUsage).toBe(15)
+  })
+})
+
+describe('generateFixSuggestions', () => {
+  it('returns empty array when no failures', () => {
+    const result = generateFixSuggestions({ url: 'https://example.com', wcag: null, design: null })
+    expect(result).toEqual([])
+  })
+
+  it('returns contrast suggestions for wcag failures', () => {
+    const result = generateFixSuggestions({
+      url: 'https://example.com',
+      wcag: {
+        totalElements: 2,
+        failures: [
+          { selector: 'h1', text: 'Heading', foreground: '#ffffff', background: '#eeeeee', contrastRatio: 2.1, required: 4.5, fontSize: 24, isLarge: true },
+          { selector: 'p', text: 'Body', foreground: '#cccccc', background: '#ffffff', contrastRatio: 3.5, required: 4.5, fontSize: 16, isLarge: false }
+        ],
+        passCount: 0,
+        failCount: 2,
+        score: 0
+      },
+      design: null
+    })
+
+    expect(result).toHaveLength(2)
+    expect(result[0].type).toBe('contrast')
+    expect(result[0].severity).toBe('high')
+    expect(result[0].selector).toBe('h1')
+    expect(result[0].recommendation).toContain('Increase contrast')
+    expect(result[1].severity).toBe('medium')
+  })
+
+  it('returns design suggestions for design failures', () => {
+    const result = generateFixSuggestions({
+      url: 'https://example.com',
+      wcag: null,
+      design: {
+        failures: [
+          { ruleId: 'font-size-legible', ruleName: 'Font Size Legibility', selector: '.body-text', description: 'Text too small', severity: 'medium', value: '12px', expected: '≥ 16px' },
+          { ruleId: 'line-height-readable', ruleName: 'Line Height Readability', selector: 'p', description: 'Line height too tight', severity: 'medium', value: '1.2', expected: '1.4 – 1.6' },
+          { ruleId: 'horizontal-scroll', ruleName: 'Horizontal Scroll', selector: 'html', description: 'Page overflows', severity: 'medium', value: '124px overflow', expected: 'no overflow' }
+        ],
+        totalChecks: 10,
+        passCount: 7,
+        failCount: 3,
+        score: 70
+      }
+    })
+
+    expect(result).toHaveLength(3)
+    expect(result[0].type).toBe('font-size-legible')
+    expect(result[0].recommendation).toContain('Increase font-size')
+    expect(result[0].recommendation).toContain('.body-text')
+    expect(result[1].type).toBe('line-height-readable')
+    expect(result[1].recommendation).toContain('Adjust line-height')
+    expect(result[2].type).toBe('horizontal-scroll')
+    expect(result[2].recommendation).toContain('Prevent overflow')
+  })
+
+  it('sorts high severity before medium', () => {
+    const result = generateFixSuggestions({
+      url: 'https://example.com',
+      wcag: {
+        totalElements: 2,
+        failures: [
+          { selector: '.moderate', text: 'M', foreground: '#aaaaaa', background: '#ffffff', contrastRatio: 3.5, required: 4.5, fontSize: 16, isLarge: false },
+          { selector: '.severe', text: 'S', foreground: '#ffffff', background: '#cccccc', contrastRatio: 2.5, required: 4.5, fontSize: 16, isLarge: false }
+        ],
+        passCount: 0,
+        failCount: 2,
+        score: 0
+      },
+      design: null
+    })
+
+    expect(result[0].selector).toBe('.severe')
+    expect(result[1].selector).toBe('.moderate')
+  })
+
+  it('returns design severity: font-size < 12px = high', () => {
+    const result = generateFixSuggestions({
+      url: 'https://example.com',
+      wcag: null,
+      design: {
+        failures: [
+          { ruleId: 'font-size-legible', ruleName: 'Font Size Legibility', selector: '.tiny', description: 'Very small text', severity: 'medium', value: '10px', expected: '≥ 16px' }
+        ],
+        totalChecks: 1,
+        passCount: 0,
+        failCount: 1,
+        score: 0
+      }
+    })
+
+    expect(result[0].severity).toBe('high')
+  })
+
+  it('merges wcag and design suggestions sorted together', () => {
+    const result = generateFixSuggestions({
+      url: 'https://example.com',
+      wcag: {
+        totalElements: 1,
+        failures: [
+          { selector: 'h1', text: 'Head', foreground: '#999999', background: '#ffffff', contrastRatio: 3.5, required: 4.5, fontSize: 16, isLarge: false }
+        ],
+        passCount: 0,
+        failCount: 1,
+        score: 0
+      },
+      design: {
+        failures: [
+          { ruleId: 'font-size-legible', ruleName: 'Font Size', selector: 'p', description: 'Small', severity: 'medium', value: '14px', expected: '≥ 16px' }
+        ],
+        totalChecks: 1,
+        passCount: 0,
+        failCount: 1,
+        score: 0
+      }
+    })
+
+    expect(result).toHaveLength(2)
+    expect(result[0].type).toBe('contrast')
+    expect(result[1].type).toBe('font-size-legible')
   })
 })

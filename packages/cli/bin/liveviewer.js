@@ -50,6 +50,8 @@ Options for "audit":
   --llm-provider <n>  AI provider: openai (default) or ollama
   --llm-model <name>  Model (default: gpt-3.5-turbo or llama3 for ollama)
   --llm-api-key <key> API key (or set OPENAI_API_KEY env var)
+  --context <text>    Site context/purpose for more relevant AI recommendations (e.g., "Dark mode SaaS dashboard")
+  --context-file <p>  Read context from file
   --llm-cache-ttl <d> Cache duration in days (default: 7)
   --llm-clear-cache   Clear LLM cache before running
 
@@ -104,7 +106,7 @@ async function main() {
   const { startServer } = require('@liveviewer/core/src/mcp');
   const { audit } = require('@liveviewer/core/src/auditor');
   const { extract, checkBrandViolations } = require('@liveviewer/core/src/extractor');
-  const { recommend } = require('@liveviewer/core/src/recommender');
+  const { recommend, generateFixSuggestions } = require('@liveviewer/core/src/recommender');
   const { renderHtml } = require('@liveviewer/core/src/report');
 
   switch (command) {
@@ -211,6 +213,17 @@ async function main() {
       const llmCacheTtl = parseInt(parseArg('--llm-cache-ttl') || '7');
       const llmClearCache = hasFlag('--llm-clear-cache');
 
+      let context = parseArg('--context') || '';
+      const contextFile = parseArg('--context-file');
+      if (contextFile) {
+        try {
+          context = fs.readFileSync(contextFile, 'utf-8').trim();
+        } catch (e) {
+          console.error(`Error: Could not read context file at ${contextFile}`);
+          process.exit(1);
+        }
+      }
+
       if (auditViewports) {
         console.log(`Auditing ${url} at ${auditViewports.length} viewport(s): ${auditViewports.map(v => `${v.width}x${v.height}`).join(', ')}...`);
       } else {
@@ -251,12 +264,25 @@ async function main() {
         }
       }
 
+      const fixSuggestions = generateFixSuggestions(result);
+      if (fixSuggestions.length > 0) {
+        console.log('\n  \u{1F4CB} Fix Suggestions (deterministic):');
+        for (const s of fixSuggestions.slice(0, 10)) {
+          console.log(`    [${s.severity.toUpperCase()}] ${s.recommendation}`);
+        }
+        if (fixSuggestions.length > 10) {
+          console.log(`    ... and ${fixSuggestions.length - 10} more`);
+        }
+      } else {
+        console.log('\n  \u{2139}\u{FE0F} No simple fixes available \u2014 consider AI enrichment with --llm-enrich');
+      }
+
       if (doAiPrompt) {
         const wcagFails = result.wcag?.failures || [];
         const designFails = result.design?.failures || [];
         if (wcagFails.length > 0 || designFails.length > 0) {
           const { buildPrompt } = require('@liveviewer/llm');
-          const prompt = buildPrompt(wcagFails, 'default', designFails.slice(0, 30));
+          const prompt = buildPrompt(wcagFails, 'default', designFails.slice(0, 30), context || undefined);
           console.log('\n' + '='.repeat(50));
           console.log('AI PROMPT');
           console.log('='.repeat(50));
@@ -280,7 +306,8 @@ async function main() {
             apiKey: llmApiKey,
             promptTemplate: 'default',
             cacheTtlDays: llmCacheTtl,
-            clearCache: llmClearCache
+            clearCache: llmClearCache,
+            context: context || undefined
           });
           result.llm = llmResult;
 
