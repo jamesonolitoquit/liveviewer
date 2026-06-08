@@ -12,10 +12,18 @@
     "README.md"
   ],
   "scripts": {
-    "test": "node -e \"console.log('core: no tests yet')\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^149.0.0",
+    "@sparticuz/chromium-min": "^149.0.0",
+    "playwright": "^1.60.0",
+    "playwright-core": "^1.60.0",
     "wcag-contrast": "^3.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.0"
   }
 }

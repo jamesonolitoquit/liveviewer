@@ -10,3 +10,9 @@ packages/*/dist/
 *.log
 .DS_Store
 Thumbs.db
+
+.vercel
+$null
+packages/src/
+apps/web/test-results/
+apps/web/.env.local

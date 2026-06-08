@@ -65,7 +65,7 @@ function recommend(auditPath, extractPath) {
 
   groups.sort((a, b) => {
     const sev = { high: 0, medium: 1, low: 2 };
-    return (sev[a.severity] || 2) - (sev[b.severity] || 2);
+    return (sev[a.severity] ?? 2) - (sev[b.severity] ?? 2);
   });
 
   return {

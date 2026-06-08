@@ -38,11 +38,15 @@ Options for "audit":
   --height <px>       Viewport height (default: 800)
   --label <name>      Label for the audit (default: "audit")
   --wcag              Enable WCAG contrast analysis
+  --design            Enable design QA analysis (typography, line-height, horizontal scroll)
+  --mobile            Audit at both Desktop (1280x800) and Mobile (375x812) viewports, merging results
+  --viewports <list>  Comma-separated viewports, e.g. "1280x800,375x812" (overrides --width/--height)
   --fail-on <n>       Exit non-zero if WCAG failures exceed n (for CI)
   --timeout <ms>      Navigation timeout (default: 30000)
   --wait-until <str>  Navigation wait strategy: networkidle (default), load, domcontentloaded
   --llm-enrich        Enable AI enrichment of audit results (requires API key)
   --no-llm            Force deterministic only, skip AI even if key present
+  --ai-prompt         Print AI-ready analysis prompt (no API key needed; pipe to AI or copy-paste)
   --llm-provider <n>  AI provider: openai (default) or ollama
   --llm-model <name>  Model (default: gpt-3.5-turbo or llama3 for ollama)
   --llm-api-key <key> API key (or set OPENAI_API_KEY env var)
@@ -87,7 +91,8 @@ Examples:
   liveviewer screenshot https://jaostudio.vercel.app --full-page --label home
   liveviewer analyze portfolio-1234567890 --fps 5
   liveviewer audit https://example.com --wcag --llm-enrich
-  liveviewer audit https://example.com --wcag --llm-enrich --llm-provider ollama
+  liveviewer audit https://example.com --wcag --mobile --design
+  liveviewer audit https://web.dev --wcag --mobile --design --llm-enrich
   liveviewer mcp
 `);
   process.exit(0);
@@ -183,27 +188,50 @@ async function main() {
       const height = parseInt(parseArg('--height') || '800');
       const label = parseArg('--label') || 'audit';
       const doWcag = hasFlag('--wcag');
+      const doDesign = hasFlag('--design');
+      const doMobile = hasFlag('--mobile');
+      const viewportsArg = parseArg('--viewports');
+      let auditViewports;
+      if (viewportsArg) {
+        auditViewports = viewportsArg.split(',').map(v => {
+          const [w, h] = v.split('x').map(Number);
+          return { width: w, height: h };
+        }).filter(v => !isNaN(v.width) && !isNaN(v.height));
+      } else if (doMobile) {
+        auditViewports = [{ width: 1280, height: 800 }, { width: 375, height: 812 }];
+      }
       const timeout = parseInt(parseArg('--timeout') || '30000');
       const waitUntil = parseArg('--wait-until') || 'networkidle';
 
-      const llmEnrich = hasFlag('--llm-enrich') || (!hasFlag('--no-llm') && !!parseArg('--llm-api-key') || !!process.env.OPENAI_API_KEY);
+      const doAiPrompt = hasFlag('--ai-prompt');
+      const llmEnrich = (hasFlag('--llm-enrich') || (!hasFlag('--no-llm') && !!parseArg('--llm-api-key') || !!process.env.OPENAI_API_KEY)) && !doAiPrompt;
       const llmProvider = parseArg('--llm-provider') || 'openai';
       const llmModel = parseArg('--llm-model') || (llmProvider === 'ollama' ? 'llama3' : 'gpt-3.5-turbo');
       const llmApiKey = parseArg('--llm-api-key') || process.env.OPENAI_API_KEY || '';
       const llmCacheTtl = parseInt(parseArg('--llm-cache-ttl') || '7');
       const llmClearCache = hasFlag('--llm-clear-cache');
 
-      console.log(`Auditing ${url} at ${width}x${height}...`);
-      const result = await audit(url, {
+      if (auditViewports) {
+        console.log(`Auditing ${url} at ${auditViewports.length} viewport(s): ${auditViewports.map(v => `${v.width}x${v.height}`).join(', ')}...`);
+      } else {
+        console.log(`Auditing ${url} at ${width}x${height}...`);
+      }
+      const auditOpts = {
         viewport: { width, height },
         label,
         wcag: doWcag,
+        design: doDesign,
         timeout,
         waitUntil
-      });
+      };
+      if (auditViewports) auditOpts.viewports = auditViewports;
+      const result = await audit(url, auditOpts);
 
       console.log('\nAudit complete!');
       console.log(`  Screenshot: ${result.filepath}`);
+      if (result.multiViewport) {
+        console.log(`  Viewports:  ${result.viewports?.length || 0} (merged)`);
+      }
       if (result.wcag) {
         console.log(`  WCAG:       ${result.wcag.passCount}/${result.wcag.totalElements} pass (score: ${result.wcag.score}%)`);
         if (result.wcag.failCount > 0) {
@@ -211,6 +239,33 @@ async function main() {
           for (const f of result.wcag.failures) {
             console.log(`    - ${f.selector} (ratio: ${f.contrastRatio}, need: ${f.required})`);
           }
+        }
+      }
+
+      if (result.design) {
+        console.log(`  Design QA:   ${result.design.score}% (${result.design.failCount} issue(s))`);
+        if (result.design.failures?.length > 0) {
+          for (const d of result.design.failures) {
+            console.log(`    - [${d.severity.toUpperCase()}] ${d.selector}: ${d.ruleName} (${d.value}, expected ${d.expected})`);
+          }
+        }
+      }
+
+      if (doAiPrompt) {
+        const wcagFails = result.wcag?.failures || [];
+        const designFails = result.design?.failures || [];
+        if (wcagFails.length > 0 || designFails.length > 0) {
+          const { buildPrompt } = require('@liveviewer/llm');
+          const prompt = buildPrompt(wcagFails, 'default', designFails.slice(0, 30));
+          console.log('\n' + '='.repeat(50));
+          console.log('AI PROMPT');
+          console.log('='.repeat(50));
+          console.log(prompt);
+          console.log('='.repeat(50));
+          console.log('END AI PROMPT');
+          console.log('='.repeat(50));
+        } else {
+          console.log('\n  ✓ No failures to analyze.');
         }
       }
 

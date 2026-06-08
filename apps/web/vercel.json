@@ -1,10 +1,11 @@
 {
-  "framework": "nextjs",
-  "buildCommand": "cd ../.. && npm install && cd apps/web && npm run build",
-  "outputDirectory": ".next",
+  "installCommand": "cd ../.. && npm install",
+  "buildCommand": "next build",
   "functions": {
     "src/app/api/audit/route.ts": {
-      "maxDuration": 60
+      "maxDuration": 10,
+      "memory": 128,
+      "regions": ["iad1"]
     }
   }
 }

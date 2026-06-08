@@ -1,0 +1,10 @@
+name: Keep Vercel warm
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Warm Vercel function
+        run: curl -sSf "${{ vars.VERCEL_URL || 'https://liveviewer.vercel.app' }}/api/audit?warmup=true" > /dev/null

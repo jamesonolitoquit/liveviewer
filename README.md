@@ -31,18 +31,32 @@ liveviewer record https://example.com --interaction "click .menu" --interaction 
 
 Reports: totalFrames, meanDelta, jankFrames, smoothnessScore (0–100).
 
-### `audit` — WCAG contrast analysis with background ancestor walk
+### `audit` — WCAG accessibility + Design QA analysis
 
 ```bash
+# WCAG contrast audit (single desktop viewport)
 liveviewer audit https://example.com --wcag --label audit1
+
+# WCAG + Design QA at both Desktop & Mobile viewports (merged results)
+liveviewer audit https://web.dev --wcag --design --mobile
+
+# Explicit viewport list (overrides --width/--height)
+liveviewer audit https://example.com --wcag --viewports 1280x800,375x812
+
+# Exit non-zero if WCAG failures exceed threshold (for CI)
 liveviewer audit https://example.com --wcag --fail-on 0
 ```
 
-Exits non-zero if failures exceed `--fail-on` threshold (for CI).
+The `--mobile` flag runs both `1280x800` and `375x812` viewports and merges failures (deduplicated by selector+colors, tagged by viewport origin). `--viewports` accepts a comma-separated list for custom combinations.
 
-Reports: `<url>-<timestamp>.png` (screenshot) + `.json` with per-element contrast ratios.
+**CLI and web app produce identical deterministic results** (WCAG failures, Design QA scores) when using the same URL and viewport configuration. The only difference is optional AI enrichment.
 
-**Alpha blending:** Semi-transparent text (`rgba`) is correctly blended against its background before computing contrast.
+Reports: `<url>-<timestamp>.png` (screenshot) + `.json` with per-element contrast ratios and Design QA issues.
+
+Includes:
+- **WCAG contrast** – per-element contrast ratios with background ancestor walk (correct alpha blending for `rgba`)
+- **Design QA** – typography (font-size ≥16px, line-height 1.4–1.6), horizontal scroll detection
+- **AI enrichment** (optional) – `--llm-enrich` sends failures to an LLM for fix suggestions, returning `perFailure` (WCAG) and `designFixes` (Design QA) sections
 
 ### `extract` — Design token inventory
 
@@ -214,3 +228,66 @@ npx playwright install chromium
 ## License
 
 MIT
+
+## Deployment
+
+The web app is designed to deploy to **Vercel Hobby** (free tier) with no extra infrastructure.
+
+### Quick Deploy
+
+```bash
+cd apps/web
+npx vercel --prod
+```
+
+### Architecture
+
+| Layer | Implementation |
+|-------|----------------|
+| **Browser binary** | `@sparticuz/chromium-min` (downloads pack from GitHub releases on first request, cached in `/tmp` for warm starts) |
+| **Timeout** | 9.5s hard cap inside a 10s Vercel function limit |
+| **Memory** | `--js-flags=--max-old-space-size=96` to stay under 128MB |
+| **Viewport** | 1024×768 (smaller than desktop to reduce paint time) |
+| **Resource blocking** | Images, fonts, media blocked by default to fit `domcontentloaded` budget |
+| **Caching** | LRU in-memory cache, 50 entries max, 7-day TTL |
+| **Rate limiting** | 10 req/min/IP via Upstash Redis (sliding window); in-memory fallback |
+| **Fallback** | 503 with extension link if cold start > 10s or OOM |
+
+### Environment Variables
+
+| Var | Required | Purpose |
+|-----|----------|---------|
+| `CHROMIUM_PACK_URL` | No | Override the GitHub release URL for the chromium pack (use a faster CDN if needed) |
+| `UPSTASH_REDIS_REST_URL` | No | Enables persistent rate-limit counters across cold starts |
+| `UPSTASH_REDIS_REST_TOKEN` | No | Paired with `UPSTASH_REDIS_REST_URL` |
+| `AUDIT_RATE_LIMIT_PER_MINUTE` | No | Default 10. Lower for stricter limits |
+| `NEXT_PUBLIC_HISTORY_RETENTION_DAYS` | No | History retention window, default 30 |
+
+Without Redis, rate limiting falls back to per-instance in-memory counters (resets on cold start). Good enough for low traffic; switch to Redis once you exceed ~50 req/min.
+
+### Smoke Test (Post-Deploy)
+
+```bash
+npm run verify:deployment -- https://your-app.vercel.app
+```
+
+This runs real audits against `example.com`, `web.dev`, and `github.com` and reports pass/fail + timings. Exits 0 only if all sites complete within the cold-start budget.
+
+### Known Limitations (Vercel)
+
+- **Heavy pages time out** (e.g. `nytimes.com`, `amazon.com`). Use the [browser extension](#browser-extension) for those.
+- **Cold start** can be 5–10s on the first request after a long idle period while the chromium pack is downloaded.
+- **Function size** is at the Hobby 50MB limit. Don't add large image-processing libraries to the web workspace.
+
+### If Vercel Hobby Becomes Insufficient
+
+Move the `/api/audit` route to a dedicated service (Fly.io, Render, Railway) that allows 30s+ timeouts and 1GB+ memory. The core audit code in `packages/core` is platform-agnostic — only `auditor.js`'s `getChromium()` function needs to swap implementations.
+
+## Browser Extension
+
+The Liveviewer browser extension performs audits locally in the user's browser, bypassing serverless constraints entirely. Use it for:
+- Local/staging sites (no cross-origin issues)
+- Very large pages (no timeout limits)
+- Behind-firewall intranet apps
+
+See `packages/extension/` for build instructions.

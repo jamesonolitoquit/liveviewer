@@ -1,0 +1,100 @@
+'use client'
+
+import { useState } from 'react'
+import { csvFromAudit, jsonFromAudit, downloadFile } from '@/lib/export'
+import { PdfExportButton } from './pdf-export-button'
+import type { AuditData } from '@/types/audit'
+
+interface ExportButtonsProps {
+  data: AuditData
+}
+
+function sanitizeFilename(url: string): string {
+  try {
+    const u = new URL(url)
+    return `${u.hostname}${u.pathname.replace(/[^a-zA-Z0-9]/g, '-')}`
+  } catch {
+    return url.replace(/[^a-zA-Z0-9]/g, '-')
+  }
+}
+
+export function ExportButtons({ data }: ExportButtonsProps) {
+  const [error, setError] = useState<string | null>(null)
+  const [shareState, setShareState] = useState<'idle' | 'saving' | 'copied' | 'error'>('idle')
+  const prefix = sanitizeFilename(data.url)
+
+  const handleCsv = () => {
+    try {
+      const csv = csvFromAudit(data)
+      downloadFile(csv, `${prefix}-audit.csv`, 'text/csv')
+      setError(null)
+    } catch {
+      setError('Failed to generate CSV')
+    }
+  }
+
+  const handleJson = () => {
+    try {
+      const json = jsonFromAudit(data)
+      downloadFile(json, `${prefix}-audit.json`, 'application/json')
+      setError(null)
+    } catch {
+      setError('Failed to generate JSON')
+    }
+  }
+
+  const handleShare = async () => {
+    setShareState('saving')
+    try {
+      const res = await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      const json = await res.json()
+      if (!json.success || !json.id) throw new Error('Failed to create report link')
+      const url = `${window.location.origin}/report/${json.id}`
+      await navigator.clipboard.writeText(url)
+      setShareState('copied')
+      setTimeout(() => setShareState('idle'), 3000)
+    } catch {
+      setShareState('error')
+      setTimeout(() => setShareState('idle'), 3000)
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-xs font-medium text-[var(--jao-text-secondary)]">Export:</span>
+      <button
+        onClick={handleCsv}
+        className="rounded-lg border border-[var(--jao-border)] px-3 py-1.5 text-xs text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
+      >
+        CSV
+      </button>
+      <button
+        onClick={handleJson}
+        className="rounded-lg border border-[var(--jao-border)] px-3 py-1.5 text-xs text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 disabled:opacity-50"
+      >
+        JSON
+      </button>
+      <PdfExportButton data={data} prefix={prefix} />
+      <button
+        onClick={handleShare}
+        disabled={shareState === 'saving'}
+        className={`rounded-lg border px-3 py-1.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 ${
+          shareState === 'copied'
+            ? 'border-[var(--jao-success)] text-[var(--jao-success)]'
+            : shareState === 'error'
+            ? 'border-[var(--jao-destructive)] text-[var(--jao-destructive)]'
+            : 'border-[var(--jao-border)] text-[var(--jao-text-secondary)] hover:bg-[var(--jao-border-subtle)]'
+        }`}
+      >
+        {shareState === 'saving' ? 'Saving...' : shareState === 'copied' ? 'Link copied' : shareState === 'error' ? 'Failed' : 'Share'}
+      </button>
+      {error && (
+        <span className="text-xs text-[var(--jao-destructive)]" role="alert">{error}</span>
+      )}
+    </div>
+  )
+}

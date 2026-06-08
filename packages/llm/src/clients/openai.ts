@@ -45,6 +45,7 @@ export const WCAG_ANALYSIS_SCHEMA = {
 export async function createOpenAIClient(options: {
   model: string
   apiKey: string
+  baseUrl?: string
 }): Promise<{ complete<T>(prompt: string): Promise<T> }> {
   let OpenAI: any
   try {
@@ -55,7 +56,10 @@ export async function createOpenAIClient(options: {
     )
   }
 
-  const client = new OpenAI({ apiKey: options.apiKey })
+  const client = new OpenAI({
+    apiKey: options.apiKey,
+    baseURL: options.baseUrl
+  })
 
   return {
     async complete<T>(prompt: string): Promise<T> {

@@ -8,54 +8,118 @@ interface LlmPanelProps {
   hasFailures: boolean
 }
 
-const PROVIDERS = [
-  { id: 'openai', label: 'OpenAI', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'] },
-  { id: 'anthropic', label: 'Anthropic', models: ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'] },
-  { id: 'google', label: 'Google', models: ['gemini-1.5-pro', 'gemini-1.5-flash'] },
-  { id: 'groq', label: 'Groq', models: ['llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768'] }
+interface ProviderConfig {
+  id: string
+  label: string
+  defaultBaseUrl: string
+  showBaseUrl: boolean
+  showKey: boolean
+  defaultModel: string
+  models: string[]
+}
+
+const PROVIDERS: ProviderConfig[] = [
+  {
+    id: 'openai-compatible',
+    label: 'OpenAI Compatible',
+    defaultBaseUrl: 'https://api.openai.com/v1',
+    showBaseUrl: true,
+    showKey: true,
+    defaultModel: 'gpt-4o-mini',
+    models: ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo', 'deepseek-chat', 'llama3-70b-8192', 'claude-sonnet-4-20250514', 'grok-2-latest', 'mistral-large-latest']
+  },
+  {
+    id: 'anthropic',
+    label: 'Anthropic',
+    defaultBaseUrl: 'https://api.anthropic.com/v1',
+    showBaseUrl: false,
+    showKey: true,
+    defaultModel: 'claude-sonnet-4-20250514',
+    models: ['claude-sonnet-4-20250514', 'claude-3.5-haiku-20241022', 'claude-3-opus-20240229']
+  },
+  {
+    id: 'google',
+    label: 'Google',
+    defaultBaseUrl: '',
+    showBaseUrl: false,
+    showKey: true,
+    defaultModel: 'gemini-2.0-flash',
+    models: ['gemini-2.0-flash', 'gemini-2.5-flash-preview-04-17', 'gemini-1.5-flash', 'gemini-1.5-pro']
+  },
+  {
+    id: 'ollama',
+    label: 'Ollama (local)',
+    defaultBaseUrl: 'http://localhost:11434',
+    showBaseUrl: true,
+    showKey: false,
+    defaultModel: 'llama3.2',
+    models: ['llama3.2', 'llama3.1', 'llama3', 'mistral', 'mixtral']
+  }
 ]
 
+function getDefaultModel(providerId: string): string {
+  const p = PROVIDERS.find(x => x.id === providerId)
+  return p?.defaultModel ?? 'gpt-4o-mini'
+}
+
+const STORAGE_KEYS = {
+  provider: 'liveviewer_llm_provider',
+  model: 'liveviewer_llm_model',
+  key: 'liveviewer_llm_key',
+  baseUrl: 'liveviewer_llm_base_url'
+}
+
 export function LlmPanel({ enabled, onToggle, hasFailures }: LlmPanelProps) {
-  const [provider, setProvider] = useState('openai')
-  const [model, setModel] = useState('gpt-3.5-turbo')
+  const [provider, setProvider] = useState('openai-compatible')
+  const [model, setModel] = useState('gpt-4o-mini')
   const [key, setKey] = useState('')
+  const [baseUrl, setBaseUrl] = useState('')
   const [showKey, setShowKey] = useState(false)
 
   useEffect(() => {
-    const savedProvider = sessionStorage.getItem('liveviewer_llm_provider')
-    const savedModel = sessionStorage.getItem('liveviewer_llm_model')
-    const savedKey = sessionStorage.getItem('liveviewer_llm_key')
-    if (savedProvider) setProvider(savedProvider)
-    if (savedModel) setModel(savedModel)
-    if (savedKey) setKey(savedKey)
+    const savedProvider = sessionStorage.getItem(STORAGE_KEYS.provider) || 'openai-compatible'
+    const savedModel = sessionStorage.getItem(STORAGE_KEYS.model) || getDefaultModel(savedProvider)
+    const savedKey = sessionStorage.getItem(STORAGE_KEYS.key) || ''
+    const savedBaseUrl = sessionStorage.getItem(STORAGE_KEYS.baseUrl) || ''
+    setProvider(savedProvider)
+    setModel(savedModel)
+    setKey(savedKey)
+    if (savedBaseUrl) setBaseUrl(savedBaseUrl)
   }, [])
 
-  const selectedProvider = PROVIDERS.find(p => p.id === provider)
-  const models = selectedProvider?.models ?? []
+  const cfg = PROVIDERS.find(p => p.id === provider) ?? PROVIDERS[0]
 
   const handleProviderChange = (newProvider: string) => {
     setProvider(newProvider)
-    const prov = PROVIDERS.find(p => p.id === newProvider)
-    if (prov) {
-      setModel(prov.models[0])
-      sessionStorage.setItem('liveviewer_llm_provider', newProvider)
-      sessionStorage.setItem('liveviewer_llm_model', prov.models[0])
+    const newCfg = PROVIDERS.find(p => p.id === newProvider)
+    if (newCfg) {
+      const newModel = newCfg.defaultModel
+      setModel(newModel)
+      setBaseUrl(newCfg.defaultBaseUrl)
+      sessionStorage.setItem(STORAGE_KEYS.provider, newProvider)
+      sessionStorage.setItem(STORAGE_KEYS.model, newModel)
+      sessionStorage.setItem(STORAGE_KEYS.baseUrl, newCfg.defaultBaseUrl)
     }
   }
 
   const handleModelChange = (newModel: string) => {
     setModel(newModel)
-    sessionStorage.setItem('liveviewer_llm_model', newModel)
+    sessionStorage.setItem(STORAGE_KEYS.model, newModel)
   }
 
   const handleKeyChange = (newKey: string) => {
     setKey(newKey)
-    sessionStorage.setItem('liveviewer_llm_key', newKey)
+    sessionStorage.setItem(STORAGE_KEYS.key, newKey.trim())
+  }
+
+  const handleBaseUrlChange = (newUrl: string) => {
+    setBaseUrl(newUrl)
+    sessionStorage.setItem(STORAGE_KEYS.baseUrl, newUrl)
   }
 
   const clearKey = () => {
     setKey('')
-    sessionStorage.removeItem('liveviewer_llm_key')
+    sessionStorage.removeItem(STORAGE_KEYS.key)
   }
 
   return (
@@ -88,8 +152,9 @@ export function LlmPanel({ enabled, onToggle, hasFailures }: LlmPanelProps) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-[var(--muted-foreground)]">Provider</label>
+              <label htmlFor="llm-provider" className="mb-1 block text-xs font-medium text-[var(--muted-foreground)]">Provider</label>
               <select
+                id="llm-provider"
                 value={provider}
                 onChange={e => handleProviderChange(e.target.value)}
                 className="w-full rounded border border-[var(--border)] bg-[var(--background)] px-2.5 py-1.5 text-xs outline-none"
@@ -100,64 +165,96 @@ export function LlmPanel({ enabled, onToggle, hasFailures }: LlmPanelProps) {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-[var(--muted-foreground)]">Model</label>
-              <select
+              <label htmlFor="llm-model" className="mb-1 block text-xs font-medium text-[var(--muted-foreground)]">Model</label>
+              <input
+                id="llm-model"
+                type="text"
                 value={model}
                 onChange={e => handleModelChange(e.target.value)}
+                list="llm-model-suggestions"
+                placeholder={cfg.defaultModel}
                 className="w-full rounded border border-[var(--border)] bg-[var(--background)] px-2.5 py-1.5 text-xs outline-none"
-              >
-                {models.map(m => (
-                  <option key={m} value={m}>{m}</option>
+              />
+              <datalist id="llm-model-suggestions">
+                {cfg.models.map(m => (
+                  <option key={m} value={m} />
                 ))}
-              </select>
+              </datalist>
             </div>
           </div>
 
-          <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--muted-foreground)]">API Key</label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <input
-                  type={showKey ? 'text' : 'password'}
-                  value={key}
-                  onChange={e => handleKeyChange(e.target.value)}
-                  placeholder="sk-... or leave blank for Ollama"
-                  className="w-full rounded border border-[var(--border)] bg-[var(--background)] px-2.5 py-1.5 pr-8 text-xs outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowKey(!showKey)}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                  aria-label={showKey ? 'Hide key' : 'Show key'}
-                >
-                  {showKey ? '🙈' : '👁'}
-                </button>
-              </div>
-              {key && (
-                <button
-                  onClick={clearKey}
-                  className="rounded border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--muted-foreground)] hover:text-[var(--destructive)]"
-                >
-                  Clear
-                </button>
-              )}
+          {cfg.showBaseUrl && (
+            <div>
+              <label htmlFor="llm-base-url" className="mb-1 block text-xs font-medium text-[var(--muted-foreground)]">Base URL</label>
+              <input
+                id="llm-base-url"
+                type="url"
+                value={baseUrl}
+                onChange={e => handleBaseUrlChange(e.target.value)}
+                placeholder={cfg.defaultBaseUrl}
+                className="w-full rounded border border-[var(--border)] bg-[var(--background)] px-2.5 py-1.5 text-xs outline-none"
+              />
             </div>
-          </div>
+          )}
+
+          {cfg.showKey && (
+            <div>
+              <label htmlFor="llm-api-key" className="mb-1 block text-xs font-medium text-[var(--muted-foreground)]">API Key</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    id="llm-api-key"
+                    type={showKey ? 'text' : 'password'}
+                    value={key}
+                    onChange={e => handleKeyChange(e.target.value)}
+                    placeholder={provider === 'ollama' ? 'Not needed for local models' : 'sk-...'}
+                    className="w-full rounded border border-[var(--border)] bg-[var(--background)] px-2.5 py-1.5 pr-8 text-xs outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKey(!showKey)}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                    aria-label={showKey ? 'Hide key' : 'Show key'}
+                  >
+                    {showKey ? '🙈' : '👁'}
+                  </button>
+                </div>
+                {key && (
+                  <button
+                    onClick={clearKey}
+                    className="rounded border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--muted-foreground)] hover:text-[var(--destructive)]"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="rounded bg-yellow-50 p-2.5 text-xs text-yellow-800">
             <strong>Privacy:</strong> Your key is stored in session storage and sent directly to
             the provider from your browser. We never see or store your key.
-            For local processing, use the{' '}
+            For fully local processing, select <strong>Ollama (local)</strong> or{' '}
             <a
               href="https://github.com/jamesonolitoquit/liveviewer"
               target="_blank"
               rel="noopener noreferrer"
               className="underline"
             >
-              CLI with Ollama
+              use the CLI with Ollama
             </a>
             .
           </div>
+
+          <details className="text-xs text-[var(--muted-foreground)]">
+            <summary className="cursor-pointer font-medium">Compatible providers</summary>
+            <ul className="mt-1 space-y-0.5 pl-4 list-disc">
+              <li><strong>OpenAI Compatible</strong> — OpenAI, Groq, Together AI, Fireworks, DeepSeek, Perplexity, OpenRouter, xAI Grok, Mistral, GitHub Models, Azure OpenAI, and any API using <code>/v1/chat/completions</code></li>
+              <li><strong>Ollama (local)</strong> — Free, runs on your machine. <code>ollama pull llama3.2</code></li>
+              <li><strong>Anthropic</strong> — Claude models</li>
+              <li><strong>Google</strong> — Gemini models</li>
+            </ul>
+          </details>
         </div>
       )}
     </div>

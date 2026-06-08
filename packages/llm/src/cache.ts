@@ -22,8 +22,10 @@ async function hash(input: string): Promise<string> {
 }
 
 export async function getCacheKey(auditResults: object, options: LLMOptions): Promise<string> {
+  const ar = auditResults as any
   const payload = JSON.stringify({
-    failures: (auditResults as any).wcag?.failures ?? [],
+    failures: ar.wcag?.failures ?? [],
+    designFailures: ar.design?.failures ?? [],
     template: options.promptTemplate ?? 'default',
     model: options.model
   })

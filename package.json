@@ -9,17 +9,42 @@
   ],
   "scripts": {
     "build": "npm -w packages/core run build && npm -w packages/llm run build && npm -w packages/cli run build",
-    "test": "npm -w packages/core run test && npm -w packages/llm run test",
+    "test": "npm -w packages/core run test && npm -w packages/llm run test && npm -w packages/cli run test && npm -w apps/web run test",
+    "test:core": "npm -w packages/core run test",
+    "test:llm": "npm -w packages/llm run test",
+    "test:cli": "npm -w packages/cli run test",
+    "test:web": "npm -w apps/web run test",
     "lint": "tsc --noEmit",
-    "liveviewer": "node packages/cli/bin/liveviewer.js",
-    "record": "node packages/cli/bin/liveviewer.js record",
-    "screenshot": "node packages/cli/bin/liveviewer.js screenshot",
-    "analyze": "node packages/cli/bin/liveviewer.js analyze",
-    "mcp": "node packages/cli/bin/liveviewer.js mcp",
+    "liveviewer": "node --import tsx/esm packages/cli/bin/liveviewer.js",
+    "record": "node --import tsx/esm packages/cli/bin/liveviewer.js record",
+    "screenshot": "node --import tsx/esm packages/cli/bin/liveviewer.js screenshot",
+    "analyze": "node --import tsx/esm packages/cli/bin/liveviewer.js analyze",
+    "mcp": "node --import tsx/esm packages/cli/bin/liveviewer.js mcp",
     "web": "npm -w apps/web run dev",
-    "web:build": "npm -w apps/web run build"
+    "web:build": "npm -w apps/web run build",
+    "verify:deployment": "node scripts/verify-deployment.js"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
+    "@crxjs/vite-plugin": "^2.4.0",
+    "@types/papaparse": "^5.5.2",
+    "@vitejs/plugin-react": "^6.0.2",
+    "tsx": "^4.22.4",
+    "vitest": "^4.1.8",
+    "webextension-polyfill": "^0.12.0"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^4.5.1",
+    "@sparticuz/chromium": "^149.0.0",
+    "@upstash/ratelimit": "^2.0.5",
+    "@upstash/redis": "^1.38.0",
+    "date-fns": "^4.4.0",
+    "geist": "^1.7.2",
+    "papaparse": "^5.5.3",
+    "playwright-core": "^1.60.0",
+    "recharts": "^3.8.1"
   }
 }

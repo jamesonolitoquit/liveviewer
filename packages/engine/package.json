@@ -1,0 +1,12 @@
+{
+  "name": "@liveviewer/engine",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./contrast": "./src/contrast.ts",
+    "./dom": "./src/dom-analyzer.ts"
+  }
+}

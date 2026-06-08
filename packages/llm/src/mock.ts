@@ -3,7 +3,7 @@ import type { LLMResponse, FailureAnalysis } from './types.js'
 export const MOCK_SUCCESS_RESPONSE: LLMResponse = {
   provider: 'mock',
   model: 'mock-v1',
-  summary: '3 contrast failures on headings and buttons',
+  summary: '3 contrast failures on headings and buttons, 1 design issue',
   perFailure: [
     {
       selector: 'h1.hero-title',
@@ -11,6 +11,15 @@ export const MOCK_SUCCESS_RESPONSE: LLMResponse = {
       explanation: 'White text on light blue background has ratio 2.1:1, needs 4.5:1',
       suggestion: 'Darken text to #1a1a2e or darken background to #003366',
       severity: 'high'
+    }
+  ],
+  designFixes: [
+    {
+      selector: 'p.body-text',
+      ruleId: 'font-size-legible',
+      explanation: 'Body text is 12px, minimum 16px for legibility',
+      suggestion: 'Increase font-size to 16px',
+      severity: 'medium'
     }
   ],
   cached: false

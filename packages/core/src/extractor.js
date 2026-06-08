@@ -49,8 +49,7 @@ async function extract(url, options = {}) {
       const walker = document.createTreeWalker(
         document.body,
         NodeFilter.SHOW_ELEMENT,
-        null,
-        false
+        null
       );
 
       while (walker.nextNode()) {

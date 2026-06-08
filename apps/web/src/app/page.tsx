@@ -1,57 +1,113 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { AuditForm } from '@/components/audit-form'
 import { AuditResults } from '@/components/audit-results'
+import { ExportButtons } from '@/components/export-buttons'
+import { Checklist } from '@/components/checklist'
 import { LlmPanel } from '@/components/llm-panel'
-
-interface WcagFailure {
-  selector: string
-  text: string
-  foreground: string
-  background: string
-  contrastRatio: number
-  required: number
-  fontSize: number
-  isLarge: boolean
-}
-
-interface WcagData {
-  totalElements: number
-  failures: WcagFailure[]
-  passCount: number
-  failCount: number
-  score: number
-}
-
-interface AuditData {
-  url: string
-  timestamp: number
-  viewport: { width: number; height: number }
-  wcag: WcagData | null
-}
+import { JaoLogo } from '@/components/jao-logo'
+import { ThemeToggle } from '@/components/theme-toggle'
+import type { AuditData, DesignData, WcagData } from '@/types/audit'
 
 type AuditStatus = 'idle' | 'running' | 'complete' | 'error'
+
+const VIEWPORT_OPTIONS = [
+  { label: 'Desktop 1280×800', width: 1280, height: 800 },
+  { label: 'Mobile 375×812', width: 375, height: 812 },
+]
+
+const PROGRESS_STAGES = [
+  { label: 'Fetching page...', duration: 3000 },
+  { label: 'Analyzing elements...', duration: 5000 },
+  { label: 'Calculating contrast ratios...', duration: 5000 },
+]
 
 export default function Home() {
   const [status, setStatus] = useState<AuditStatus>('idle')
   const [data, setData] = useState<AuditData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [selectedViewports, setSelectedViewports] = useState<Set<string>>(new Set(['1280x800']))
   const [llmEnabled, setLlmEnabled] = useState(false)
   const [llmResult, setLlmResult] = useState<any>(null)
   const [llmLoading, setLlmLoading] = useState(false)
+  const [progressStage, setProgressStage] = useState(0)
+  const resultsRef = useRef<HTMLDivElement>(null)
+  const announceRef = useRef<HTMLDivElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
+  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const auditUrlRef = useRef<string>('')
+  const cancelledRef = useRef(false)
+
+  useEffect(() => {
+    if (status === 'complete' || status === 'error') {
+      resultsRef.current?.focus()
+    }
+  }, [status])
+
+  useEffect(() => {
+    if (status === 'running') {
+      cancelledRef.current = false
+      let stage = 0
+      setProgressStage(0)
+      progressTimerRef.current = setInterval(() => {
+        stage++
+        if (stage < PROGRESS_STAGES.length) {
+          setProgressStage(stage)
+        } else {
+          if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+        }
+      }, PROGRESS_STAGES[0]?.duration ?? 3000)
+    }
+    return () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+    }
+  }, [status])
+
+  const toggleViewport = (key: string) => {
+    setSelectedViewports(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        if (next.size <= 1) return prev
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+      return next
+    })
+  }
+
+  const cancelAudit = useCallback(() => {
+    cancelledRef.current = true
+    abortRef.current?.abort()
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+    setStatus('idle')
+  }, [])
 
   const runAudit = useCallback(async (url: string) => {
+    auditUrlRef.current = url
     setStatus('running')
     setError(null)
     setData(null)
     setLlmResult(null)
 
+    const controller = new AbortController()
+    abortRef.current = controller
+
     try {
+      const body: any = { url }
+      setSelectedViewports(prev => {
+        const vps = VIEWPORT_OPTIONS.filter(v => prev.has(`${v.width}x${v.height}`))
+        if (vps.length > 0) {
+          body.viewports = vps.map(v => ({ width: v.width, height: v.height }))
+        }
+        return prev
+      })
       const res = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
+        body: JSON.stringify(body),
+        signal: controller.signal
       })
 
       const json = await res.json()
@@ -62,14 +118,31 @@ export default function Home() {
 
       setData(json.data)
       setStatus('complete')
+      saveToHistory(json.data)
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setStatus('idle')
+        return
+      }
       setError(err instanceof Error ? err.message : 'Audit failed')
       setStatus('error')
     }
   }, [])
 
+  const saveToHistory = useCallback(async (auditData: AuditData) => {
+    try {
+      const { saveAudit } = await import('@/lib/history')
+      await saveAudit(auditData)
+    } catch {
+      // best-effort
+    }
+  }, [])
+
   const runLlmEnrichment = useCallback(async () => {
-    if (!data?.wcag?.failures?.length || !llmEnabled) return
+    if (!llmEnabled) return
+    const wcagFails = data?.wcag?.failures
+    const designFails = data?.design?.failures
+    if ((!wcagFails || wcagFails.length === 0) && (!designFails || designFails.length === 0)) return
 
     setLlmLoading(true)
     setLlmResult(null)
@@ -77,11 +150,16 @@ export default function Home() {
     try {
       const { enrichWithLLM } = await import('@/lib/llm-client')
 
-      const key = sessionStorage.getItem('liveviewer_llm_key') || ''
-      const provider = sessionStorage.getItem('liveviewer_llm_provider') || 'openai'
-      const model = sessionStorage.getItem('liveviewer_llm_model') || 'gpt-3.5-turbo'
+      const key = (sessionStorage.getItem('liveviewer_llm_key') || '').trim()
+      const provider = sessionStorage.getItem('liveviewer_llm_provider') || 'openai-compatible'
+      const model = sessionStorage.getItem('liveviewer_llm_model') || 'gpt-4o-mini'
+      const baseUrl = (sessionStorage.getItem('liveviewer_llm_base_url') || '').trim()
 
-      const result = await enrichWithLLM(data.wcag.failures, provider, model, key)
+      if (!key && provider !== 'ollama') {
+        throw new Error('Enter your API key in the AI panel above before enriching')
+      }
+
+      const result = await enrichWithLLM(wcagFails || [], provider, model, key, baseUrl || undefined, designFails || [])
       setLlmResult({ ...result, cached: false })
     } catch (err) {
       setLlmResult({ error: err instanceof Error ? err.message : 'LLM enrichment failed', provider: 'client', model: '', perFailure: [], summary: '' })
@@ -90,80 +168,231 @@ export default function Home() {
     }
   }, [data, llmEnabled])
 
+  const liveMessage = status === 'running' ? `Audit in progress: ${PROGRESS_STAGES[progressStage]?.label ?? ''}` :
+    status === 'complete' ? `Audit completed with ${data?.wcag?.score ?? 0}% score` :
+    status === 'error' ? `Audit failed: ${error}` : ''
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Liveviewer</h1>
-        <p className="mt-1 text-[color:var(--muted-foreground)]">
-          Design QA robot — audit websites for WCAG contrast, right in your browser.
-        </p>
+    <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-4">
+      <header className="flex items-center justify-between border-b border-[var(--jao-border-subtle)] py-4">
+        <div className="flex items-center gap-2.5">
+          <JaoLogo size={24} className="text-[var(--jao-text-secondary)]" />
+          <span className="text-base font-semibold tracking-tight">Liveviewer</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <a
+            href="/history"
+            className="rounded-full px-3 py-1.5 text-xs text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] hover:text-[var(--jao-text)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
+          >
+            History
+          </a>
+          <a
+            href="https://github.com/jamesonolitoquit/liveviewer#browser-extension"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-[var(--jao-accent)]/40 px-3 py-1.5 text-xs text-[var(--jao-accent)] transition-colors hover:bg-[var(--jao-accent)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
+          >
+            + Extension
+          </a>
+          <ThemeToggle />
+        </div>
       </header>
 
-      <AuditForm onRun={runAudit} isRunning={status === 'running'} />
-
-      {status === 'error' && (
-        <div className="mt-6 rounded-lg border border-[var(--destructive)]/30 bg-[var(--destructive)]/5 p-4 text-sm text-[var(--destructive)]">
-          {error}
+      <main id="main-content" tabIndex={-1} className="flex-1 py-8 sm:py-12">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Design QA Robot</h1>
+          <p className="mt-1.5 text-sm text-[var(--jao-text-secondary)]">
+            Audit websites for WCAG contrast, right in your browser.
+          </p>
         </div>
-      )}
 
-      {data && (
-        <div className="mt-6 space-y-6">
-          <AuditResults data={data} />
+        <div aria-describedby={status === 'error' ? 'audit-error' : undefined}>
+          <AuditForm onRun={runAudit} isRunning={status === 'running'} />
+        </div>
 
-          <LlmPanel
-            enabled={llmEnabled}
-            onToggle={setLlmEnabled}
-            hasFailures={(data.wcag?.failures?.length ?? 0) > 0}
-          />
+        <div className="mt-3 flex items-center justify-center gap-4 text-xs text-[var(--jao-text-secondary)]">
+          {VIEWPORT_OPTIONS.map(v => {
+            const key = `${v.width}x${v.height}`
+            const active = selectedViewports.has(key)
+            return (
+              <label key={key} className="flex cursor-pointer items-center gap-1.5">
+                <input
+                  type="checkbox"
+                  checked={active}
+                  onChange={() => toggleViewport(key)}
+                  disabled={status === 'running'}
+                  className="h-3.5 w-3.5 rounded border-[var(--jao-border)] text-[var(--jao-primary)] focus:ring-[var(--jao-primary)]/30"
+                />
+                {v.label}
+              </label>
+            )
+          })}
+        </div>
 
-          {llmEnabled && data.wcag && data.wcag.failures.length > 0 && (
-            <div className="flex justify-end">
-              <button
-                onClick={runLlmEnrichment}
-                disabled={llmLoading}
-                className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                {llmLoading ? 'Enriching...' : 'Enrich with AI'}
-              </button>
+        <div
+          ref={announceRef}
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+        >
+          {liveMessage}
+        </div>
+
+        {status === 'running' && (
+          <div className="card mt-6 p-5 space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--jao-primary)] border-t-transparent" />
+              <span className="text-sm text-[var(--jao-text-secondary)]">
+                {PROGRESS_STAGES[progressStage]?.label ?? 'Auditing...'}
+              </span>
             </div>
-          )}
+            <div className="flex items-center gap-2">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--jao-border)]">
+                <div
+                  className="h-full rounded-full bg-[var(--jao-gradient)] transition-all duration-500"
+                  style={{ width: `${Math.min((progressStage + 1) / PROGRESS_STAGES.length * 100, 100)}%` }}
+                />
+              </div>
+              <span className="text-xs text-[var(--jao-text-tertiary)]">{auditUrlRef.current}</span>
+            </div>
+            <button
+              onClick={cancelAudit}
+              className="rounded-full border border-[var(--jao-border)] px-3 py-1.5 text-xs text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
 
-          {llmResult && !llmLoading && (
-            <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-sm">
-              <h3 className="mb-2 font-semibold">AI Insights</h3>
-              {llmResult.error ? (
-                <p className="text-[var(--destructive)]">Error: {llmResult.error}</p>
-              ) : (
-                <>
-                  <p className="mb-3 text-[var(--muted-foreground)]">{llmResult.summary}</p>
-                  <div className="space-y-2">
-                    {llmResult.perFailure?.map((pf: any, i: number) => (
-                      <div key={i} className="rounded border border-[var(--border)] p-3">
-                        <div className="mb-1 flex items-center gap-2">
-                          <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${
-                            pf.severity === 'high' ? 'bg-red-100 text-red-700' :
-                            pf.severity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-green-100 text-green-700'
-                          }`}>
-                            {pf.severity}
-                          </span>
-                          <code className="text-xs break-all">{pf.selector}</code>
+        {status === 'error' && (
+          <div id="audit-error" className="mt-6 rounded-xl border border-[var(--jao-destructive)]/30 bg-[var(--jao-destructive)]/5 p-4 text-sm text-[var(--jao-destructive)]" role="alert">
+            {error}
+          </div>
+        )}
+
+        {status === 'idle' && !data && (
+          <div className="mt-16 text-center">
+            <JaoLogo size={48} className="mx-auto text-[var(--jao-border)] opacity-40" />
+            <p className="mt-4 text-sm text-[var(--jao-text-tertiary)]">
+              Enter a URL above to start auditing
+            </p>
+          </div>
+        )}
+
+        {data && (
+          <div
+            ref={resultsRef}
+            tabIndex={-1}
+            className="mt-6 space-y-5 focus:outline-none"
+          >
+            <AuditResults data={data} />
+
+            <ExportButtons data={data} />
+
+            <Checklist currentUrl={data.url} />
+
+            <LlmPanel
+              enabled={llmEnabled}
+              onToggle={setLlmEnabled}
+              hasFailures={(data.wcag?.failures?.length ?? 0) > 0}
+            />
+
+            {llmEnabled && ((data.wcag?.failures?.length ?? 0) > 0 || (data.design?.failures?.length ?? 0) > 0) && (
+              <div className="flex justify-end">
+                <button
+                  onClick={runLlmEnrichment}
+                  disabled={llmLoading}
+                  className="btn-gradient inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/50"
+                >
+                  {llmLoading ? 'Enriching...' : 'Enrich with AI'}
+                </button>
+              </div>
+            )}
+
+            {llmResult && !llmLoading && (
+              <div className="card p-5 text-sm">
+                <h3 className="mb-2 font-semibold">AI Insights</h3>
+                {llmResult.error ? (
+                  <p className="text-[var(--jao-destructive)]">Error: {llmResult.error}</p>
+                ) : (
+                  <>
+                    <p className="mb-3 text-[var(--jao-text-secondary)]">{llmResult.summary}</p>
+
+                    {llmResult.perFailure?.length > 0 && (
+                      <>
+                        <h4 className="mb-2 text-xs font-semibold text-[var(--jao-destructive)]">Accessibility (WCAG)</h4>
+                        <div className="mb-4 space-y-2">
+                          {llmResult.perFailure.map((pf: any, i: number) => (
+                            <div key={i} className="rounded-lg border border-[var(--jao-border)] p-3">
+                              <div className="mb-1 flex items-center gap-2">
+                                <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase ${
+                                  pf.severity === 'high' ? 'bg-red-900/30 text-red-300' :
+                                  pf.severity === 'medium' ? 'bg-yellow-900/30 text-yellow-300' :
+                                  'bg-green-900/30 text-green-300'
+                                }`}>
+                                  {pf.severity}
+                                </span>
+                                <code className="break-all text-xs text-[var(--jao-text-secondary)]">{pf.selector}</code>
+                              </div>
+                              <p className="text-xs text-[var(--jao-text-tertiary)]">{pf.explanation}</p>
+                              <p className="mt-1 text-xs font-medium text-[var(--jao-primary)]">{pf.suggestion}</p>
+                            </div>
+                          ))}
                         </div>
-                        <p className="text-xs text-[var(--muted-foreground)]">{pf.explanation}</p>
-                        <p className="mt-1 text-xs font-medium text-[var(--primary)]">{pf.suggestion}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {llmResult.cached && (
-                    <p className="mt-2 text-xs text-[var(--muted-foreground)]">(cached result)</p>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                      </>
+                    )}
+
+                    {llmResult.designFixes?.length > 0 && (
+                      <>
+                        <h4 className="mb-2 text-xs font-semibold text-[var(--jao-accent)]">Design Quality</h4>
+                        <div className="space-y-2">
+                          {llmResult.designFixes.map((df: any, i: number) => (
+                            <div key={i} className="rounded-lg border-l-2 border-[var(--jao-accent)] border-[var(--jao-border)] p-3">
+                              <div className="mb-1 flex items-center gap-2">
+                                <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase ${
+                                  df.severity === 'high' ? 'bg-red-900/30 text-red-300' :
+                                  df.severity === 'medium' ? 'bg-yellow-900/30 text-yellow-300' :
+                                  'bg-green-900/30 text-green-300'
+                                }`}>
+                                  {df.severity}
+                                </span>
+                                <code className="break-all text-xs text-[var(--jao-text-secondary)]">{df.selector}</code>
+                              </div>
+                              <p className="text-xs text-[var(--jao-text-tertiary)]">{df.explanation}</p>
+                              <p className="mt-1 text-xs font-medium text-[var(--jao-accent)]">{df.suggestion}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {llmResult.cached && (
+                      <p className="mt-2 text-xs text-[var(--jao-text-tertiary)]">(cached result)</p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      <footer className="border-t border-[var(--jao-border-subtle)] py-6 text-center">
+        <p className="inline-flex items-center gap-1.5 text-xs text-[var(--jao-text-tertiary)]">
+          <JaoLogo size={12} className="opacity-40" />
+          Made with ⚡ by{' '}
+          <a
+            href="https://jaostudio.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-dotted underline-offset-2 transition-colors hover:text-[var(--jao-primary)]"
+          >
+            jaostudio.dev
+          </a>
+          {' — '}AI-powered WCAG audits
+        </p>
+      </footer>
     </div>
   )
 }
