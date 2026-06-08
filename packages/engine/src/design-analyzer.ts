@@ -1,7 +1,7 @@
-import type { ElementDatum } from './dom-analyzer'
-import type { DesignFailure } from './rules/font-size'
-import { checkFontSize } from './rules/font-size'
-import { checkLineHeight } from './rules/line-height'
+import type { ElementDatum } from './dom-analyzer.js'
+import type { DesignFailure } from './rules/font-size.js'
+import { checkFontSize } from './rules/font-size.js'
+import { checkLineHeight } from './rules/line-height.js'
 
 export interface DesignResult {
   failures: DesignFailure[]

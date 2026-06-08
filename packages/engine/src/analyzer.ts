@@ -1,5 +1,5 @@
-import { parseRgb, blendRgbaOverRgb, rgbToHex, contrastRatio } from './contrast'
-import type { ElementDatum, Failure, WcagResult } from './dom-analyzer'
+import { parseRgb, blendRgbaOverRgb, rgbToHex, contrastRatio } from './contrast.js'
+import type { ElementDatum, Failure, WcagResult } from './dom-analyzer.js'
 
 export function analyzeElements(elements: ElementDatum[]): WcagResult {
   const failures: Failure[] = []

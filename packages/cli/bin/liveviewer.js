@@ -48,8 +48,9 @@ Options for "audit":
   --no-llm            Force deterministic only, skip AI even if key present
   --ai-prompt         Print AI-ready analysis prompt (no API key needed; pipe to AI or copy-paste)
   --llm-provider <n>  AI provider: openai (default) or ollama
-  --llm-model <name>  Model (default: gpt-3.5-turbo or llama3 for ollama)
+  --llm-model <name>  Model (default: gpt-3.5-turbo or OPENAI_MODEL env, llama3 for ollama)
   --llm-api-key <key> API key (or set OPENAI_API_KEY env var)
+  --llm-base-url <u>  Custom API base URL (e.g. https://api.deepseek.com for DeepSeek)
   --context <text>    Site context/purpose for more relevant AI recommendations (e.g., "Dark mode SaaS dashboard")
   --context-file <p>  Read context from file
   --sarif             Output SARIF 2.1 report to stdout (for GitHub Code Scanning)
@@ -211,8 +212,9 @@ async function main() {
       const doAiPrompt = hasFlag('--ai-prompt');
       const llmEnrich = (hasFlag('--llm-enrich') || (!hasFlag('--no-llm') && !!parseArg('--llm-api-key') || !!process.env.OPENAI_API_KEY)) && !doAiPrompt;
       const llmProvider = parseArg('--llm-provider') || 'openai';
-      const llmModel = parseArg('--llm-model') || (llmProvider === 'ollama' ? 'llama3' : 'gpt-3.5-turbo');
+      const llmModel = parseArg('--llm-model') || process.env.OPENAI_MODEL || (llmProvider === 'ollama' ? 'llama3' : 'gpt-3.5-turbo');
       const llmApiKey = parseArg('--llm-api-key') || process.env.OPENAI_API_KEY || '';
+      const llmBaseUrl = parseArg('--llm-base-url') || process.env.OPENAI_BASE_URL || '';
       const llmCacheTtl = parseInt(parseArg('--llm-cache-ttl') || '7');
       const llmClearCache = hasFlag('--llm-clear-cache');
 
@@ -280,16 +282,24 @@ async function main() {
         console.log('\n  \u{2139}\u{FE0F} No simple fixes available \u2014 consider AI enrichment with --llm-enrich');
       }
 
+      // Always save audit result JSON
+      const metaPath = `audits/${label}-${result.timestamp}.json`;
+      fs.writeFileSync(metaPath, JSON.stringify(result, null, 2));
+
       if (doAiPrompt) {
         const wcagFails = result.wcag?.failures || [];
         const designFails = result.design?.failures || [];
         if (wcagFails.length > 0 || designFails.length > 0) {
-          const { buildPrompt } = require('@liveviewer/llm');
-          const prompt = buildPrompt(wcagFails, 'default', designFails.slice(0, 30), context || undefined);
+          const { buildPrompt, SYSTEM_PROMPT } = require('@liveviewer/llm');
+          const userPrompt = buildPrompt(wcagFails, 'default', designFails.slice(0, 30), context || undefined);
           console.log('\n' + '='.repeat(50));
-          console.log('AI PROMPT');
+          console.log('SYSTEM PROMPT');
           console.log('='.repeat(50));
-          console.log(prompt);
+          console.log(SYSTEM_PROMPT);
+          console.log('='.repeat(50));
+          console.log('USER PROMPT');
+          console.log('='.repeat(50));
+          console.log(userPrompt);
           console.log('='.repeat(50));
           console.log('END AI PROMPT');
           console.log('='.repeat(50));
@@ -307,6 +317,7 @@ async function main() {
             provider: llmProvider,
             model: llmModel,
             apiKey: llmApiKey,
+            baseUrl: llmBaseUrl || undefined,
             promptTemplate: 'default',
             cacheTtlDays: llmCacheTtl,
             clearCache: llmClearCache,
@@ -337,7 +348,6 @@ async function main() {
         }
 
         // Re-save audit result with LLM data
-        const metaPath = `audits/${label}-${result.timestamp}.json`;
         fs.writeFileSync(metaPath, JSON.stringify(result, null, 2));
       }
 

@@ -19,7 +19,8 @@
  */
 
 import { execSync } from 'child_process'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
+import os from 'os'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -50,6 +51,10 @@ function fail(label, detail) {
   failed++
 }
 
+function warn(label, detail) {
+  console.log(`  [!] ${label}${detail ? ` — ${detail}` : ''}`)
+}
+
 function section(title) {
   console.log(`\n${'='.repeat(60)}`)
   console.log(`  ${title}`)
@@ -71,7 +76,7 @@ function stripNonDeterministic(obj) {
 }
 
 function deepEqual(a, b, path = '') {
-  if (a === b) return true
+  if (a === b) return [true]
   if (a == null || b == null) return [false, `${path}: one is null`]
   if (typeof a !== typeof b) return [false, `${path}: type mismatch (${typeof a} vs ${typeof b})`]
   if (Array.isArray(a) && Array.isArray(b)) {
@@ -97,7 +102,8 @@ function deepEqual(a, b, path = '') {
 
 function runCli() {
   const cliPath = `node "${join(ROOT, 'packages/cli/bin/liveviewer.js')}"`
-  const cmd = `${cliPath} audit "${TARGET_URL}" --wcag --design --mobile --timeout 30000`
+  // Use domcontentloaded (not networkidle) to match web API default — networkidle can timeout on heavy pages
+  const cmd = `${cliPath} audit "${TARGET_URL}" --wcag --design --mobile --wait-until domcontentloaded --timeout 30000`
   try {
     const out = execSync(cmd, { cwd: ROOT, timeout: 120_000, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
     return { stdout: out.toString().trim(), code: 0 }
@@ -107,7 +113,20 @@ function runCli() {
   }
 }
 
+function extractJsonFromFile(text) {
+  // CLI writes JSON to audits/{label}-{timestamp}.json. Extract timestamp from screenshot path.
+  const screenshotMatch = text.match(/Screenshot:.*?[/\\](audit-\d+)\.png/)
+  if (!screenshotMatch) return null
+  const jsonPath = join(ROOT, 'audits', `${screenshotMatch[1]}.json`)
+  if (!existsSync(jsonPath)) return null
+  try { return JSON.parse(readFileSync(jsonPath, 'utf-8')) } catch { return null }
+}
+
 function extractJson(text) {
+  // First try reading from CLI-written JSON file
+  const fromFile = extractJsonFromFile(text)
+  if (fromFile) return fromFile
+  // Fallback: try regex extraction from stdout
   const match = text.match(/\{[\s\S]*\}/)
   if (!match) return null
   try { return JSON.parse(match[0]) } catch { return null }
@@ -120,7 +139,7 @@ async function callWebApp() {
       const res = await fetch(`${DEPLOYMENT_URL}/api/audit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: TARGET_URL, viewports: VIEWPORTS, bypassCache: true, timeout: 8000 }),
+        body: JSON.stringify({ url: TARGET_URL, viewports: VIEWPORTS, wcag: true, design: true, waitUntil: 'domcontentloaded', bypassCache: true, timeout: 30000 }),
         signal: AbortSignal.timeout(120_000)
       })
       if (res.status === 200) {
@@ -153,7 +172,10 @@ async function main() {
 
   // Check chromium
   const hasChrome = existsSync(join(ROOT, 'node_modules/playwright-core/.local-browsers')) ||
-    process.env.PLAYWRIGHT_BROWSERS_PATH !== undefined
+    existsSync(join(ROOT, 'apps/web/node_modules/playwright-core/.local-browsers')) ||
+    existsSync(join(ROOT, 'packages/core/node_modules/playwright-core/.local-browsers')) ||
+    process.env.PLAYWRIGHT_BROWSERS_PATH !== undefined ||
+    existsSync(join(os.homedir(), 'AppData/Local/ms-playwright'))
   if (!hasChrome) {
     console.error('\n  Chromium not found. Run `npx playwright install chromium` to test CLI parity.')
     process.exit(1)
@@ -200,7 +222,11 @@ async function main() {
   }
 
   // Compare design
-  if (cliClean.design && webClean.design) {
+  // Web API caps timeout at 7s; CLI uses 30s. Heavy pages may timeout on web API but succeed on CLI.
+  // If web API returned 503/500, skip design comparison.
+  if (!webClean.design && cliClean.design) {
+    warn('design: web API timed out (expected for heavy pages) — CLI-only result', '7s vs 30s timeout')
+  } else if (cliClean.design && webClean.design) {
     const [desOk, desDiff] = deepEqual(cliClean.design, webClean.design, 'design')
     if (desOk) ok('design: scores and failures match')
     else fail('design mismatch', desDiff)

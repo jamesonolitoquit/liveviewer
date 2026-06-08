@@ -1,5 +1,5 @@
 import type { ElementDatum } from '../dom-analyzer'
-import type { DesignFailure } from './font-size'
+import type { DesignFailure } from './font-size.js'
 
 const BODY_TAGS = new Set(['p', 'li', 'td', 'th', 'dd', 'dt', 'figcaption', 'label', 'span', 'a', 'button', 'div'])
 

@@ -19,6 +19,46 @@ const DEFAULT_MAX_SUMMARY_ITEMS = 50
 
 export type { LLMOptions, LLMResponse, LLMError, FailureAnalysis, DesignFix }
 
+export const SYSTEM_PROMPT = `You are an expert web designer and accessibility consultant. Your task is to analyze the accessibility and design quality issues listed below and provide actionable, concise, and specific fix recommendations.
+
+For each failure, you must output a JSON object with the following structure:
+
+{
+  "summary": "A one-sentence executive summary of the most critical issues.",
+  "perFailure": [
+    {
+      "selector": "CSS selector of the failing element (exact from the list)",
+      "ruleId": "WCAG rule ID or 'contrast'",
+      "explanation": "Why this fails (e.g., 'Text color #777 on white background has insufficient contrast')",
+      "suggestion": "Specific fix (e.g., 'Change text color to #333' or 'Increase font size to 16px')",
+      "severity": "high|medium|low"
+    }
+  ],
+  "designFixes": [
+    {
+      "selector": "CSS selector of the element with design issue",
+      "ruleId": "font-size-legible | line-height-readable | horizontal-scroll | ...",
+      "explanation": "Why this design choice is problematic (e.g., 'Body text below 16px reduces readability')",
+      "suggestion": "Specific fix (e.g., 'Increase font size to at least 16px' or 'Set line-height to 1.5')",
+      "severity": "high|medium|low"
+    }
+  ]
+}
+
+Important rules:
+- Return ONLY valid JSON. No extra text, no markdown formatting.
+- If a failure is not applicable (e.g., no design issues), return an empty array for that field.
+- Use the exact selectors provided. Do not modify them.
+- Severity mapping:
+  - high: critical for accessibility or usability (e.g., contrast < 3:1, font-size < 12px, line-height < 1.2, overlapping content).
+  - medium: important but not blocking (e.g., contrast 3:1–4.5:1, font-size 12–16px, line-height 1.2–1.4 or 1.6–1.8).
+  - low: minor improvements (e.g., small spacing issues, non-critical overlap).
+- For horizontal scroll: suggest \`overflow-x: hidden\` or responsive width adjustments.
+- For missing labels: suggest adding a <label> or aria-label.
+- For skip navigation: suggest adding a skip link or role="main".
+
+If the user provided additional context (e.g., site purpose, audience, brand guidelines), incorporate that context into your explanations and suggestions. For example, if the site is a dark-mode dashboard, you may suggest lighter text on dark backgrounds; if it's a mobile-first e-commerce site, prioritize touch targets and font legibility.`
+
 export function summarizeFailures(
   failures: AuditFailure[],
   maxItems: number = DEFAULT_MAX_SUMMARY_ITEMS
@@ -35,90 +75,25 @@ export function chunkFailures<T>(items: T[], chunkSize: number = DEFAULT_CHUNK_S
   return chunks
 }
 
-function buildDesignPrompt(designFails: DesignFailure[]): string {
+function buildWcagSection(failures: AuditFailure[]): string {
+  if (failures.length === 0) return ''
+  const lines = failures.map(f =>
+    `- ${f.selector}: "${f.text.slice(0, 60)}" – fg ${f.foreground} on bg ${f.background}, ratio ${f.contrastRatio}:1 (needs ${f.required}:1, ${f.isLarge ? 'large text' : 'normal text'})`
+  ).join('\n')
+  return '# Accessibility (WCAG Contrast)\n' + lines
+}
+
+function buildDesignSection(designFails: DesignFailure[]): string {
+  if (designFails.length === 0) return ''
   const lines = designFails.map(d =>
-    `- ${d.selector}: ${d.description} (value: ${d.value}, expected: ${d.expected}, severity: ${d.severity})`
+    `- ${d.selector}: ${d.description} (value: ${d.value}, expected: ${d.expected})`
   ).join('\n')
-
-  return `Analyze these design quality issues and suggest specific CSS fixes:
-
-Issues:
-${lines}
-
-For each issue, provide:
-1. A clear explanation of the design problem
-2. A specific CSS fix suggestion with exact values
-3. A severity rating (high, medium, or low)`
+  return '# Design Quality\n' + lines
 }
 
-function buildCombinedPrompt(
-  wcagFailures: AuditFailure[],
-  designFails: DesignFailure[],
-  template: string,
-  context?: string
-): string {
-  const parts: string[] = []
-
-  if (context && context.trim()) {
-    parts.push(`--- USER CONTEXT ---\n${context.trim()}\n--- END USER CONTEXT ---`)
-  }
-
-  if (wcagFailures.length > 0) {
-    const lines = wcagFailures.map(f =>
-      `- ${f.selector}: "${f.text.slice(0, 60)}" — foreground ${f.foreground} on background ${f.background}, ratio ${f.contrastRatio}:1 (needs ${f.required}:1, ${f.isLarge ? 'large text' : 'normal text'})`
-    ).join('\n')
-    parts.push('# Accessibility (WCAG Contrast)\n' + lines)
-  }
-
-  if (designFails.length > 0) {
-    const lines = designFails.map(d =>
-      `- ${d.selector}: ${d.description} (value: ${d.value}, expected: ${d.expected}, severity: ${d.severity})`
-    ).join('\n')
-    parts.push('# Design Quality\n' + lines)
-  }
-
-  const combined = parts.join('\n\n')
-
-  if (template === 'simple') {
-    return `List these issues and their fixes briefly:\n\n${combined}`
-  }
-
-  const prompt = `You are an expert web designer. Analyze these accessibility and design quality issues and suggest specific fixes.
-
-${combined}
-
-For each failure, provide:
-1. A clear explanation of why it fails
-2. A specific fix suggestion with exact values
-3. A severity rating (high, medium, or low)`
-
-  return prompt
-}
-
-function buildWcagPrompt(failures: AuditFailure[], template: string, context?: string): string {
-  const failureLines = failures.map(f =>
-    `- ${f.selector}: "${f.text.slice(0, 60)}" — foreground ${f.foreground} on background ${f.background}, ratio ${f.contrastRatio}:1 (needs ${f.required}:1, ${f.isLarge ? 'large text' : 'normal text'})`
-  ).join('\n')
-
-  const parts: string[] = []
-  if (context && context.trim()) {
-    parts.push(`--- USER CONTEXT ---\n${context.trim()}\n--- END USER CONTEXT ---`)
-  }
-  parts.push(`You are an accessibility expert. Analyze these WCAG contrast failures and suggest specific fixes.
-
-Failures:
-${failureLines}
-
-For each failure, provide:
-1. A clear explanation of why it fails
-2. A specific fix suggestion with exact color values (e.g., "change foreground to #333" or "darken background to #1a1a2e")
-3. A severity rating (high if ratio < 3.0, medium if ratio < 4.5, low otherwise)`)
-
-  if (template === 'simple') {
-    return `List these WCAG failures and their fixes briefly:\n${failureLines}`
-  }
-
-  return parts.join('\n\n')
+function buildContextBlock(context?: string): string {
+  if (!context || !context.trim()) return ''
+  return `--- USER CONTEXT ---\n${context.trim()}\n---`
 }
 
 export function buildPrompt(
@@ -127,10 +102,18 @@ export function buildPrompt(
   designFails?: DesignFailure[],
   context?: string
 ): string {
-  if (designFails && designFails.length > 0) {
-    return buildCombinedPrompt(failures, designFails, template, context)
+  const wcagSection = buildWcagSection(failures)
+  const designSection = designFails && designFails.length > 0 ? buildDesignSection(designFails) : ''
+  const contextBlock = buildContextBlock(context)
+
+  const sections = [contextBlock, wcagSection, designSection].filter(Boolean)
+
+  if (template === 'simple') {
+    const body = sections.join('\n\n')
+    return `List these issues and their fixes briefly:\n\n${body}`
   }
-  return buildWcagPrompt(failures, template, context)
+
+  return sections.join('\n\n') || 'No issues to analyze.'
 }
 
 async function getLLMClient(options: LLMOptions): Promise<LLMClient> {
@@ -214,7 +197,7 @@ export async function enrichWithLLM(
   try {
     const client = await getLLMClient(options)
 
-    const response = await client.complete<LLMResponse>(combinedPrompt)
+    const response = await client.complete<LLMResponse>(combinedPrompt, SYSTEM_PROMPT)
 
     // Apply designFixes from response if present
     const merged: LLMResponse = {

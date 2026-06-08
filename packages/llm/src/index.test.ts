@@ -104,13 +104,13 @@ describe('buildPrompt', () => {
 
   it('uses default template when not specified', () => {
     const failures = [makeFailure()]
-    expect(buildPrompt(failures)).toContain('WCAG contrast failures')
+    expect(buildPrompt(failures)).toContain('# Accessibility (WCAG Contrast)')
   })
 
   it('generates simple template', () => {
     const failures = [makeFailure()]
     const prompt = buildPrompt(failures, 'simple')
-    expect(prompt).toContain('List these WCAG failures')
+    expect(prompt).toContain('List these issues')
   })
 
   it('truncates long text to 60 chars', () => {
@@ -125,7 +125,7 @@ describe('buildPrompt', () => {
     const prompt = buildPrompt(failures, 'default', undefined, 'Dark mode SaaS dashboard for engineers')
     expect(prompt).toContain('USER CONTEXT')
     expect(prompt).toContain('Dark mode SaaS dashboard for engineers')
-    expect(prompt).toContain('END USER CONTEXT')
+    expect(prompt).toContain('---\n\n# Accessibility')
   })
 
   it('includes context before failure details in combined prompt', () => {

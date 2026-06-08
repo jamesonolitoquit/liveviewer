@@ -1,85 +1,61 @@
-export const WCAG_ANALYSIS_SCHEMA = {
-  name: 'analyze_wcag_failures',
-  description: 'Analyze WCAG contrast failures and suggest fixes',
-  parameters: {
-    type: 'object',
-    properties: {
-      summary: {
-        type: 'string',
-        description: 'One-sentence summary of all failures'
-      },
-      perFailure: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            selector: {
-              type: 'string',
-              description: 'CSS selector of the failing element'
-            },
-            ruleId: {
-              type: 'string',
-              description: 'WCAG rule ID, e.g. color-contrast'
-            },
-            explanation: {
-              type: 'string',
-              description: 'Why this element fails contrast requirements'
-            },
-            suggestion: {
-              type: 'string',
-              description: 'Specific fix suggestion with exact color values'
-            },
-            severity: {
-              type: 'string',
-              enum: ['high', 'medium', 'low']
-            }
-          },
-          required: ['selector', 'ruleId', 'explanation', 'suggestion', 'severity']
-        }
-      }
-    },
-    required: ['summary', 'perFailure']
-  }
-}
-
 export async function createOpenAIClient(options: {
   model: string
   apiKey: string
   baseUrl?: string
-}): Promise<{ complete<T>(prompt: string): Promise<T> }> {
-  let OpenAI: any
-  try {
-    OpenAI = (await import('openai')).default
-  } catch {
-    throw new Error(
-      'OpenAI package not installed. Run: npm install openai'
-    )
-  }
-
-  const clientOptions: { apiKey: string; baseURL?: string } = { apiKey: options.apiKey };
-  if (options.baseUrl) clientOptions.baseURL = options.baseUrl;
-  const client = new OpenAI(clientOptions);
+}): Promise<{ complete<T>(prompt: string, system?: string): Promise<T> }> {
+  const baseUrl = (options.baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '')
 
   return {
-    async complete<T>(prompt: string): Promise<T> {
-      const response = await client.chat.completions.create({
-        model: options.model,
-        messages: [{ role: 'user', content: prompt }],
-        tools: [{
-          type: 'function',
-          function: WCAG_ANALYSIS_SCHEMA
-        }],
-        tool_choice: { type: 'function', function: { name: 'analyze_wcag_failures' } },
-        temperature: 0.2,
-        max_tokens: 2000
-      })
+    async complete<T>(prompt: string, system?: string): Promise<T> {
+      const messages: { role: string; content: string }[] = []
+      if (system) messages.push({ role: 'system', content: system })
+      messages.push({ role: 'user', content: prompt })
 
-      const toolCall = response.choices[0]?.message?.tool_calls?.[0]
-      if (!toolCall?.function?.arguments) {
-        throw new Error('OpenAI did not return a structured response')
+      const body: Record<string, any> = {
+        model: options.model,
+        messages,
+        temperature: 0.2,
+        max_tokens: 4096
       }
 
-      return JSON.parse(toolCall.function.arguments) as T
+      if (options.model?.includes('deepseek')) {
+        body.thinking = { type: 'disabled' }
+      }
+
+      const res = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${options.apiKey}`
+        },
+        body: JSON.stringify(body)
+      })
+
+      if (!res.ok) {
+        const err = await res.text()
+        let msg = `Error from provider (${res.status})`
+        try {
+          const parsed = JSON.parse(err)
+          if (parsed.error?.message) msg = parsed.error.message
+        } catch { }
+        throw new Error(msg)
+      }
+
+      const data = await res.json()
+      const msg = data.choices?.[0]?.message
+      let content = msg?.content || msg?.reasoning_content
+
+      if (!content) {
+        throw new Error('LLM returned empty response')
+      }
+
+      // Try to extract JSON object from response (handles text-wrapped JSON)
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]) as T
+      }
+
+      return JSON.parse(content) as T
     }
   }
 }

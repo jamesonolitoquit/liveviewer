@@ -96,5 +96,5 @@ export interface LLMResponse {
 }
 
 export interface LLMClient {
-  complete<T>(prompt: string, schema?: object): Promise<T>
+  complete<T>(prompt: string, system?: string, schema?: object): Promise<T>
 }

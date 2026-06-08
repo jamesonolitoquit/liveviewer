@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { hexToRgb, rgbToHex, parseRgb, blendRgbaOverRgb, contrastRatio, scoreLabel } from './contrast'
+import { hexToRgb, rgbToHex, parseRgb, blendRgbaOverRgb, contrastRatio, scoreLabel } from './contrast.js'
 
 describe('hexToRgb', () => {
   test('converts 6-digit hex', () => {

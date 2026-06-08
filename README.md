@@ -163,7 +163,13 @@ Liveviewer can enrich WCAG audits with natural-language explanations and fix sug
 ### Quick Start (OpenAI)
 ```bash
 export OPENAI_API_KEY=sk-...
+export OPENAI_MODEL=gpt-4o-mini    # optional, defaults to gpt-4o-mini
 liveviewer audit https://example.com --wcag --llm-enrich
+```
+
+**Tip:** For heavy pages (e.g., web.dev, nytimes.com), add `--wait-until domcontentloaded` to avoid timeouts:
+```bash
+liveviewer audit https://web.dev --wcag --design --llm-enrich --wait-until domcontentloaded
 ```
 
 ### Quick Start (Ollama — local, free)
@@ -179,9 +185,9 @@ liveviewer audit https://example.com --wcag --llm-enrich --llm-provider ollama
 | `--llm-enrich` | off | Enable AI enrichment |
 | `--no-llm` | — | Force deterministic only |
 | `--llm-provider` | `openai` | Provider: `openai`, `anthropic`, `google`, `ollama`, or `openai-compatible` |
-| `--llm-model` | `gpt-4o-mini` | Model name |
+| `--llm-model` | `gpt-4o-mini` or `OPENAI_MODEL` env | Model name |
 | `--llm-api-key` | `OPENAI_API_KEY` env | API key |
-| `--llm-base-url` | provider default | Custom base URL (e.g., `https://openrouter.ai/api/v1`) |
+| `--llm-base-url` | provider default or `OPENAI_BASE_URL` env | Custom base URL (e.g., `https://openrouter.ai/api/v1`) |
 | `--llm-cache-ttl` | `7` | Cache duration in days |
 | `--llm-clear-cache` | off | Clear cache before run |
 | `--context` | — | Site purpose/audience description for more relevant suggestions |
@@ -321,6 +327,9 @@ npx vercel --prod
 
 | Var | Required | Purpose |
 |-----|----------|---------|
+| `OPENAI_API_KEY` | For AI enrichment | API key for LLM provider (also `--llm-api-key`) |
+| `OPENAI_BASE_URL` | For custom LLM endpoints | Override API base URL (also `--llm-base-url`) |
+| `OPENAI_MODEL` | For custom LLM endpoints | Override default model name (also `--llm-model`) |
 | `CHROMIUM_PACK_URL` | No | Override the GitHub release URL for the chromium pack (use a faster CDN if needed) |
 | `UPSTASH_REDIS_REST_URL` | No | Enables persistent rate-limit counters across cold starts |
 | `UPSTASH_REDIS_REST_TOKEN` | No | Paired with `UPSTASH_REDIS_REST_URL` |

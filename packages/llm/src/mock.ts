@@ -26,10 +26,10 @@ export const MOCK_SUCCESS_RESPONSE: LLMResponse = {
 }
 
 export function createMockClient(scenario: 'success' | 'error' | 'empty' | 'malformed' = 'success'): {
-  complete<T>(_prompt: string, _schema?: object): Promise<T>
+  complete<T>(_prompt: string, _system?: string, _schema?: object): Promise<T>
 } {
   return {
-    async complete<T>(_prompt: string, _schema?: object): Promise<T> {
+    async complete<T>(_prompt: string, _system?: string, _schema?: object): Promise<T> {
       switch (scenario) {
         case 'success':
           return MOCK_SUCCESS_RESPONSE as unknown as T

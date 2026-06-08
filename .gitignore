@@ -13,6 +13,7 @@ Thumbs.db
 
 .vercel
 $null
+*.tsbuildinfo
 packages/src/
 apps/web/test-results/
 apps/web/.env.local

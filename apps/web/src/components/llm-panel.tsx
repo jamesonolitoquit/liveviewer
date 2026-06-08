@@ -246,6 +246,11 @@ export function LlmPanel({ enabled, onToggle, hasFailures }: LlmPanelProps) {
             .
           </div>
 
+          <div className="rounded bg-blue-50 p-2.5 text-xs text-blue-800">
+            <strong>Heavy pages?</strong> The web app has a 7-second timeout. For large sites (web.dev, nytimes.com),
+            use the CLI with <code>--wait-until domcontentloaded</code> for more reliable results.
+          </div>
+
           <details className="text-xs text-[var(--muted-foreground)]">
             <summary className="cursor-pointer font-medium">Compatible providers</summary>
             <ul className="mt-1 space-y-0.5 pl-4 list-disc">

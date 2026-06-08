@@ -52,15 +52,14 @@ function fingerprintSet(failures) {
   return new Set((failures || []).map(fingerprint));
 }
 
-function collectFailures(auditResult) {
-  const design = auditResult.design;
-  if (!design || !Array.isArray(design.failures)) return [];
-  return design.failures.map(f => ({
-    ruleId: f.ruleId,
+function collectFailures(auditResult, section) {
+  const data = section === 'wcag' ? auditResult.wcag : auditResult.design;
+  if (!data || !Array.isArray(data.failures)) return [];
+  return data.failures.map(f => ({
+    ruleId: f.ruleId || f.ref || 'WCAG',
     selector: f.selector,
-    value: f.value,
-    expected: f.expected,
-    severity: f.severity
+    value: f.value || f.contrastRatio,
+    expected: f.expected || f.required
   }));
 }
 
@@ -78,12 +77,13 @@ const { audit } = require('${auditorPath.replace(/\\/g, '\\\\')}');
   try {
     const result = await audit('${TARGET_URL.replace(/'/g, "\\'")}', {
       design: true,
-      wcag: false,
+      wcag: true,
       viewports: ${JSON.stringify(VIEWPORTS)},
       timeout: 30000
     });
     // Remove screenshot path and other machine-specific fields
     const clean = {
+      wcag: result.wcag,
       design: result.design
     };
     process.stdout.write(JSON.stringify(clean));
@@ -127,7 +127,7 @@ const { audit } = require('${auditorPath.replace(/\\/g, '\\\\')}');
 async function runWebAudit() {
   const body = JSON.stringify({
     url: TARGET_URL,
-    wcag: false,
+    wcag: true,
     design: true,
     viewports: VIEWPORTS
   });
@@ -183,53 +183,54 @@ async function main() {
     process.exit(1);
   }
 
-  // Extract failures
-  const cliFailures = collectFailures(cliResult);
-  const webFailures = collectFailures(webResult);
+  function compareSection(label, section) {
+    const cliFailures = collectFailures(cliResult, section);
+    const webFailures = collectFailures(webResult, section);
 
-  // Compare counts
-  const cliCount = cliFailures.length;
-  const webCount = webFailures.length;
+    const cliCount = cliFailures.length;
+    const webCount = webFailures.length;
 
-  if (cliCount === webCount) {
-    ok(`Failure count: ${cliCount} (CLI) === ${webCount} (Web)`);
-  } else {
-    fail('Failure count mismatch', `${cliCount} (CLI) !== ${webCount} (Web)`);
-  }
-
-  // Compare fingerprints
-  const cliFps = fingerprintSet(cliFailures);
-  const webFps = fingerprintSet(webFailures);
-
-  const onlyCli = [...cliFps].filter(f => !webFps.has(f));
-  const onlyWeb = [...webFps].filter(f => !cliFps.has(f));
-
-  if (onlyCli.length === 0 && onlyWeb.length === 0) {
-    ok('Failure fingerprints match exactly');
-  } else {
-    if (onlyCli.length > 0) {
-      fail('Failures only in CLI', onlyCli.join('\n            '));
+    if (cliCount === webCount) {
+      ok(`${label} failure count: ${cliCount} (CLI) === ${webCount} (Web)`);
+    } else {
+      fail(`${label} failure count mismatch`, `${cliCount} (CLI) !== ${webCount} (Web)`);
     }
-    if (onlyWeb.length > 0) {
-      fail('Failures only in Web', onlyWeb.join('\n            '));
-    }
-  }
 
-  // Spot-check selectors if counts match
-  if (cliFailures.length > 0 && cliCount === webCount) {
-    const sortedCli = [...cliFailures].sort((a, b) => a.ruleId.localeCompare(b.ruleId) || a.selector.localeCompare(b.selector));
-    const sortedWeb = [...webFailures].sort((a, b) => a.ruleId.localeCompare(b.ruleId) || a.selector.localeCompare(b.selector));
+    const cliFps = fingerprintSet(cliFailures);
+    const webFps = fingerprintSet(webFailures);
 
-    for (let i = 0; i < Math.min(sortedCli.length, sortedWeb.length); i++) {
-      const a = sortedCli[i];
-      const b = sortedWeb[i];
-      const key = `${a.ruleId}|${normalizeSelector(a.selector)}`;
-      if (normalizeSelector(a.selector) !== normalizeSelector(b.selector) || a.value !== b.value || a.expected !== b.expected) {
-        fail(`Mismatch at index ${i}: ${key}`, `CLI: ${a.value} → ${a.expected}, Web: ${b.value} → ${b.expected}`);
+    const onlyCli = [...cliFps].filter(f => !webFps.has(f));
+    const onlyWeb = [...webFps].filter(f => !cliFps.has(f));
+
+    if (onlyCli.length === 0 && onlyWeb.length === 0) {
+      ok(`${label} fingerprints match exactly`);
+    } else {
+      if (onlyCli.length > 0) {
+        fail(`${label} failures only in CLI`, onlyCli.join('\n            '));
+      }
+      if (onlyWeb.length > 0) {
+        fail(`${label} failures only in Web`, onlyWeb.join('\n            '));
       }
     }
-    ok('All failure details match across CLI and web app');
+
+    if (cliFailures.length > 0 && cliCount === webCount) {
+      const sortedCli = [...cliFailures].sort((a, b) => a.ruleId.localeCompare(b.ruleId) || a.selector.localeCompare(b.selector));
+      const sortedWeb = [...webFailures].sort((a, b) => a.ruleId.localeCompare(b.ruleId) || a.selector.localeCompare(b.selector));
+
+      for (let i = 0; i < Math.min(sortedCli.length, sortedWeb.length); i++) {
+        const a = sortedCli[i];
+        const b = sortedWeb[i];
+        const key = `${a.ruleId}|${normalizeSelector(a.selector)}`;
+        if (normalizeSelector(a.selector) !== normalizeSelector(b.selector) || a.value !== b.value || a.expected !== b.expected) {
+          fail(`${label} mismatch at index ${i}: ${key}`, `CLI: ${a.value} → ${a.expected}, Web: ${b.value} → ${b.expected}`);
+        }
+      }
+      ok(`${label} all failure details match across CLI and web app`);
+    }
   }
+
+  compareSection('WCAG', 'wcag');
+  compareSection('Design', 'design');
 
   printSummary();
 }

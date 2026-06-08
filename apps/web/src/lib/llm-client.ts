@@ -43,40 +43,56 @@ interface LlmResult {
   model: string
 }
 
-const SYSTEM_PROMPT = `You are an expert web designer analyzing WCAG contrast failures and design quality issues.
-Respond ONLY with valid JSON matching this exact schema:
+const SYSTEM_PROMPT = `You are an expert web designer and accessibility consultant. Your task is to analyze the accessibility and design quality issues listed below and provide actionable, concise, and specific fix recommendations.
+
+For each failure, you must output a JSON object with the following structure:
+
 {
-  "summary": "string - one sentence summary of all issues",
+  "summary": "A one-sentence executive summary of the most critical issues.",
   "perFailure": [
     {
-      "selector": "string - CSS selector",
-      "ruleId": "color-contrast",
-      "explanation": "string - why it fails",
-      "suggestion": "string - how to fix with specific color values",
+      "selector": "CSS selector of the failing element (exact from the list)",
+      "ruleId": "WCAG rule ID or 'contrast'",
+      "explanation": "Why this fails (e.g., 'Text color #777 on white background has insufficient contrast')",
+      "suggestion": "Specific fix (e.g., 'Change text color to #333' or 'Increase font size to 16px')",
       "severity": "high|medium|low"
     }
   ],
   "designFixes": [
     {
-      "selector": "string - CSS selector",
-      "ruleId": "string - e.g. font-size-legible, line-height-readable",
-      "explanation": "string - why it fails and how to fix",
-      "suggestion": "string - specific CSS fix",
+      "selector": "CSS selector of the element with design issue",
+      "ruleId": "font-size-legible | line-height-readable | horizontal-scroll | ...",
+      "explanation": "Why this design choice is problematic (e.g., 'Body text below 16px reduces readability')",
+      "suggestion": "Specific fix (e.g., 'Increase font size to at least 16px' or 'Set line-height to 1.5')",
       "severity": "high|medium|low"
     }
   ]
-}`
+}
+
+Important rules:
+- Return ONLY valid JSON. No extra text, no markdown formatting.
+- If a failure is not applicable (e.g., no design issues), return an empty array for that field.
+- Use the exact selectors provided. Do not modify them.
+- Severity mapping:
+  - high: critical for accessibility or usability (e.g., contrast < 3:1, font-size < 12px, line-height < 1.2, overlapping content).
+  - medium: important but not blocking (e.g., contrast 3:1–4.5:1, font-size 12–16px, line-height 1.2–1.4 or 1.6–1.8).
+  - low: minor improvements (e.g., small spacing issues, non-critical overlap).
+- For horizontal scroll: suggest \`overflow-x: hidden\` or responsive width adjustments.
+- For missing labels: suggest adding a <label> or aria-label.
+- For skip navigation: suggest adding a skip link or role="main".
+
+If the user provided additional context (e.g., site purpose, audience, brand guidelines), incorporate that context into your explanations and suggestions. For example, if the site is a dark-mode dashboard, you may suggest lighter text on dark backgrounds; if it's a mobile-first e-commerce site, prioritize touch targets and font legibility.`
 
 function buildPrompt(failures: Failure[], designFailures?: DesignFailureCtx[], context?: string): string {
   const parts: string[] = []
 
   if (context && context.trim()) {
-    parts.push(`--- USER CONTEXT ---\n${context.trim()}\n--- END USER CONTEXT ---`)
+    parts.push(`--- USER CONTEXT ---\n${context.trim()}\n---`)
   }
 
   if (failures.length > 0) {
     const lines = failures.map(f =>
-      `- ${f.selector}: "${f.text.slice(0, 60)}" — fg ${f.foreground} on bg ${f.background}, ratio ${f.contrastRatio}:1 (needs ${f.required}:1)`
+      `- ${f.selector}: "${f.text.slice(0, 60)}" – fg ${f.foreground} on bg ${f.background}, ratio ${f.contrastRatio}:1 (needs ${f.required}:1, ${f.isLarge ? 'large text' : 'normal text'})`
     ).join('\n')
     parts.push('# Accessibility (WCAG Contrast)\n' + lines)
   }
