@@ -41,6 +41,21 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "Liveviewer",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web, CLI",
+              "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+              "description": "Free design QA and accessibility tool. Checks WCAG contrast, heading hierarchy, ARIA, and provides fix suggestions.",
+              "author": { "@type": "Person", "name": "Jao" }
+            })
+          }}
+        />
+        <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
