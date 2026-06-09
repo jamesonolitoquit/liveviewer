@@ -9,10 +9,10 @@ const baseUrl = 'https://jao-liveviewer.vercel.app'
 
 export const metadata: Metadata = {
   title: 'Liveviewer - Accessibility & Design QA',
-  description: 'Audit websites for WCAG contrast, typography, and ARIA issues. No API key required.',
+  description: 'Free design QA and accessibility tool. Checks WCAG contrast, font size, heading hierarchy, and ARIA — with fix suggestions you can act on. No API key needed, no signup required.',
   openGraph: {
     title: 'Liveviewer - Accessibility & Design QA',
-    description: 'Audit websites for WCAG contrast, typography, and ARIA issues. No API key required.',
+    description: 'Free design QA and accessibility tool. Checks WCAG contrast, font size, heading hierarchy, and ARIA — with fix suggestions you can act on. No API key needed, no signup required.',
     url: baseUrl,
     siteName: 'Liveviewer',
     images: [{ url: `${baseUrl}/og-image.svg`, width: 1200, height: 630 }],
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Liveviewer - Accessibility & Design QA',
-    description: 'Audit websites for WCAG contrast, typography, and ARIA issues. No API key required.',
+    description: 'Free design QA and accessibility tool. Checks WCAG contrast, font size, heading hierarchy, and ARIA — with fix suggestions you can act on. No API key needed, no signup required.',
     images: [`${baseUrl}/og-image.svg`],
   },
   robots: {

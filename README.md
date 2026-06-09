@@ -1,6 +1,6 @@
 # Liveviewer v2.3.0
 
-Design QA robot for live websites. Audits WCAG contrast, detects design issues, validates ARIA accessibility, and generates deterministic fix suggestions — **no API key required**. Optional smart enrichment with your own key.
+Free, open-source design QA and accessibility tool. Checks WCAG contrast, font sizes, heading hierarchy, and ARIA — with deterministic fix suggestions for every issue. No API key required, no signup, no tracking.
 
 **Web app:** [jao-liveviewer.vercel.app](https://jao-liveviewer.vercel.app) — run audits in your browser, no install needed.  
 **CLI:** `npm install -g @liveviewer/cli` — for CI pipelines and local development.

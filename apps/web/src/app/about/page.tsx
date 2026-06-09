@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'About — Liveviewer',
-  description: 'Why Liveviewer was built and what it does.',
+  description: 'Free, open-source tool for WCAG contrast audits, design QA checks, and ARIA validation. No API key needed, no tracking.',
 }
 
 export default function AboutPage() {
@@ -28,6 +28,7 @@ export default function AboutPage() {
         <p>
           So I built Liveviewer. A tool that checks your site for common contrast issues, design
           problems, and ARIA violations. No signup required. No API key needed for the basic checks.
+          It is fully open source — you can inspect the code, run it yourself, and trust what it does.
         </p>
 
         <p>

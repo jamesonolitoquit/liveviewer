@@ -193,7 +193,11 @@ export default function Home() {
         <div className="mb-10 text-center">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Accessibility &amp; Design QA</h1>
           <p className="mt-2 text-base text-[var(--jao-text-secondary)] mx-auto">
-            Audit any website for WCAG contrast, typography, layout, and ARIA rules.
+            Catch contrast issues, broken headings, and missing labels before they ship.
+            No signup, no API key, no tracking.
+          </p>
+          <p className="mt-4 text-sm text-[var(--jao-text-tertiary)] mx-auto">
+            Deterministic fix suggestions for every issue. Open source, community-driven.
           </p>
         </div>
 

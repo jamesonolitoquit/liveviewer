@@ -12,8 +12,34 @@ packages/*/dist/
 Thumbs.db
 
 .vercel
-$null
 *.tsbuildinfo
-packages/src/
 apps/web/test-results/
 apps/web/.env.local
+
+# Test & coverage
+coverage/
+playwright-report/
+
+# Environment & secrets
+.env
+.env.*.local
+
+# Build artifacts
+*.tgz
+packages/extension/dist/
+packages/extension/*.zip
+
+# IDE & temporary files
+.idea/
+.vscode/
+tmp/
+temp/
+scratch/
+*.swp
+*.swo
+*~
+npm-debug.log*
+
+# Screenshot artifacts
+*.png
+*.jpg
