@@ -98,6 +98,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         <p className="mt-1 text-xs text-[var(--jao-text-tertiary)]">
           <a href="/about" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">About</a>
           {' / '}
+          <a href="/privacy" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">Privacy</a>
+          {' / '}
           <a
             href="https://github.com/jamesonolitoquit/liveviewer"
             target="_blank"
