@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { humanError } from '@/lib/errors'
 
 interface WcagFailure {
   selector: string
@@ -82,7 +83,7 @@ export function PdfExportButton({ data, prefix }: PdfExportButtonProps) {
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      setError('Failed to generate PDF')
+      setError(humanError('export'))
     } finally {
       setLoading(false)
     }

@@ -93,7 +93,19 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             className="underline decoration-dotted underline-offset-2 transition-colors hover:text-[var(--jao-primary)]">
             jaostudio.dev
           </a>
-          {' — '}WCAG & Design QA audits
+          &nbsp;Independent dev tool, made with care.
+        </p>
+        <p className="mt-1 text-xs text-[var(--jao-text-tertiary)]">
+          <a href="/about" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">About</a>
+          {' / '}
+          <a
+            href="https://github.com/jamesonolitoquit/liveviewer"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]"
+          >
+            GitHub
+          </a>
         </p>
       </footer>
     </div>

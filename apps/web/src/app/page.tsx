@@ -12,6 +12,7 @@ import { JaoLogo } from '@/components/jao-logo'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { HistoryDropdown } from '@/components/history-dropdown'
 import { OnboardingModal } from '@/components/onboarding-modal'
+import { humanError } from '@/lib/errors'
 import type { AuditData, DesignData, WcagData } from '@/types/audit'
 
 type AuditStatus = 'idle' | 'running' | 'complete' | 'error'
@@ -101,7 +102,7 @@ export default function Home() {
           if (cancelledRef.current) return
           return runAudit(url, attempt + 1)
         }
-        throw new Error(json.error || 'Audit failed')
+        throw new Error(json.error || humanError('audit'))
       }
 
       setData(json.data)
@@ -117,7 +118,7 @@ export default function Home() {
         if (cancelledRef.current) return
         return runAudit(url, attempt + 1)
       }
-      setError(err instanceof Error ? err.message : 'Audit failed')
+      setError(err instanceof Error ? err.message : humanError('audit'))
       setStatus('error')
     }
   }, [viewportMode])
@@ -164,7 +165,7 @@ export default function Home() {
       const result = await enrichWithLLM(wcagFails || [], 'openai-compatible', 'deepseek-chat', key, baseUrl || 'https://api.deepseek.com/v1', designFails || [], context || undefined)
       setLlmResult({ ...result, cached: false })
     } catch (err) {
-      setLlmResult({ error: err instanceof Error ? err.message : 'Enhancement failed', provider: 'client', model: '', perFailure: [], summary: '' })
+      setLlmResult({ error: err instanceof Error ? err.message : humanError('llm'), provider: 'client', model: '', perFailure: [], summary: '' })
     } finally {
       setLlmLoading(false)
     }
@@ -172,7 +173,7 @@ export default function Home() {
 
   const liveMessage = status === 'running' ? `Auditing ${auditUrlRef.current}...` :
     status === 'complete' ? `Audit completed with ${data?.wcag?.score ?? 0}% score` :
-    status === 'error' ? `Audit failed: ${error}` : ''
+    status === 'error' ? `Audit hit a snag: ${error}` : ''
 
   return (
     <>
@@ -324,7 +325,28 @@ export default function Home() {
           >
             jaostudio.dev
           </a>
-          {' — '}WCAG & Design QA audits
+          &nbsp;Independent dev tool, made with care.
+        </p>
+        <p className="mt-2 text-sm text-[var(--jao-text-tertiary)]">
+          <a href="/about" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">About</a>
+          {' / '}
+          <a
+            href="https://github.com/jamesonolitoquit/liveviewer"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]"
+          >
+            GitHub
+          </a>
+          {' / '}
+          <a
+            href="https://github.com/jamesonolitoquit/liveviewer/blob/master/CHANGELOG.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]"
+          >
+            Changelog
+          </a>
         </p>
       </footer>
     </div>

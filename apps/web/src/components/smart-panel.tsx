@@ -190,7 +190,7 @@ export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoadin
                         {llmResult && !llmLoading && (
                           <div className="space-y-3">
                             {llmResult.error ? (
-                              <p className="text-sm text-[var(--jao-destructive)]">Error: {llmResult.error}</p>
+                              <p className="text-sm text-[var(--jao-destructive)]">{llmResult.error}</p>
                             ) : (
                               <>
                                 <p className="text-sm text-[var(--jao-text-secondary)]">{llmResult.summary}</p>

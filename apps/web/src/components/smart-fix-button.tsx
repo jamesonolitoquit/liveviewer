@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { humanError } from '@/lib/errors'
 import type { FixSuggestion } from '@/lib/llm-client'
 
 interface WcagFailure {
@@ -42,7 +43,7 @@ export function SmartFixButton({ failure }: SmartFixButtonProps) {
       const result = await getFixSuggestion(failure, provider, model, key, baseUrl || undefined)
       setSuggestion(result)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to get fix')
+      setError(err instanceof Error ? err.message : humanError('llm'))
     } finally {
       setLoading(false)
     }

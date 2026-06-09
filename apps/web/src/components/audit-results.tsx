@@ -347,6 +347,28 @@ export function AuditResults({ data }: AuditResultsProps) {
           </details>
         </div>
       )}
+
+      <details className="group mt-8 rounded-lg border border-[var(--jao-border-subtle)] p-4">
+        <summary className="cursor-pointer text-sm font-medium text-[var(--jao-text-secondary)] transition-colors hover:text-[var(--jao-text)]">
+          Known limitations
+        </summary>
+        <div className="mt-3 space-y-2 text-sm text-[var(--jao-text-tertiary)]">
+          <p>
+            CSS variable opacity and color-mix() may report false positives on decorative
+            badges and tags. Content text contrast is always accurate.
+          </p>
+          <p>
+            SVG text elements and Shadow DOM content are not checked.
+          </p>
+          <p>
+            Heavy pages may time out on the web version (the CLI handles those fine).
+          </p>
+          <p>
+            This tool does not test screen reader compatibility, interactive widgets,
+            or PDFs.
+          </p>
+        </div>
+      </details>
     </section>
   )
 }

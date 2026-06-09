@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { csvFromAudit, jsonFromAudit, textFromAudit, downloadFile } from '@/lib/export'
+import { humanError } from '@/lib/errors'
 import { PdfExportButton } from './pdf-export-button'
 import type { AuditData } from '@/types/audit'
 
@@ -30,7 +31,7 @@ export function ExportButtons({ data }: ExportButtonsProps) {
       downloadFile(csv, `${prefix}-audit.csv`, 'text/csv')
       setError(null)
     } catch {
-      setError('Failed to generate CSV')
+      setError(humanError('export'))
     }
   }
 
@@ -40,7 +41,7 @@ export function ExportButtons({ data }: ExportButtonsProps) {
       downloadFile(json, `${prefix}-audit.json`, 'application/json')
       setError(null)
     } catch {
-      setError('Failed to generate JSON')
+      setError(humanError('export'))
     }
   }
 
@@ -65,7 +66,7 @@ export function ExportButtons({ data }: ExportButtonsProps) {
         body: JSON.stringify(data)
       })
       const json = await res.json()
-      if (!json.success || !json.id) throw new Error('Failed to create report link')
+      if (!json.success || !json.id) throw new Error(humanError('share'))
       const url = `${window.location.origin}/report/${json.id}`
       await navigator.clipboard.writeText(url)
       setShareState('copied')
@@ -102,7 +103,7 @@ export function ExportButtons({ data }: ExportButtonsProps) {
             : 'border-[var(--jao-border)] text-[var(--jao-text-secondary)] hover:bg-[var(--jao-border-subtle)]'
         }`}
       >
-        {copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Failed' : 'Copy Summary'}
+        {copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Nope' : 'Copy Summary'}
       </button>
       <button
         onClick={handleShare}
@@ -115,7 +116,7 @@ export function ExportButtons({ data }: ExportButtonsProps) {
             : 'border-[var(--jao-border)] text-[var(--jao-text-secondary)] hover:bg-[var(--jao-border-subtle)]'
         }`}
       >
-        {shareState === 'saving' ? 'Saving...' : shareState === 'copied' ? 'Link copied' : shareState === 'error' ? 'Failed' : 'Share'}
+        {shareState === 'saving' ? 'Saving...' : shareState === 'copied' ? 'Link copied' : shareState === 'error' ? 'Nope' : 'Share'}
       </button>
       {error && (
         <span className="text-xs text-[var(--jao-destructive)]" role="alert">{error}</span>

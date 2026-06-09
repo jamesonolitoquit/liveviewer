@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area } from 'recharts'
 import { formatTimestamp, getLocalHistory } from '@/lib/history'
+import { humanError } from '@/lib/errors'
 
 interface HistoryEntry {
   url: string
@@ -48,11 +49,11 @@ export default function HistoryPage() {
     try {
       const res = await fetch(`/api/history?url=${encodeURIComponent(u.trim())}`)
       const json = await res.json()
-      if (!json.success) throw new Error(json.error || 'Failed to load history')
+      if (!json.success) throw new Error(json.error || humanError('history'))
       setEntries(json.data || [])
     } catch (err) {
       if (localEntries.length === 0) {
-        setError(err instanceof Error ? err.message : 'Failed to load history')
+        setError(err instanceof Error ? err.message : humanError('history'))
       }
     } finally {
       setLoading(false)
