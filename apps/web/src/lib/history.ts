@@ -201,12 +201,23 @@ export function formatTimestamp(ts: number): string {
   })
 }
 
+function isValidEntry(entry: unknown): entry is HistoryEntry {
+  if (!entry || typeof entry !== 'object') return false
+  const e = entry as Record<string, unknown>
+  return typeof e.url === 'string' &&
+    typeof e.timestamp === 'number' &&
+    typeof e.score === 'number' &&
+    (e.pillars === undefined || typeof e.pillars === 'object')
+}
+
 export function getAllHistory(limit = 10): HistoryEntry[] {
   const all = readLocalStorage()
   const entries: HistoryEntry[] = []
   for (const key in all) {
     for (const entry of all[key]) {
-      entries.push(entry)
+      if (isValidEntry(entry)) {
+        entries.push(entry)
+      }
     }
   }
   return entries

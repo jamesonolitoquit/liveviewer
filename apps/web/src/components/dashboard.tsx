@@ -67,7 +67,7 @@ export function Dashboard({ entries, onReAudit }: DashboardProps) {
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {PILLAR_ORDER.map((key) => {
-            const score = latest.pillars[key]
+            const score = latest.pillars?.[key]
             return (
               <div
                 key={key}
