@@ -128,7 +128,7 @@ async function runLegalChecks(page) {
       });
     }
 
-    return results;
+    return { failures: results, totalChecks: 5 };
   });
 }
 

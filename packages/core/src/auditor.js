@@ -1099,13 +1099,18 @@ async function audit(url, options = {}) {
         var legalResult = null;
         if (doLegal) {
           try {
-            var legalFails = await runLegalChecks(page);
+            var legalResultData = await runLegalChecks(page);
+            var legalFails = legalResultData.failures;
+            var legalTotal = legalResultData.totalChecks;
+            var legalFailCount = legalFails.length;
             legalResult = {
               failures: legalFails,
-              totalChecks: legalFails.length,
-              passCount: 0,
-              failCount: legalFails.length,
-              score: legalFails.length > 0 ? 0 : 100
+              totalChecks: legalTotal,
+              passCount: Math.max(0, legalTotal - legalFailCount),
+              failCount: legalFailCount,
+              score: legalTotal > 0
+                ? Math.round(Math.max(0, legalTotal - legalFailCount) / legalTotal * 1000) / 10
+                : 100
             };
           } catch (e) {
             legalResult = { failures: [], totalChecks: 0, passCount: 0, failCount: 0, score: 100 };
