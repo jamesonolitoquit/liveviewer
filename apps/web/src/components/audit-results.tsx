@@ -527,26 +527,26 @@ export function AuditResults({ data, children }: AuditResultsProps) {
         />
       )}
 
-      <PillarFailures
-        failures={seo?.failures || []}
+      {seo && <PillarFailures
+        failures={seo.failures || []}
         title="SEO"
         accentColor="text-blue-600 dark:text-blue-400"
         renderContent={renderSeoFailure}
-      />
+      />}
 
-      <PillarFailures
-        failures={security?.failures || []}
+      {security && <PillarFailures
+        failures={security.failures || []}
         title="Security"
         accentColor="text-red-600 dark:text-red-400"
         renderContent={renderSecurityFailure}
-      />
+      />}
 
-      <PillarFailures
-        failures={legal?.failures || []}
+      {legal && <PillarFailures
+        failures={legal.failures || []}
         title="Legal &amp; Privacy"
         accentColor="text-purple-600 dark:text-purple-400"
         renderContent={renderLegalFailure}
-      />
+      />}
 
       {performance && <PerformanceSection perf={performance} />}
 

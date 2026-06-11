@@ -133,6 +133,7 @@ export async function POST(request: NextRequest) {
       seo: true,
       security: true,
       legal: true,
+      performance: true,
       timeout: Math.min(timeout, 7000),
       waitUntil,
       loadImages,
@@ -171,6 +172,9 @@ export async function POST(request: NextRequest) {
     }
     if (result.legal) {
       sanitized.legal = result.legal
+    }
+    if (result.performance) {
+      sanitized.performance = result.performance
     }
     if (viewports && viewports.length >= 2) {
       sanitized.multiViewport = true
