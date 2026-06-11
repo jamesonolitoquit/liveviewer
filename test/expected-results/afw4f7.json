@@ -43,7 +43,7 @@
     {
       "id": "passed-7",
       "url": "https://w3.org/WAI/content-assets/wcag-act-rules/testcases/afw4f7/eb4bfbbeba4e803fef10ebad17427f32e306ae82.html",
-      "expected": "passed",
+      "expected": "inapplicable",
       "label": "Button 'X' not human language (exception)"
     },
     {

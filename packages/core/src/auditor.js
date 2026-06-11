@@ -145,19 +145,99 @@ async function applyServerlessOptimizations(context, page, options) {
 
 async function runWcagOnPage(page) {
   const elements = await page.evaluate(() => {
+    function parseRgb(rgbStr) {
+      var m = rgbStr.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (!m) return null;
+      return { r: parseInt(m[1]), g: parseInt(m[2]), b: parseInt(m[3]) };
+    }
+
+    function parseLinearGradient(bgImage) {
+      var m = bgImage.match(/linear-gradient\s*\(([^)]+)\)/i);
+      if (!m) return null;
+      var inner = m[1];
+      var stops = [];
+      var i = 0, parenDepth = 0, current = '';
+      var chars = inner.split('');
+      for (var ci = 0; ci < chars.length; ci++) {
+        var ch = chars[ci];
+        if (ch === '(') { parenDepth++; current += ch; }
+        else if (ch === ')') { parenDepth--; current += ch; }
+        else if (ch === ',' && parenDepth === 0) {
+          stops.push(current.trim());
+          current = '';
+        } else { current += ch; }
+      }
+      if (current.trim()) stops.push(current.trim());
+      if (stops.length === 0) return null;
+      var first = stops[0].trim().toLowerCase();
+      if (first === 'to bottom' || first === 'to top' || first === 'to left' || first === 'to right' ||
+          first.indexOf('deg') !== -1 || first.indexOf('turn') !== -1 || first.indexOf('rad') !== -1 ||
+          first === 'to bottom left' || first === 'to bottom right' || first === 'to top left' || first === 'to top right') {
+        stops.shift();
+      }
+      if (stops.length === 0) return null;
+      var rSum = 0, gSum = 0, bSum = 0, count = 0;
+      for (var si = 0; si < stops.length; si++) {
+        var colorPart = stops[si].replace(/\s+\d+%$/, '').replace(/\s+\d+px$/, '').trim();
+        var parsed = parseRgb(colorPart);
+        if (!parsed) {
+          var temp = document.createElement('div');
+          temp.style.color = colorPart;
+          document.body.appendChild(temp);
+          var computed = getComputedStyle(temp).color;
+          document.body.removeChild(temp);
+          parsed = parseRgb(computed);
+        }
+        if (parsed) { rSum += parsed.r; gSum += parsed.g; bSum += parsed.b; count++; }
+      }
+      if (count === 0) return null;
+      return 'rgb(' + Math.round(rSum / count) + ',' + Math.round(gSum / count) + ',' + Math.round(bSum / count) + ')';
+    }
+
+    function parseTextShadowValue(ts) {
+      // Extract color from text-shadow shorthand using the browser's own parser
+      var temp = document.createElement('div');
+      temp.style.textShadow = ts;
+      document.body.appendChild(temp);
+      var computed = getComputedStyle(temp).textShadow;
+      document.body.removeChild(temp);
+      // computed textShadow is normalized: "rgb(r,g,b) offset-x offset-y blur-radius"
+      var m = computed.match(/^(rgba?\([^)]+\))/);
+      if (m) {
+        var parsed = parseRgb(m[1]);
+        if (parsed) return parsed;
+      }
+      return null;
+    }
+
     function getEffectiveBackground(el, maxDepth) {
+      let bg = null;
       let current = el;
       for (let i = 0; i < maxDepth && current; i++) {
         const style = getComputedStyle(current);
-        const bg = style.backgroundColor;
+        const bgColor = style.backgroundColor;
         const bgImage = style.backgroundImage;
-        if (bgImage !== 'none') return 'skip';
-        if (bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg;
+        if (bgImage !== 'none') {
+          // Try to parse gradient
+          const gradColor = parseLinearGradient(bgImage);
+          if (gradColor) {
+            bg = gradColor;
+            break;
+          }
+          return 'skip';
+        }
+        if (bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+          bg = bgColor;
+          break;
+        }
         current = current.parentElement;
       }
-      const htmlBg = getComputedStyle(document.documentElement).backgroundColor;
-      const normalized = htmlBg.replace(/\s/g, '');
-      return (normalized === 'rgba(0,0,0,0)' || normalized === 'transparent') ? 'rgb(255,255,255)' : htmlBg;
+      if (!bg) {
+        const htmlBg = getComputedStyle(document.documentElement).backgroundColor;
+        const normalized = htmlBg.replace(/\s/g, '');
+        bg = (normalized === 'rgba(0,0,0,0)' || normalized === 'transparent') ? 'rgb(255,255,255)' : htmlBg;
+      }
+      return bg;
     }
 
     const results = [];
@@ -185,6 +265,15 @@ async function runWcagOnPage(page) {
       }
       if (hasDisabledAncestor) return;
 
+      // Skip if this element is an aria-labelledby target for a disabled element
+      var elId = el.id;
+      if (elId) {
+        var refs = document.querySelectorAll('[aria-labelledby="' + elId.replace(/["\\]/g, '\\$&') + '"]');
+        for (var ri = 0; ri < refs.length; ri++) {
+          if (refs[ri].disabled || refs[ri].getAttribute('aria-disabled') === 'true') return;
+        }
+      }
+
       // Skip off-screen positioned elements (outside viewport, not scrollable into view)
       const rect = el.getBoundingClientRect();
       if ((style.position === 'absolute' || style.position === 'fixed') &&
@@ -200,13 +289,35 @@ async function runWcagOnPage(page) {
 
       const text = el.textContent.trim();
       if (!text || el.children.length > 0) return;
+
+      // Skip single-char interactive elements (non-human-language exception, WCAG SC 1.4.3)
+      if (text.length <= 1 && ['button', 'a', 'input', 'select', 'textarea'].includes(tag)) return;
+
       const fontSize = parseFloat(style.fontSize);
       const fontWeight = parseInt(style.fontWeight);
       const isLarge = fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700);
       const rawCls = typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
       const cls = rawCls ? '.' + rawCls.trim().split(/\s+/).filter(Boolean).join('.') : '';
-      const bg = getEffectiveBackground(el, 10);
-      if (bg === 'skip') return;
+      let bg = getEffectiveBackground(el, 10);
+
+      // Handle text-shadow: use as fallback for bg images, or blend with solid background
+      var ts = style.textShadow;
+      var shadowFallback = (ts && ts !== 'none') ? parseTextShadowValue(ts) : null;
+
+      if (bg === 'skip') {
+        if (shadowFallback) {
+          bg = 'rgb(' + shadowFallback.r + ',' + shadowFallback.g + ',' + shadowFallback.b + ')';
+        } else if (style.backgroundColor !== 'rgba(0, 0, 0, 0)' && style.backgroundColor !== 'transparent') {
+          bg = style.backgroundColor;
+        } else {
+          return;
+        }
+      } else if (shadowFallback) {
+        bg = 'rgb(' + Math.round(shadowFallback.r * 0.5 + parseRgb(bg).r * 0.5) + ',' +
+          Math.round(shadowFallback.g * 0.5 + parseRgb(bg).g * 0.5) + ',' +
+          Math.round(shadowFallback.b * 0.5 + parseRgb(bg).b * 0.5) + ')';
+      }
+
       const lh = parseFloat(style.lineHeight);
       results.push({
         selector: el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + cls,
@@ -229,6 +340,14 @@ async function runWcagOnPage(page) {
       while (walker.nextNode()) {
         processElement(walker.currentNode);
         foundElements = true;
+      }
+      // Handle <slot> elements: process assigned (slotted) nodes from light DOM
+      var slots = root.querySelectorAll('slot');
+      for (var si2 = 0; si2 < slots.length; si2++) {
+        var assigned = slots[si2].assignedNodes();
+        for (var ai = 0; ai < assigned.length; ai++) {
+          if (assigned[ai].nodeType === 1) processElement(assigned[ai]);
+        }
       }
       // Handle direct text nodes in shadow root (no element wrapper)
       if (!foundElements && root.nodeType === 11) {
