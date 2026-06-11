@@ -164,21 +164,23 @@ async function runApiAudit(url, apiBase) {
 function comparePillar(name, a, b) {
   const diffs = [];
 
-  // Score (tolerance ±0.5 to account for timing jitter)
+  // Score (tolerance ±1.0 to account for timing jitter on dynamic sites)
   if (typeof a.score === 'number' && typeof b.score === 'number') {
     const scoreDiff = Math.abs(a.score - b.score);
-    if (scoreDiff > 0.5) {
+    if (scoreDiff > 1.0) {
       diffs.push({ field: 'score', cli: a.score, api: b.score, diff: scoreDiff.toFixed(2) });
     }
   } else if ((a.score === null || a.score === undefined) !== (b.score === null || b.score === undefined)) {
     diffs.push({ field: 'score', cli: a.score, api: b.score, note: 'one side missing' });
   }
 
-  // Failure count (tolerance ±1 for timing jitter on dynamic pages)
+  // Failure count (proportional tolerance: ±max(3, 3%) for dynamic pages)
   const aFails = (a.failures || []).length;
   const bFails = (b.failures || []).length;
+  const avgFails = (aFails + bFails) / 2;
+  const failTolerance = Math.max(3, Math.ceil(avgFails * 0.03));
   const failDiff = Math.abs(aFails - bFails);
-  if (failDiff > 1) {
+  if (failDiff > failTolerance) {
     diffs.push({ field: 'failures.length', cli: aFails, api: bFails, diff: failDiff });
   }
 

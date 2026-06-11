@@ -99,8 +99,8 @@ export function Dashboard({ entries, onReAudit }: DashboardProps) {
               </tr>
             </thead>
             <tbody>
-              {entries.map((entry) => (
-                <tr key={entry.url + entry.timestamp} className="border-b border-[var(--jao-border-subtle)] last:border-b-0">
+              {entries.map((entry, idx) => (
+                <tr key={entry.url + entry.timestamp + '-' + idx} className="border-b border-[var(--jao-border-subtle)] last:border-b-0">
                   <td className="max-w-[200px] truncate px-4 py-3 font-mono text-xs text-[var(--jao-text)]">
                     {entry.url}
                   </td>
