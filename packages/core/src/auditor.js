@@ -573,31 +573,39 @@ async function runA11yPageChecks(page) {
     }
 
     // Skip navigation / main landmark check
-    // Only flag when there is navigational content (nav element) but no skip link and no main landmark.
-    // This matches axe-core's bypass rule behavior: simple pages without navigation are not flagged.
+    // Only flag when the page has a <nav> (repeated content block), no main landmark,
+    // no skip link, and few additional landmarks. axe-core considers landmark navigation
+    // a sufficient bypass mechanism, so pages with multiple landmarks aren't flagged even
+    // without an explicit skip link.
     const hasMain = document.querySelector('[role="main"], #main, #content, #main-content, main');
     const hasNav = document.querySelector('nav, [role="navigation"]');
     if (!hasMain && hasNav) {
-      let hasSkipLink = false;
-      const links = document.querySelectorAll('a[href^="#"]');
-      for (const link of links) {
-        const text = (link.textContent || '').toLowerCase();
-        if (text.includes('skip') || text.includes('main') || text.includes('content') || text.includes('navigation')) {
-          hasSkipLink = true;
-          break;
+      const extraLandmarks = document.querySelectorAll(
+        'header, aside, section, footer, article, ' +
+        '[role="complementary"], [role="banner"], [role="contentinfo"]'
+      ).length;
+      if (extraLandmarks < 2) {
+        let hasSkipLink = false;
+        const links = document.querySelectorAll('a[href^="#"]');
+        for (const link of links) {
+          const text = (link.textContent || '').toLowerCase();
+          if (text.includes('skip') || text.includes('main') || text.includes('content') || text.includes('navigation')) {
+            hasSkipLink = true;
+            break;
+          }
         }
-      }
-      if (!hasSkipLink) {
-        results.push({
-          ruleId: 'skip-navigation',
-          ruleName: 'Page should have skip navigation or main landmark',
-          category: 'interactivity',
-          selector: 'body',
-          description: 'No skip link or main landmark found on page with navigation',
-          severity: 'high',
-          value: 'no skip link or role="main"',
-          expected: 'a skip link with href="#main" or role="main" on content area'
-        });
+        if (!hasSkipLink) {
+          results.push({
+            ruleId: 'skip-navigation',
+            ruleName: 'Page should have skip navigation or main landmark',
+            category: 'interactivity',
+            selector: 'body',
+            description: 'No skip link or main landmark found on page with navigation',
+            severity: 'high',
+            value: 'no skip link or role="main"',
+            expected: 'a skip link with href="#main" or role="main" on content area'
+          });
+        }
       }
     }
 
