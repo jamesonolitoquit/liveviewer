@@ -1062,15 +1062,17 @@ async function audit(url, options = {}) {
                   : 0
               };
             } catch (_) {
-              if (uniquePageFails.length > 0) {
-                designResult = {
-                  failures: uniquePageFails,
-                  totalChecks: uniquePageFails.length,
-                  passCount: 0,
-                  failCount: uniquePageFails.length,
-                  score: 0
-                };
-              }
+              const totalChecks = lastElements.length * 2 + uniquePageFails.length;
+              const failCount = allFailures.length;
+              designResult = {
+                failures: allFailures,
+                totalChecks,
+                passCount: Math.max(0, totalChecks - failCount),
+                failCount,
+                score: totalChecks > 0
+                  ? Math.round(Math.max(0, totalChecks - failCount) / totalChecks * 1000) / 10
+                  : uniquePageFails.length > 0 ? 0 : 100
+              };
             }
           } else if (uniquePageFails.length > 0) {
             designResult = {
