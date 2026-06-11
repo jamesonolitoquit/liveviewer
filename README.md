@@ -1,8 +1,8 @@
-# Liveviewer v2.3.0
+# Liveviewer v4.0.0
 
-Free, open-source design QA and accessibility tool. Checks WCAG contrast, font sizes, heading hierarchy, and ARIA — with deterministic fix suggestions for every issue. No API key required, no signup, no tracking.
+Free, open-source full site quality audit tool. Checks **accessibility, design QA, SEO, security, legal compliance, and performance** — with deterministic fix suggestions for every issue. No API key required, no signup, no tracking.
 
-**Web app:** [jao-liveviewer.vercel.app](https://jao-liveviewer.vercel.app) — run audits in your browser, no install needed.  
+**Web app:** [jao-liveviewer.vercel.app](https://jao-liveviewer.vercel.app) — visual report with radar chart and pass/fail bars.  
 **CLI:** `npm install -g @liveviewer/cli` — for CI pipelines and local development.
 
 ```bash
@@ -31,32 +31,44 @@ liveviewer record https://example.com --interaction "click .menu" --interaction 
 
 Reports: totalFrames, meanDelta, jankFrames, smoothnessScore (0–100).
 
-### `audit` — WCAG accessibility + Design QA + ARIA analysis
+### `audit` — Full site quality audit (6 pillars)
 
 ```bash
-# WCAG contrast audit (single desktop viewport)
-liveviewer audit https://example.com --wcag
+# Run all 6 pillars: WCAG, Design QA, SEO, Security, Legal & Privacy, Performance
+liveviewer audit https://example.com --all
 
-# WCAG + Design QA + ARIA rules at both Desktop & Mobile viewports (merged)
+# Individual pillars
+liveviewer audit https://example.com --wcag                           # Accessibility (contrast, alt text, labels, skip nav)
+liveviewer audit https://example.com --design                         # Design QA (font-size, line-height, heading hierarchy, scroll)
+liveviewer audit https://example.com --seo                            # SEO (title, meta, canonical, OG, Twitter, JSON-LD)
+liveviewer audit https://example.com --security                       # Security (HSTS, CSP, XFO, mixed content, cookies)
+liveviewer audit https://example.com --legal                          # Legal & Privacy (cookie consent, privacy policy, imprint)
+liveviewer audit https://example.com --performance                    # Performance (Lighthouse: LCP, CLS, TBT, FCP, SI, TTI)
+
+# Multiple pillars together
+liveviewer audit https://example.com --wcag --design --seo --security --legal
+
+# Desktop & Mobile viewports (merged)
 liveviewer audit https://web.dev --wcag --design --mobile
 
-# Explicit viewport list (overrides --width/--height)
+# Explicit viewport list
 liveviewer audit https://example.com --wcag --design --viewports 1280x800,375x812
 
-# Deterministic fix suggestions (no API key needed) — shown automatically
+# Deterministic fix suggestions (no API key needed)
 liveviewer audit https://example.com --wcag --design
 
 # SARIF 2.1 output (compatible with GitHub Code Scanning)
-liveviewer audit https://example.com --wcag --design --sarif
-liveviewer audit https://example.com --wcag --design --sarif-output ./results.sarif
+liveviewer audit https://example.com --all --sarif
+liveviewer audit https://example.com --all --sarif-output ./results.sarif
 
-# Contextual smart enrichment — describe your site for better suggestions
+# JSON output (machine-readable)
+liveviewer audit https://example.com --all --json
+
+# Contextual smart enrichment
 liveviewer audit https://example.com --wcag --smart-enrich --context "SaaS dashboard for engineers, dark mode"
-
-# Read context from file
 liveviewer audit https://example.com --wcag --smart-enrich --context-file ./site-brief.txt
 
-# Exit non-zero if WCAG failures exceed threshold (for CI)
+# Exit non-zero if failures exceed threshold (for CI)
 liveviewer audit https://example.com --wcag --fail-on 0
 
 # Crawl same-origin pages for multi-page auditing
@@ -84,11 +96,15 @@ The `--mobile` flag runs both `1280x800` and `375x812` viewports and merges fail
 Reports: `<url>-<timestamp>.png` (screenshot) + `.json` with all failures and fix suggestions.
 
 Includes:
-- **WCAG contrast** – per-element contrast ratios with background ancestor walk (correct alpha blending for `rgba`), `sr-only` elements automatically filtered
-- **Design QA** – typography (font-size ≥16px, line-height 1.4–1.6), horizontal scroll detection, heading hierarchy validation
-- **ARIA rules** – missing alt text, empty interactive elements, missing `lang` attribute, missing form labels, skip navigation / main landmark detection
+- **WCAG contrast** – per-element contrast ratios with background ancestor walk (correct alpha blending for `rgba`), `sr-only` elements automatically filtered. 100% accuracy on W3C ACT Rule `afw4f7` (33/33 cases).
+- **Design QA** – typography (font-size ≥16px, line-height 1.4–1.6), horizontal scroll detection, heading hierarchy validation. 100% benchmark accuracy.
+- **SEO** – title tag, meta description, canonical URL, viewport meta, Open Graph tags, Twitter Cards, JSON-LD structured data. 100% benchmark accuracy.
+- **Security** – HTTP security headers (HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy), mixed content detection, secure cookie flags. 100% benchmark accuracy.
+- **Legal & Privacy** – cookie consent banner detection, privacy policy link, imprint/legal notice, terms of service, data collection notice. 100% benchmark accuracy.
+- **Performance** – Lighthouse integration (LCP, CLS, TBT, FCP, Speed Index, TTI), grade A–F scoring, smoke-tested and resilience-tested.
+- **Visual report** – web app now shows a radar chart comparing all 6 pillar scores and stacked bar charts for pass/fail breakdown.
 - **Deterministic fix suggestions** – rule-based fixes for every failure, shown automatically in CLI and web app (no API key required)
-- **SARIF 2.1 output** – 10 rule IDs compatible with GitHub Code Scanning upload
+- **SARIF 2.1 output** – rule IDs compatible with GitHub Code Scanning upload
 - **Smart enrichment** (optional) – `--smart-enrich` sends failures to a backend service. Use `--context` to provide site purpose for more relevant suggestions. Use `--smart-prompt` to print the prompt without calling an API.
 
 ### `extract` — Design token inventory

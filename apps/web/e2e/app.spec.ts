@@ -11,7 +11,7 @@ test.describe('Liveviewer web app', () => {
     await page.goto('/')
 
     const heading = page.locator('h1')
-    await expect(heading).toHaveText('Accessibility & Design QA')
+    await expect(heading).toHaveText('Full Site Quality Audit')
 
     const input = page.locator('input[type="url"]')
     await expect(input).toBeVisible()
@@ -83,7 +83,7 @@ test.describe('Liveviewer web app', () => {
     await page.fill('input[type="url"]', 'https://example.com')
     await page.click('button[type="submit"]')
 
-    await expect(page.getByText('98%', { exact: true })).toBeVisible()
+    await expect(page.getByText('98%', { exact: true }).first()).toBeVisible()
     await expect(page.locator('h3:has-text("Accessibility — 2")')).toBeVisible()
     await expect(page.locator('text=/Welcome/')).toBeVisible()
   })
@@ -166,7 +166,7 @@ test.describe('Liveviewer web app', () => {
     await page.goto('/')
     await page.fill('input[type="url"]', 'https://example.com')
     await page.click('button[type="submit"]')
-    await expect(page.getByText('99%', { exact: true })).toBeVisible()
+    await expect(page.getByText('99%', { exact: true }).first()).toBeVisible()
 
     // Open the smart panel drawer
     await page.click('button:has-text("Get Smart Fixes")')

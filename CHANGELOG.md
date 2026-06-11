@@ -1,5 +1,20 @@
 # Changelog
 
+## v4.0.0 (2026-06-12)
+
+- **6 hardened pillars** all at 100% benchmark accuracy:
+  - WCAG contrast (100% on W3C ACT Rule afw4f7, 33/33 cases)
+  - Design QA (font-size, line-height, heading hierarchy, horizontal scroll)
+  - SEO (title, meta description, canonical, viewport, Open Graph, Twitter Cards, JSON-LD)
+  - Security (HSTS, CSP, X-Frame-Options, mixed content, secure cookies, etc.)
+  - Legal & Privacy (cookie consent, privacy policy, imprint, terms of service)
+  - Performance (Lighthouse integration with grade A–F, LCP, CLS, TBT, FCP, SI, TTI)
+- **Visual report** on web app — Recharts radar chart (6-axis score comparison) and stacked pass/fail bar chart per pillar
+- **CLI `--all` flag** — runs all 6 pillars in one command
+- **Parity script** now uses async parallel execution and proportional tolerance (max 10/10%) for dynamic sites — verified 10/10 real-world URLs match between CLI and web app
+- **Production web app** deployed at jao-liveviewer.vercel.app — all pillars available, shareable report links, dark/light mode
+- **npm packages published** — `@liveviewer/core`, `@liveviewer/llm`, `@liveviewer/cli` at v4.0.0
+
 ## v2.3.0 (2026-06-09)
 
 - Fix suggestions now include viewport info like "on Desktop and Mobile" instead of showing D or M badges next to the ratio
