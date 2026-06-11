@@ -24,6 +24,7 @@
     "mcp": "node --import tsx/esm packages/cli/bin/liveviewer.js mcp",
     "web": "npm -w apps/web run dev",
     "web:build": "npm -w apps/web run build",
+    "postinstall": "patch-package",
     "verify:deployment": "node scripts/verify-deployment.js"
   },
   "engines": {
@@ -34,6 +35,7 @@
     "@crxjs/vite-plugin": "^2.4.0",
     "@types/papaparse": "^5.5.2",
     "@vitejs/plugin-react": "^6.0.2",
+    "patch-package": "^8.0.1",
     "tsx": "^4.22.4",
     "vitest": "^4.1.8",
     "webextension-polyfill": "^0.12.0"

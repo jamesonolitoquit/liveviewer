@@ -1,0 +1,8 @@
+diff --git a/node_modules/@paulirish/trace_engine/core/common/common.js b/node_modules/@paulirish/trace_engine/core/common/common.js
+index cb0ff5c..9d0b6c3 100644
+--- a/node_modules/@paulirish/trace_engine/core/common/common.js
++++ b/node_modules/@paulirish/trace_engine/core/common/common.js
+@@ -1 +1,2 @@
+-export {};
++import { ParsedURL as ParsedURLClass } from '../../models/trace/insights/NetworkDependencyTree.js';
++export const ParsedURL = Object.freeze({ ParsedURL: ParsedURLClass });
