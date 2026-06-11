@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { CheckCircle } from 'lucide-react'
 import type { AuditData, WcagFailure, DesignFailure, FixSuggestion, SeoFailure, SecurityFailure, LegalFailure, PerformanceData } from '@/types/audit'
 import { SmartFixButton } from './smart-fix-button'
+import { VisualReport } from './visual-report'
 
 interface AuditResultsProps {
   data: AuditData
@@ -383,6 +384,7 @@ export function AuditResults({ data, children }: AuditResultsProps) {
           {children}
         </div>
       )}
+      <VisualReport data={data} />
       {(wcag || design || seo || security || legal || performance) && (
         <div className="border-b border-[var(--jao-border)] p-6">
           <div className="mb-1 flex items-center justify-between">
