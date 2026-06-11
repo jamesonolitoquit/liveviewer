@@ -42,6 +42,14 @@ Options for "audit":
   --fail-on <n>       Exit non-zero if WCAG failures exceed n (for CI)
   --timeout <ms>      Navigation timeout (default: 30000)
   --wait-until <str>  Navigation wait strategy: domcontentloaded (default), load, networkidle
+  --crawl               Crawl same-origin pages up to --max-pages (default: 50)
+  --max-pages <n>       Max pages to crawl (default: 50)
+  --depth <n>           Max crawl depth (default: 3)
+  --concurrency <n>     Concurrent audits (default: 3)
+  --delay <ms>          Delay between audit batches (default: 200)
+  --no-cache            Skip disk cache, force fresh audits
+  --cache-dir <path>    Cache directory (default: .liveviewer-cache)
+  --cache-ttl <h>       Cache TTL in hours (default: 24)
   --smart-enrich        Enable smart enrichment of audit results (requires enhancement key)
   --no-smart            Force deterministic only, skip enrichment even if key present
   --smart-prompt        Print enrichment analysis prompt (no key needed; pipe to AI or copy-paste)
@@ -242,62 +250,113 @@ async function main() {
       };
       if (auditViewports) auditOpts.viewports = auditViewports;
 
-      // Start spinner
-      const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-      let spinnerIdx = 0;
-      const spinnerInterval = setInterval(() => {
-        process.stdout.write(`\r${spinnerFrames[spinnerIdx++ % spinnerFrames.length]} Auditing...`);
-      }, 80);
+      const doCrawl = hasFlag('--crawl');
+      const crawlMaxPages = parseInt(parseArg('--max-pages') || '50');
+      const crawlDepth = parseInt(parseArg('--depth') || '3');
+      const crawlConcurrency = parseInt(parseArg('--concurrency') || '3');
+      const crawlDelay = parseInt(parseArg('--delay') || '200');
+      const crawlNoCache = hasFlag('--no-cache');
+      const crawlCacheDir = parseArg('--cache-dir') || '.liveviewer-cache';
+      const crawlCacheTtl = parseInt(parseArg('--cache-ttl') || '24');
+
+      // Start spinner (only if stdout is a TTY — pipes, redirects, tests get silent)
+      const isTTY = process.stdout.isTTY;
+      let spinnerInterval;
+      if (isTTY) {
+        const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+        let spinnerIdx = 0;
+        spinnerInterval = setInterval(() => {
+          process.stdout.write(`\r${spinnerFrames[spinnerIdx++ % spinnerFrames.length]} Auditing...`);
+        }, 80);
+      }
 
       let result;
       try {
-        result = await audit(url, auditOpts);
+        if (doCrawl) {
+          const { crawl } = require('@liveviewer/core/src/crawler');
+          result = await crawl(url, {
+            maxPages: crawlMaxPages,
+            depth: crawlDepth,
+            concurrency: crawlConcurrency,
+            delay: crawlDelay,
+            noCache: crawlNoCache,
+            cacheDir: crawlCacheDir,
+            cacheTtl: crawlCacheTtl,
+            wcag: doWcag,
+            design: doDesign,
+            viewport: { width, height },
+            viewports: auditViewports || undefined,
+            timeout,
+            waitUntil,
+          });
+        } else {
+          result = await audit(url, auditOpts);
+        }
       } finally {
         clearInterval(spinnerInterval);
         process.stdout.write('\r');
       }
 
-      console.log('\nAudit complete!');
-      console.log(`  Screenshot: ${result.filepath}`);
-      if (result.multiViewport) {
-        console.log(`  Viewports:  ${result.viewports?.length || 0} (merged)`);
-      }
-      if (result.wcag) {
-        console.log(`  WCAG:       ${result.wcag.passCount}/${result.wcag.totalElements} pass (score: ${result.wcag.score}%)`);
-        if (result.wcag.failCount > 0) {
-          console.log(`  Failures:   ${result.wcag.failCount} element(s) below contrast threshold`);
-          for (const f of result.wcag.failures) {
-            console.log(`    - ${f.selector} (ratio: ${f.contrastRatio}, need: ${f.required})`);
-          }
+      if (doCrawl) {
+        const s = result.summary;
+        console.log(`\nCrawl complete! ${s.totalPages} pages in ${(s.totalDuration / 1000).toFixed(1)}s`);
+        if (s.averageWcagScore !== null) console.log(`  Avg WCAG:   ${s.averageWcagScore}%`);
+        if (s.averageDesignScore !== null) console.log(`  Avg Design: ${s.averageDesignScore}%`);
+        if (s.worstWcagPage) console.log(`  Worst WCAG: ${s.worstWcagPage.url} (${s.worstWcagPage.score}%)`);
+        if (s.worstDesignPage) console.log(`  Worst Design: ${s.worstDesignPage.url} (${s.worstDesignPage.score}%)`);
+        console.log(`  Total failures: ${s.totalFailures}`);
+        for (const p of result.pages) {
+          const w = p.wcagScore !== null ? `WCAG ${p.wcagScore}%` : '';
+          const d = p.designScore !== null ? `Design ${p.designScore}%` : '';
+          const scores = [w, d].filter(Boolean).join(', ');
+          console.log(`  ${scores ? scores.padEnd(20) : ''} ${p.url}`);
         }
-      }
-
-      if (result.design) {
-        console.log(`  Design QA:   ${result.design.score}% (${result.design.failCount} issue(s))`);
-        if (result.design.failures?.length > 0) {
-          for (const d of result.design.failures) {
-            console.log(`    - [${d.severity.toUpperCase()}] ${d.selector}: ${d.ruleName} (${d.value}, expected ${d.expected})`);
-          }
-        }
-      }
-
-      const fixSuggestions = generateFixSuggestions(result);
-      if (fixSuggestions.length > 0) {
-        console.log('\n  \u{1F4CB} Fix Suggestions (deterministic):');
-        for (const s of fixSuggestions.slice(0, 10)) {
-          console.log(`    [${s.severity.toUpperCase()}] ${s.recommendation}`);
-        }
-        if (fixSuggestions.length > 10) {
-          console.log(`    ... and ${fixSuggestions.length - 10} more`);
-        }
+        const crawlPath = `audits/crawl-${Date.now()}.json`;
+        fs.writeFileSync(crawlPath, JSON.stringify(result, null, 2));
+        console.log(`\n  JSON:       ${crawlPath}`);
       } else {
-        console.log('\n  \u{2139}\u{FE0F} No simple fixes available \u2014 consider smart enrichment with --smart-enrich');
-      }
+        console.log('\nAudit complete!');
+        console.log(`  Screenshot: ${result.filepath}`);
+        if (result.multiViewport) {
+          console.log(`  Viewports:  ${result.viewports?.length || 0} (merged)`);
+        }
+        if (result.wcag) {
+          console.log(`  WCAG:       ${result.wcag.passCount}/${result.wcag.totalElements} pass (score: ${result.wcag.score}%)`);
+          if (result.wcag.failCount > 0) {
+            console.log(`  Failures:   ${result.wcag.failCount} element(s) below contrast threshold`);
+            for (const f of result.wcag.failures) {
+              console.log(`    - ${f.selector} (ratio: ${f.contrastRatio}, need: ${f.required})`);
+            }
+          }
+        }
 
-      // Always save audit result JSON
-      const metaPath = `audits/${label}-${result.timestamp}.json`;
-      fs.writeFileSync(metaPath, JSON.stringify(result, null, 2));
-      console.log(`  JSON:       ${metaPath}`);
+        if (result.design) {
+          console.log(`  Design QA:   ${result.design.score}% (${result.design.failCount} issue(s))`);
+          if (result.design.failures?.length > 0) {
+            for (const d of result.design.failures) {
+              console.log(`    - [${d.severity.toUpperCase()}] ${d.selector}: ${d.ruleName} (${d.value}, expected ${d.expected})`);
+            }
+          }
+        }
+
+        const fixSuggestions = generateFixSuggestions(result);
+        if (fixSuggestions.length > 0) {
+          console.log('\n  \u{1F4CB} Fix Suggestions (deterministic):');
+          for (const s of fixSuggestions.slice(0, 10)) {
+            console.log(`    [${s.severity.toUpperCase()}] ${s.recommendation}`);
+          }
+          if (fixSuggestions.length > 10) {
+            console.log(`    ... and ${fixSuggestions.length - 10} more`);
+          }
+        } else {
+          console.log('\n  \u{2139}\u{FE0F} No simple fixes available \u2014 consider smart enrichment with --smart-enrich');
+        }
+
+        // Always save audit result JSON
+        const metaPath = `audits/${label}-${result.timestamp}.json`;
+        fs.writeFileSync(metaPath, JSON.stringify(result, null, 2));
+        console.log(`  JSON:       ${metaPath}`);
+      }
 
       if (doSmartPrompt) {
         const wcagFails = result.wcag?.failures || [];
@@ -666,7 +725,7 @@ function parseInteractionString(str) {
   }
 }
 
-main().catch(err => {
+main().then(() => process.exit(0)).catch(err => {
   console.error('Error:', err.message);
   process.exit(1);
 });

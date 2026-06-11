@@ -6,6 +6,7 @@ const { audit } = require('./auditor');
 const { extract, checkBrandViolations, normalizeColor } = require('./extractor');
 const { recommend } = require('./recommender');
 const { renderHtml } = require('./report');
+const { crawl } = require('./crawler');
 
 module.exports = {
   record,
@@ -21,5 +22,6 @@ module.exports = {
   checkBrandViolations,
   normalizeColor,
   recommend,
-  renderHtml
+  renderHtml,
+  crawl
 };

@@ -58,7 +58,24 @@ liveviewer audit https://example.com --wcag --smart-enrich --context-file ./site
 
 # Exit non-zero if WCAG failures exceed threshold (for CI)
 liveviewer audit https://example.com --wcag --fail-on 0
+
+# Crawl same-origin pages for multi-page auditing
+liveviewer audit https://example.com --wcag --crawl --max-pages 10 --depth 2
+
+# Crawl with 1-page limit for quick health check
+liveviewer audit https://example.com --wcag --crawl --max-pages 1 --depth 0
+
+# Crawl with custom viewport
+liveviewer audit https://example.com --wcag --design --crawl --viewports 1280x800,375x812
+
+# Skip disk cache, force fresh audits
+liveviewer audit https://example.com --wcag --crawl --no-cache
+
+# Low-concurrency crawl (polite mode)
+liveviewer audit https://example.com --wcag --crawl --concurrency 1 --delay 1000
 ```
+
+The `--crawl` flag enables breadth-first crawling of same-origin pages. Uses disk cache (24h TTL by default, `.liveviewer-cache/` directory) to avoid re-auditing unchanged pages. Each page gets its own audit with the same WCAG/Design/Viewport settings. Results include per-page scores and a summary with averages, worst pages, and total failures.
 
 The `--mobile` flag runs both `1280x800` and `375x812` viewports and merges failures (deduplicated by selector+colors, tagged by viewport origin with D/M badges). `--viewports` accepts a comma-separated list for custom combinations.
 
@@ -143,12 +160,15 @@ The web app at [jao-liveviewer.vercel.app](https://jao-liveviewer.vercel.app) in
 
 ## Known Limitations
 
+Benchmarked against the W3C ACT Rule `afw4f7` (Text has minimum contrast, WCAG 1.4.3 AA) — 33 test cases. Current scores: **66.7% precision, 42.9% recall**.
+
 | Gap | Impact | Status |
 |-----|--------|--------|
 | CSS variable opacity (`color-mix()`) | `getComputedStyle` resolves to fully opaque — causes 1:1 false positives on badge elements | Low priority |
-| SVG `<text>` elements | Not traversed by TreeWalker | Low priority |
-| Shadow DOM | Not traversed by TreeWalker | Low priority |
-| Overlapping elements | Not yet detected (experimental, planned for v2.3) | Planned |
+| Gradient backgrounds (`linear-gradient`, `radial-gradient`) | Elements on gradients are skipped entirely | v3.2 (pixel sampling) |
+| Shadow DOM (open mode only) | Elements inside `attachShadow({mode:'open'})` are not traversed | v3.2 |
+| Text-shadow effects | May cause false positives (overly strict) or false negatives (missed insufficient contrast) | v3.2 |
+| Overlapping elements | Not yet detected | Planned |
 
 ### CSS Variable Opacity False Positives
 
@@ -195,6 +215,14 @@ liveviewer audit https://web.dev --wcag --design --smart-enrich --wait-until dom
 | `--design` | off | Enable Design QA + ARIA rules |
 | `--mobile` | off | Run both 1280×800 and 375×812 viewports (merged results) |
 | `--viewports` | — | Comma-separated viewport list (e.g., `1280x800,375x812,768x1024`) |
+| `--crawl` | off | Crawl same-origin pages (BFS, max 50 pages) |
+| `--max-pages` | 50 | Max pages to crawl |
+| `--depth` | 3 | Max crawl depth (0 = seed page only) |
+| `--concurrency` | 3 | Concurrent audit processes |
+| `--delay` | 200 | Delay (ms) between audit batches |
+| `--no-cache` | off | Skip disk cache, force fresh audits |
+| `--cache-dir` | `.liveviewer-cache` | Disk cache directory |
+| `--cache-ttl` | 24 | Cache TTL in hours |
 | `--sarif` | off | Output SARIF 2.1 JSON to stdout |
 | `--sarif-output` | — | Write SARIF 2.1 JSON to file |
 | `--fail-on` | — | Exit code 1 if WCAG failures exceed this threshold |

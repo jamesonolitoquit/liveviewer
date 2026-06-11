@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Mixed Rules</title>
+<style>
+  body { font-family: sans-serif; margin: 2em; }
+  .small { font-size: 12px; }
+  .tight { line-height: 1.2; }
+  .wide { width: 1400px; height: 80px; background: #eee; white-space: nowrap; }
+</style></head><body>
+  <h1>Main Title</h1>
+  <h1>Duplicate h1</h1>
+  <h3>Skipped from h1 to h3</h3>
+  <p class="small">Small 12px text with <span class="tight">tight span lh 1.2</span>.</p>
+  <p class="small tight">Both small font (12px) and tight line-height (1.2).</p>
+  <div class="wide">1400px wide block causing horizontal scroll at 1280px default viewport.</div>
+</body></html>

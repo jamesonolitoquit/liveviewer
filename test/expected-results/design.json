@@ -1,0 +1,77 @@
+{
+  "name": "Liveviewer Design QA Rules",
+  "description": "Test suite for typography, heading hierarchy, and horizontal scroll rules.",
+  "testCases": [
+    {
+      "id": "font-size-pass",
+      "label": "All body text ≥16px — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "font-size-fail",
+      "label": "12px / 14px normal body text — font-size failures",
+      "expectedFailures": [
+        { "ruleId": "font-size-legible", "selector": "p.small" },
+        { "ruleId": "font-size-legible", "selector": "p.med" },
+        { "ruleId": "font-size-legible", "selector": "li.small" },
+        { "ruleId": "font-size-legible", "selector": "button.small" },
+        { "ruleId": "font-size-legible", "selector": "span.med" }
+      ]
+    },
+    {
+      "id": "line-height-pass",
+      "label": "All line-height 1.5 — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "line-height-fail",
+      "label": "Line-height 1.2 / 2.0 / 3.0 — line-height failures",
+      "expectedFailures": [
+        { "ruleId": "line-height-readable", "selector": "p.tight" },
+        { "ruleId": "line-height-readable", "selector": "p.loose" },
+        { "ruleId": "line-height-readable", "selector": "p.extreme" },
+        { "ruleId": "line-height-readable", "selector": "li.tight" },
+        { "ruleId": "line-height-readable", "selector": "span.loose" },
+        { "ruleId": "line-height-readable", "selector": "button.tight" }
+      ]
+    },
+    {
+      "id": "heading-pass",
+      "label": "One h1, proper nesting h1→h2→h3 — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "heading-fail",
+      "label": "Multiple h1s, skipped h1→h3 — heading failures",
+      "expectedFailures": [
+        { "ruleId": "heading-hierarchy", "selector": "body" },
+        { "ruleId": "heading-hierarchy", "selector": "h3" }
+      ]
+    },
+    {
+      "id": "horizontal-scroll-pass",
+      "label": "No overflow at 1280px — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "horizontal-scroll-fail",
+      "label": "1400px fixed element at 1280px viewport — scroll failure",
+      "expectedFailures": [
+        { "ruleId": "horizontal-scroll", "selector": "div.wide" }
+      ]
+    },
+    {
+      "id": "mixed-rules",
+      "label": "Multiple violations: font-size, line-height, heading, scroll",
+      "expectedFailures": [
+        { "ruleId": "heading-hierarchy", "selector": "body" },
+        { "ruleId": "heading-hierarchy", "selector": "h3" },
+        { "ruleId": "font-size-legible", "selector": "span.tight" },
+        { "ruleId": "line-height-readable", "selector": "span.tight" },
+        { "ruleId": "font-size-legible", "selector": "p.small.tight" },
+        { "ruleId": "line-height-readable", "selector": "p.small.tight" },
+        { "ruleId": "horizontal-scroll", "selector": "div.wide" }
+      ]
+    }
+  ]
+}

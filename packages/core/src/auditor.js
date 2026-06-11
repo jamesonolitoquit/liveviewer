@@ -91,6 +91,26 @@ function blendRgbaOverRgb(rgbaStr, bgRgbStr) {
   return `rgb(${Math.round(a * r + (1 - a) * bgR)},${Math.round(a * g + (1 - a) * bgG)},${Math.round(a * b + (1 - a) * bgB)})`;
 }
 
+function blendOpacity(fgRgbStr, bgRgbStr, opacity) {
+  if (opacity >= 1) return fgRgbStr;
+  const m = fgRgbStr.match(/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/);
+  if (!m) return fgRgbStr;
+  const [r, g, b] = [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])];
+  let bgR, bgG, bgB;
+  const bgMatch = bgRgbStr.match(/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/);
+  if (bgMatch) {
+    bgR = parseInt(bgMatch[1]); bgG = parseInt(bgMatch[2]); bgB = parseInt(bgMatch[3]);
+  } else if (bgRgbStr.startsWith('#')) {
+    const hex = bgRgbStr.slice(1);
+    if (/^[0-9a-f]{6}$/i.test(hex)) {
+      const val = parseInt(hex, 16);
+      bgR = (val >> 16) & 255; bgG = (val >> 8) & 255; bgB = val & 255;
+    } else { return fgRgbStr; }
+  } else { return fgRgbStr; }
+  const blend = (fg, bg) => Math.round(opacity * fg + (1 - opacity) * bg);
+  return `rgb(${blend(r, bgR)},${blend(g, bgG)},${blend(b, bgB)})`;
+}
+
 async function applyServerlessOptimizations(context, page, options) {
   const { loadImages = false, blockFonts = true, blockMedia = true, disableJavaScript = false } = options;
 
@@ -132,35 +152,58 @@ async function runWcagOnPage(page) {
         if (bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg;
         current = current.parentElement;
       }
-      return getComputedStyle(document.documentElement).backgroundColor;
+      const htmlBg = getComputedStyle(document.documentElement).backgroundColor;
+      const normalized = htmlBg.replace(/\s/g, '');
+      return (normalized === 'rgba(0,0,0,0)' || normalized === 'transparent') ? 'rgb(255,255,255)' : htmlBg;
     }
 
     const results = [];
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_ELEMENT,
-      null
-    );
-    while (walker.nextNode()) {
-      const el = walker.currentNode;
+
+    function processElement(el) {
       const tag = el.tagName.toLowerCase();
-      if (tag === 'style' || tag === 'script' || tag === 'noscript') continue;
+      if (tag === 'style' || tag === 'script' || tag === 'noscript') return;
       const style = getComputedStyle(el);
-      // Skip visually hidden elements (sr-only pattern)
-      if (style.position === 'absolute') {
-        const rect = el.getBoundingClientRect();
-        if (rect.width <= 1 && rect.height <= 1) continue;
-        if (style.overflow === 'hidden' && rect.width === 0 && rect.height === 0) continue;
+
+      // Skip hidden elements
+      if (style.display === 'none') return;
+      if (el.getAttribute('aria-hidden') === 'true') return;
+      if (tag === 'svg') return;
+      if (tag === 'text') return;
+
+      // Skip disabled elements
+      if (el.disabled) return;
+      if (el.getAttribute('aria-disabled') === 'true') return;
+      let dParent = el.parentElement;
+      let hasDisabledAncestor = false;
+      while (dParent) {
+        if (dParent.tagName === 'FIELDSET' && dParent.disabled) { hasDisabledAncestor = true; break; }
+        if (dParent.tagName === 'BODY') break;
+        dParent = dParent.parentElement;
       }
+      if (hasDisabledAncestor) return;
+
+      // Skip off-screen positioned elements (outside viewport, not scrollable into view)
+      const rect = el.getBoundingClientRect();
+      if ((style.position === 'absolute' || style.position === 'fixed') &&
+          (rect.bottom < 0 || rect.top > window.innerHeight || rect.right < 0 || rect.left > window.innerWidth)) return;
+
+      // Skip visually hidden elements (sr-only with zero dimensions)
+      if (style.position === 'absolute' && style.overflow === 'hidden' && rect.width === 0 && rect.height === 0) return;
+
+      // Recurse into open shadow DOM (before text/content check — host element may have empty textContent)
+      if (el.shadowRoot && el.shadowRoot.mode === 'open') {
+        traverseRoot(el.shadowRoot);
+      }
+
       const text = el.textContent.trim();
-      if (!text || el.children.length > 0) continue;
+      if (!text || el.children.length > 0) return;
       const fontSize = parseFloat(style.fontSize);
       const fontWeight = parseInt(style.fontWeight);
       const isLarge = fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700);
       const rawCls = typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
       const cls = rawCls ? '.' + rawCls.trim().split(/\s+/).filter(Boolean).join('.') : '';
       const bg = getEffectiveBackground(el, 10);
-      if (bg === 'skip') continue;
+      if (bg === 'skip') return;
       const lh = parseFloat(style.lineHeight);
       results.push({
         selector: el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + cls,
@@ -172,9 +215,47 @@ async function runWcagOnPage(page) {
         isLarge,
         fontFamily: style.fontFamily,
         lineHeight: isNaN(lh) ? 0 : lh,
-        tagName: el.tagName.toLowerCase()
+        tagName: el.tagName.toLowerCase(),
+        opacity: parseFloat(style.opacity)
       });
     }
+
+    function traverseRoot(root) {
+      let foundElements = false;
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, null);
+      while (walker.nextNode()) {
+        processElement(walker.currentNode);
+        foundElements = true;
+      }
+      // Handle direct text nodes in shadow root (no element wrapper)
+      if (!foundElements && root.nodeType === 11) {
+        const text = root.textContent.trim();
+        if (text) {
+          const host = root.host;
+          const hostStyle = getComputedStyle(host);
+          const bg = getEffectiveBackground(host, 10);
+          if (bg !== 'skip') {
+            const fontSize = parseFloat(hostStyle.fontSize);
+            const fontWeight = parseInt(hostStyle.fontWeight);
+            results.push({
+              selector: host.tagName.toLowerCase() + (host.id ? '#' + host.id : '') + '::shadow',
+              text: text.slice(0, 120),
+              foreground: hostStyle.color,
+              background: bg,
+              fontSize,
+              fontWeight,
+              isLarge: fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700),
+              fontFamily: hostStyle.fontFamily,
+              lineHeight: parseFloat(hostStyle.lineHeight) || 0,
+              tagName: host.tagName.toLowerCase(),
+              opacity: parseFloat(hostStyle.opacity)
+            });
+          }
+        }
+      }
+    }
+
+    traverseRoot(document.body);
     return results;
   });
 
@@ -185,6 +266,9 @@ async function runWcagOnPage(page) {
       const bgColor = el.background;
       if (fgColor.includes('rgba')) {
         fgColor = blendRgbaOverRgb(fgColor, bgColor);
+      }
+      if (typeof el.opacity === 'number' && el.opacity < 1) {
+        fgColor = blendOpacity(fgColor, bgColor, el.opacity);
       }
       const fg = rgbToHex(fgColor);
       const bg = rgbToHex(bgColor);
@@ -723,4 +807,4 @@ async function audit(url, options = {}) {
   }
 }
 
-module.exports = { audit, isVercel, CHROMIUM_VERSION };
+module.exports = { audit, getChromium, isVercel, CHROMIUM_VERSION };

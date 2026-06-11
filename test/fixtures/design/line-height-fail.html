@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Line Height Fail</title>
+<style>
+  body { font-family: sans-serif; font-size: 16px; margin: 2em; }
+  .tight { line-height: 1.2; }
+  .loose { line-height: 2.0; }
+  .good  { line-height: 1.5; }
+  .extreme { line-height: 3.0; }
+  button { font-size: 16px; }
+</style></head><body>
+  <h1>Line Height Fail Test</h1>
+  <p class="tight">Tight line-height 1.2 — too cramped.</p>
+  <p class="loose">Loose line-height 2.0 — too spaced.</p>
+  <p class="good">Good line-height 1.5 — OK.</p>
+  <p class="extreme">Extreme line-height 3.0 — way too loose.</p>
+  <ul><li class="tight">Tight list item lh 1.2</li></ul>
+  <span class="loose">Loose span lh 2.0</span>
+  <button class="tight">Tight button lh 1.2</button>
+</body></html>

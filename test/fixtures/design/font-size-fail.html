@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Font Size Fail</title>
+<style>
+  body { font-family: sans-serif; margin: 2em; }
+  .small { font-size: 12px; }
+  .med   { font-size: 14px; }
+  /* 14pt bold = large text exception, should pass */
+  .large-exception { font-size: 14px; font-weight: 700; }
+  /* 18px = large text exception, should pass */
+  .large { font-size: 18px; }
+  .ok    { font-size: 16px; }
+  button { font-size: 14px; }
+</style></head><body>
+  <h1>Font Size Fail Test</h1>
+  <p class="small">This paragraph is 12px — too small.</p>
+  <p class="med">This paragraph is 14px normal weight — too small.</p>
+  <p class="large-exception">14px bold — large text exception, OK.</p>
+  <p class="large">18px — large text, OK.</p>
+  <p class="ok">16px — acceptable.</p>
+  <ul><li class="small">12px list item</li></ul>
+  <button class="small">12px button</button>
+  <span class="med">14px span normal weight</span>
+</body></html>
