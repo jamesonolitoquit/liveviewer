@@ -323,6 +323,7 @@ function renderDesignFailure(f: DesignFailure, _i: number) {
 }
 
 export function AuditResults({ data, children }: AuditResultsProps) {
+  if (!data) return null
   const { wcag, design, seo, security, legal, performance } = data
   const multi = data.multiViewport && data.viewports && data.viewports.length >= 2
   const resultsRef = useRef<HTMLElement>(null)
