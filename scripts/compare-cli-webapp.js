@@ -85,9 +85,10 @@ function postJson(url, body, timeoutMs = 30000) {
   return new Promise((resolve) => {
     const u = new URL(url);
     const data = JSON.stringify(body);
+    const mod = u.protocol === 'https:' ? require('https') : http;
     const options = {
       hostname: u.hostname,
-      port: u.port || 80,
+      port: u.port || (u.protocol === 'https:' ? 443 : 80),
       path: u.pathname,
       method: 'POST',
       headers: {
@@ -96,7 +97,7 @@ function postJson(url, body, timeoutMs = 30000) {
       },
       timeout: timeoutMs
     };
-    const req = http.request(options, (res) => {
+    const req = mod.request(options, (res) => {
       let body = '';
       res.on('data', chunk => { body += chunk; });
       res.on('end', () => {
