@@ -573,8 +573,11 @@ async function runA11yPageChecks(page) {
     }
 
     // Skip navigation / main landmark check
+    // Only flag when there is navigational content (nav element) but no skip link and no main landmark.
+    // This matches axe-core's bypass rule behavior: simple pages without navigation are not flagged.
     const hasMain = document.querySelector('[role="main"], #main, #content, #main-content, main');
-    if (!hasMain) {
+    const hasNav = document.querySelector('nav, [role="navigation"]');
+    if (!hasMain && hasNav) {
       let hasSkipLink = false;
       const links = document.querySelectorAll('a[href^="#"]');
       for (const link of links) {
@@ -590,7 +593,7 @@ async function runA11yPageChecks(page) {
           ruleName: 'Page should have skip navigation or main landmark',
           category: 'interactivity',
           selector: 'body',
-          description: 'No skip link or main landmark found',
+          description: 'No skip link or main landmark found on page with navigation',
           severity: 'high',
           value: 'no skip link or role="main"',
           expected: 'a skip link with href="#main" or role="main" on content area'
