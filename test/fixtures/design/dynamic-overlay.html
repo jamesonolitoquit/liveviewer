@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Dynamic Overlay</title>
+<style>
+  body { font-family: sans-serif; margin: 2em; line-height: 1.5; }
+  .static { font-size: 14px; }
+  .overlay-text { font-size: 11px; }
+</style></head><body>
+  <h1>Main Heading</h1>
+  <p class="static">Static body text at 14px</p>
+  <script>
+    var div = document.createElement('div');
+    div.innerHTML = '<p class="overlay-text" style="font-size:11px">Dynamic overlay content added by blocking script (simulates React hydration)</p>';
+    document.body.prepend(div);
+  </script>
+</body></html>

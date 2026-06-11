@@ -19,4 +19,6 @@ jobs:
       - run: npx playwright install chromium
       - run: npm run build
       - run: npm run test
+      - run: npm run test:viewport-merge
+      - run: npm run test:performance
       - run: npm audit --audit-level=critical

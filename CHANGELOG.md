@@ -1,5 +1,29 @@
 # Changelog
 
+## v4.2.0 (2026-06-12)
+
+- **`waitUntil` default changed to `load`** — ensures React hydration completes before element collection; eliminates race condition where dynamic modals/overlays appeared inconsistently between CLI and web app
+- **Multi-viewport element merge** — elements from all viewports are now accumulated (deduped by selector) instead of only the last viewport's elements being used for engine analysis; fixes `--mobile` losing design QA findings from earlier viewports
+- **`--wait-stable` flag** — optional MutationObserver-based wait for DOM stability (300ms without mutations, 3s timeout); catches dynamic content added after `load` (lazy-loaded widgets, async React updates)
+- **Design QA parity** — CLI and web app now produce identical failure counts and scores for the same URL/viewports; dedup verified across viewports
+- **Dynamic content fixture** (`test/fixtures/dynamic/`) — blocking and deferred (setTimeout) content scenarios for regression testing
+- **Viewport-merge unit tests** — 8 new vitest tests validating merge/dedup logic
+- **Hardening verification script** (`scripts/verify-hardening.js`) — 11 checks for delayed content, responsive elements, dedup, and CLI documentation
+- **Legal benchmark fixed** — `benchmark-legal.js` updated for `runLegalChecks` returning `{ failures, totalChecks }` (v4.1.1 regression)
+- **CI pipeline updated** — `test:viewport-merge` and `test:performance` added to GitHub Actions
+- **All 5 benchmarks at 100% precision/recall**: Design QA, SEO, Security, Legal & Privacy, Accessibility
+
+## v4.1.1 (2026-06-12)
+
+- **Legal score fix** — `runLegalChecks` now returns `{ failures, totalChecks: 5 }` instead of bare array; `auditor.js` computes proportional score (`passCount / totalChecks * 100`) instead of hardcoding `score: 0`
+- **Parity script HTTPS support** — dynamically requires `https` module when URL protocol is `https:`, fixing redirect errors against production Vercel
+- **Legal score confirmed**: 20% on liveviewer homepage (privacy link detected, 4 other rules genuinely fail)
+
+## v4.1.0 (2026-06-12)
+
+- **Performance pillar visible in API** — `sanitized.performance` now serialized in route.ts response (was silently dropped)
+- **SEO/Security/Legal detail sections guarded** — wrapped with conditional checks matching WCAG/Design pattern
+
 ## v4.0.0 (2026-06-12)
 
 - **6 hardened pillars** all at 100% benchmark accuracy:

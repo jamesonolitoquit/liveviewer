@@ -16,6 +16,7 @@
     "test:cli": "npm -w packages/cli run test",
     "test:web": "npm -w apps/web run test",
     "test:performance": "node scripts/resilience-performance.js && node scripts/smoke-performance.js",
+    "test:viewport-merge": "node scripts/benchmark-viewport-merge.js",
     "lint": "tsc --noEmit",
     "liveviewer": "node --import tsx/esm packages/cli/bin/liveviewer.js",
     "record": "node --import tsx/esm packages/cli/bin/liveviewer.js record",

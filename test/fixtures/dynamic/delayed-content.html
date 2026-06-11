@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Delayed Content</title>
+<style>
+  body { font-family: sans-serif; margin: 2em; line-height: 1.5; }
+</style></head><body>
+  <p style="font-size:14px">Initial content — would trigger font-size-legible in any case</p>
+  <script>
+    setTimeout(function() {
+      var d = document.createElement('div');
+      d.innerHTML = '<p class="delayed" style="font-size:10px">Delayed 100ms — only captured with --wait-stable or waitUntil load</p>';
+      document.body.appendChild(d);
+    }, 100);
+  </script>
+</body></html>

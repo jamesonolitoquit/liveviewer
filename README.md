@@ -1,4 +1,4 @@
-# Liveviewer v4.0.0
+# Liveviewer v4.2.0
 
 Free, open-source full site quality audit tool. Checks **accessibility, design QA, SEO, security, legal compliance, and performance** — with deterministic fix suggestions for every issue. No API key required, no signup, no tracking.
 
@@ -201,10 +201,16 @@ Liveviewer can enrich WCAG audits with natural-language explanations and fix sug
 export OPENAI_API_KEY=sk-...
 liveviewer audit https://example.com --wcag --smart-enrich
 ```
+**Tip 1:** For heavy pages (e.g., web.dev, nytimes.com), add `--wait-until domcontentloaded` to avoid timeouts:
 
-**Tip:** For heavy pages (e.g., web.dev, nytimes.com), add `--wait-until domcontentloaded` to avoid timeouts:
 ```bash
 liveviewer audit https://web.dev --wcag --design --smart-enrich --wait-until domcontentloaded
+```
+
+**Tip 2:** For dynamic SPAs with lazy-loaded content (React, Vue, Angular), add `--wait-stable` to wait for DOM mutations to settle before collecting elements:
+
+```bash
+liveviewer audit https://web.dev --wcag --design --wait-stable
 ```
 
 ### Smart Enrichment Flags

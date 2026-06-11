@@ -47,7 +47,8 @@ Options for "audit":
   --viewports <list>  Comma-separated viewports, e.g. "1280x800,375x812" (overrides --width/--height)
   --fail-on <n>       Exit non-zero if WCAG failures exceed n (for CI)
   --timeout <ms>      Navigation timeout (default: 30000)
-  --wait-until <str>  Navigation wait strategy: domcontentloaded (default), load, networkidle
+  --wait-until <str>  Navigation wait strategy: load (default), domcontentloaded, networkidle
+  --wait-stable       Wait for DOM stability (no mutations for 300ms) before collecting elements (more deterministic for dynamic SPAs)
   --crawl               Crawl same-origin pages up to --max-pages (default: 50)
   --max-pages <n>       Max pages to crawl (default: 50)
   --depth <n>           Max crawl depth (default: 3)
@@ -77,7 +78,7 @@ Options for "extract":
   --styles            Extract design tokens (colors, typography, spacing)
   --brand <path>      Brand config JSON for design system violation detection
   --timeout <ms>      Navigation timeout (default: 30000)
-  --wait-until <str>  Navigation wait strategy: domcontentloaded (default), load, networkidle
+  --wait-until <str>  Navigation wait strategy: load (default), domcontentloaded, networkidle
 
 Options for "record":
   --duration <ms>     Recording duration (default: 5000)
@@ -249,7 +250,7 @@ async function main() {
         auditViewports = [{ width: 1280, height: 800 }, { width: 375, height: 812 }];
       }
       const timeout = parseInt(parseArg('--timeout') || '30000');
-      const waitUntil = parseArg('--wait-until') || 'domcontentloaded';
+      const waitUntil = parseArg('--wait-until') || 'load';
 
       const doSmartPrompt = hasFlag('--smart-prompt') || hasFlag('--ai-prompt');
       const llmEnrich = (hasFlag('--smart-enrich') || hasFlag('--llm-enrich') || (!hasFlag('--no-smart') && !hasFlag('--no-llm') && (!!parseArg('--enhancement-key') || !!parseArg('--llm-api-key') || !!process.env.OPENAI_API_KEY))) && !doSmartPrompt;
@@ -302,7 +303,8 @@ async function main() {
         legal: doLegal,
         performance: doPerformance,
         timeout,
-        waitUntil
+        waitUntil,
+        waitStable: hasFlag('--wait-stable')
       };
       if (auditViewports) auditOpts.viewports = auditViewports;
       const crawlMaxPages = parseInt(parseArg('--max-pages') || '50');
@@ -592,7 +594,7 @@ async function main() {
       const doStyles = hasFlag('--styles');
       const brandPath = parseArg('--brand');
       const timeout = parseInt(parseArg('--timeout') || '30000');
-      const waitUntil = parseArg('--wait-until') || 'domcontentloaded';
+      const waitUntil = parseArg('--wait-until') || 'load';
 
       console.log(`Extracting from ${url} at ${width}x${height}...`);
       const result = await extract(url, {

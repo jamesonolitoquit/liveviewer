@@ -61,6 +61,14 @@
       ]
     },
     {
+      "id": "dynamic-overlay",
+      "label": "Dynamic content added after DOMContentLoaded — captured with waitStable",
+      "expectedFailures": [
+        { "ruleId": "font-size-legible", "selector": "p.static" },
+        { "ruleId": "font-size-legible", "selector": "p.overlay-text" }
+      ]
+    },
+    {
       "id": "mixed-rules",
       "label": "Multiple violations: font-size, line-height, heading, scroll",
       "expectedFailures": [

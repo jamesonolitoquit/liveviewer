@@ -891,6 +891,20 @@ async function waitForLayout(page) {
   }));
 }
 
+async function waitForStableDOM(page, stableTimeout = 3000) {
+  await page.evaluate(async (timeout) => {
+    await new Promise(resolve => {
+      let timer;
+      const observer = new MutationObserver(() => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { observer.disconnect(); resolve(); }, 300);
+      });
+      observer.observe(document.body, { childList: true, subtree: true, attributes: false });
+      timer = setTimeout(() => { observer.disconnect(); resolve(); }, timeout);
+    });
+  }, stableTimeout).catch(() => {});
+}
+
 async function audit(url, options = {}) {
   const {
     viewport = isVercel ? DEFAULT_VIEWPORT : { width: 1280, height: 800 },
@@ -909,7 +923,8 @@ async function audit(url, options = {}) {
     blockFonts = true,
     blockMedia = true,
     disableJavaScript = false,
-    navigationTimeout = 8000
+    navigationTimeout = 8000,
+    waitStable = false
   } = options;
 
   const vps = viewports && viewports.length > 0
@@ -976,6 +991,7 @@ async function audit(url, options = {}) {
         const responseHeaders = mainResponse ? mainResponse.headers() : {};
         await page.waitForSelector('body', { timeout: 2000 }).catch(() => {});
         await page.waitForSelector('h1, main, [role="main"]', { timeout: 5000 }).catch(() => {});
+        if (waitStable) await waitForStableDOM(page);
 
         const viewportResults = [];
         let lastElements = [];
@@ -990,7 +1006,15 @@ async function audit(url, options = {}) {
           if (doWcag || doDesign) {
             const result = await runWcagOnPage(page);
             if (doWcag) viewportResults.push({ viewport: vp, wcag: result });
-            if (result._elements) lastElements = result._elements;
+            if (result._elements) {
+              const seen = new Set((lastElements || []).map(e => e.selector));
+              for (const el of result._elements) {
+                if (!seen.has(el.selector)) {
+                  seen.add(el.selector);
+                  lastElements.push(el);
+                }
+              }
+            }
           }
           if (doDesign) {
             const pageFails = await runDesignPageChecks(page);

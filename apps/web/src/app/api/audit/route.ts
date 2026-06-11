@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
       url,
       viewports: rawViewports,
       timeout = 8000,
-      waitUntil = 'domcontentloaded',
+      waitUntil = 'load',
+      waitStable = false,
       bypassCache,
       loadImages = false,
       context: bodyContext
@@ -136,6 +137,7 @@ export async function POST(request: NextRequest) {
       performance: true,
       timeout: Math.min(timeout, 7000),
       waitUntil,
+      waitStable,
       loadImages,
       blockFonts: true,
       blockMedia: true,

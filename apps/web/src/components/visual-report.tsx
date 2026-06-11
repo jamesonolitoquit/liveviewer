@@ -1,6 +1,7 @@
 'use client'
 
 import type { AuditData } from '@/types/audit'
+import { PILLARS } from '@/lib/pillars'
 import { PillarRadar } from './pillar-radar'
 import { PassFailBars } from './pass-fail-bars'
 
@@ -8,27 +9,17 @@ interface VisualReportProps {
   data: AuditData
 }
 
-const PILLAR_LABELS: Record<string, string> = {
-  wcag: 'WCAG',
-  design: 'Design',
-  seo: 'SEO',
-  security: 'Security',
-  legal: 'Legal',
-  performance: 'Perf',
-}
-
 export function VisualReport({ data }: VisualReportProps) {
-  const pillars = ['wcag', 'design', 'seo', 'security', 'legal', 'performance'] as const
   const scores: { pillar: string; score: number }[] = []
   const bars: { pillar: string; pass: number; fail: number }[] = []
 
-  for (const key of pillars) {
+  for (const { key, label } of PILLARS) {
     const p = data[key as keyof AuditData] as { score?: number; passCount?: number; failCount?: number } | null
     if (p && p.score != null) {
-      scores.push({ pillar: PILLAR_LABELS[key], score: Math.round(p.score) })
+      scores.push({ pillar: label, score: Math.round(p.score) })
     }
     if (p && p.passCount != null && p.failCount != null) {
-      bars.push({ pillar: PILLAR_LABELS[key], pass: p.passCount, fail: p.failCount })
+      bars.push({ pillar: label, pass: p.passCount, fail: p.failCount })
     }
   }
 

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Responsive Elements</title>
+<style>
+  body { font-family: sans-serif; margin: 0; line-height: 1.5; }
+  .always-visible { font-size: 14px; }
+  .desktop-only { font-size: 12px; }
+  .mobile-only { font-size: 12px; }
+  @media (max-width: 800px) { .desktop-only { display: none; } }
+  @media (min-width: 801px) { .mobile-only { display: none; } }
+</style></head><body>
+  <p class="always-visible">Always visible text 14px</p>
+  <p class="desktop-only">Desktop only element 12px</p>
+  <p class="mobile-only">Mobile only element 12px</p>
+</body></html>
