@@ -52,6 +52,76 @@ export interface FixSuggestion {
   recommendation: string
 }
 
+export interface SeoFailure {
+  ruleId: string
+  ruleName: string
+  category: string
+  selector: string
+  description: string
+  severity: 'high' | 'medium' | 'low'
+  value: string
+  expected: string
+}
+
+export interface SeoData {
+  failures: SeoFailure[]
+  totalChecks: number
+  passCount: number
+  failCount: number
+  score: number
+}
+
+export interface SecurityFailure {
+  ruleId: string
+  ruleName: string
+  category: string
+  selector: string
+  description: string
+  severity: 'high' | 'medium' | 'low'
+  value: string
+  expected: string
+}
+
+export interface SecurityData {
+  failures: SecurityFailure[]
+  totalChecks: number
+  passCount: number
+  failCount: number
+  score: number
+}
+
+export interface LegalFailure {
+  ruleId: string
+  ruleName: string
+  category?: string
+  selector: string
+  description: string
+  severity?: string
+  value?: string
+  expected?: string
+}
+
+export interface LegalData {
+  failures: LegalFailure[]
+  totalChecks: number
+  passCount: number
+  failCount: number
+  score: number
+}
+
+export interface PerformanceData {
+  error: string | null
+  score: number | null
+  grade: string | null
+  lcp: number | null
+  cls: number | null
+  tbt: number | null
+  fcp: number | null
+  speedIndex: number | null
+  tti: number | null
+  recommendations: string[]
+}
+
 export interface AuditData {
   url: string
   timestamp: number
@@ -60,5 +130,9 @@ export interface AuditData {
   viewports?: ViewportResult[]
   multiViewport?: boolean
   design?: DesignData | null
+  seo?: SeoData | null
+  security?: SecurityData | null
+  legal?: LegalData | null
+  performance?: PerformanceData | null
   recommendations?: FixSuggestion[]
 }

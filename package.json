@@ -1,6 +1,6 @@
 {
   "name": "liveviewer-monorepo",
-  "version": "2.3.0",
+  "version": "3.7.0",
   "private": true,
   "description": "Frame-by-frame visual recording and analysis engine for live websites",
   "license": "MIT",
@@ -15,6 +15,7 @@
     "test:llm": "npm -w packages/llm run test",
     "test:cli": "npm -w packages/cli run test",
     "test:web": "npm -w apps/web run test",
+    "test:performance": "node scripts/resilience-performance.js && node scripts/smoke-performance.js",
     "lint": "tsc --noEmit",
     "liveviewer": "node --import tsx/esm packages/cli/bin/liveviewer.js",
     "record": "node --import tsx/esm packages/cli/bin/liveviewer.js record",

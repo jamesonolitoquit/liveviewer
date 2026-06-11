@@ -1,29 +1,31 @@
 {
-    "name":  "@liveviewer/core",
-    "version":  "2.3.0",
-    "description":  "Liveviewer deterministic design QA engine",
-    "license":  "MIT",
-    "type":  "commonjs",
-    "main":  "src/index.js",
-    "files":  [
-                  "src/",
-                  "lib/",
-                  "templates/",
-                  "README.md"
-              ],
-    "scripts":  {
-                    "test":  "vitest run",
-                    "test:watch":  "vitest",
-                    "typecheck":  "tsc --noEmit"
-                },
-    "dependencies":  {
-                         "@sparticuz/chromium":  "^149.0.0",
-                         "@sparticuz/chromium-min":  "^149.0.0",
-                         "playwright":  "^1.60.0",
-                         "playwright-core":  "^1.60.0",
-                         "wcag-contrast":  "^3.0.0"
-                     },
-    "devDependencies":  {
-                            "vitest":  "^3.1.0"
-                        }
+    "name": "@liveviewer/core",
+    "version": "3.7.0",
+    "description": "Liveviewer deterministic design QA engine",
+    "license": "MIT",
+    "type": "commonjs",
+    "main": "src/index.js",
+    "files": [
+        "src/",
+        "lib/",
+        "templates/",
+        "README.md"
+    ],
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@sparticuz/chromium": "^149.0.0",
+        "@sparticuz/chromium-min": "^149.0.0",
+        "chrome-launcher": "^1.2.1",
+        "lighthouse": "^13.4.0",
+        "playwright": "^1.60.0",
+        "playwright-core": "^1.60.0",
+        "wcag-contrast": "^3.0.0"
+    },
+    "devDependencies": {
+        "vitest": "^3.1.0"
+    }
 }

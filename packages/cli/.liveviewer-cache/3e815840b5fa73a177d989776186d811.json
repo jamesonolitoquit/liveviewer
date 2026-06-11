@@ -1,0 +1,9 @@
+{
+  "url": "https://example.com",
+  "wcagScore": null,
+  "designScore": null,
+  "wcagFailures": 0,
+  "designFailures": 0,
+  "timestamp": 1781154348785,
+  "timedOut": false
+}

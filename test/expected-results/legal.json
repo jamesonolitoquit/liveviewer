@@ -1,0 +1,82 @@
+{
+  "name": "Liveviewer Legal & Privacy Rules",
+  "description": "Test suite for cookie consent, privacy, imprint, terms of service, and data collection checks.",
+  "testCases": [
+    {
+      "id": "consent-pass",
+      "label": "Cookie consent banner present — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "consent-fail",
+      "label": "No cookie consent — cookie-consent fails",
+      "expectedFailures": [
+        {"ruleId": "cookie-consent", "fixture": "consent-fail.html"}
+      ]
+    },
+    {
+      "id": "privacy-pass",
+      "label": "Privacy policy link present — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "privacy-fail",
+      "label": "No privacy link — privacy-policy fails",
+      "expectedFailures": [
+        {"ruleId": "privacy-policy", "fixture": "privacy-fail.html"}
+      ]
+    },
+    {
+      "id": "imprint-pass",
+      "label": "Imprint link present — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "imprint-fail",
+      "label": "No imprint link — imprint fails",
+      "expectedFailures": [
+        {"ruleId": "imprint", "fixture": "imprint-fail.html"}
+      ]
+    },
+    {
+      "id": "tos-pass",
+      "label": "Terms of service link present — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "tos-fail",
+      "label": "No TOS link — terms-of-service fails",
+      "expectedFailures": [
+        {"ruleId": "terms-of-service", "fixture": "tos-fail.html"}
+      ]
+    },
+    {
+      "id": "data-pass",
+      "label": "Data collection text present — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "data-fail",
+      "label": "No data collection text — data-collection-notice fails",
+      "expectedFailures": [
+        {"ruleId": "data-collection-notice", "fixture": "data-fail.html"}
+      ]
+    },
+    {
+      "id": "legal-perfect",
+      "label": "All legal requirements met — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "legal-mixed",
+      "label": "No legal requirements met — all 5 fail",
+      "expectedFailures": [
+        {"ruleId": "cookie-consent", "fixture": "legal-mixed.html"},
+        {"ruleId": "privacy-policy", "fixture": "legal-mixed.html"},
+        {"ruleId": "imprint", "fixture": "legal-mixed.html"},
+        {"ruleId": "terms-of-service", "fixture": "legal-mixed.html"},
+        {"ruleId": "data-collection-notice", "fixture": "legal-mixed.html"}
+      ]
+    }
+  ]
+}

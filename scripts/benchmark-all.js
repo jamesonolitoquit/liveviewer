@@ -33,7 +33,12 @@ async function runBenchmark(label, script, args = []) {
 const benchmarks = [
   ['Contrast (W3C ACT afw4f7)', 'scripts/benchmark.mjs'],
   ['Design QA (internal fixtures)', 'scripts/benchmark-design.js'],
+  ['SEO (internal fixtures)', 'scripts/benchmark-seo.js'],
+  ['Security (internal fixtures)', 'scripts/benchmark-security.js'],
+  ['Legal & Privacy (internal fixtures)', 'scripts/benchmark-legal.js'],
   ['Accessibility + Design (vs axe-core)', 'scripts/benchmark-accessibility.js'],
+  ['Performance (resilience)', 'scripts/resilience-performance.js'],
+  ['Performance (smoke)', 'scripts/smoke-performance.js'],
 ];
 
 let allPassed = true;

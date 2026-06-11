@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 
 interface SmartPanelProps {
@@ -13,10 +13,13 @@ interface SmartPanelProps {
 }
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com/v1'
+const DEFAULT_MODEL = 'deepseek-chat'
 
 const STORAGE_KEYS = {
   key: 'liveviewer_llm_key',
-  baseUrl: 'liveviewer_llm_base_url'
+  baseUrl: 'liveviewer_llm_base_url',
+  model: 'liveviewer_llm_model',
+  modelsCache: 'liveviewer_llm_models_cache'
 }
 
 function SeverityPill({ severity }: { severity: string }) {
@@ -37,13 +40,81 @@ export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoadin
   const [key, setKey] = useState('')
   const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE_URL)
   const [showKey, setShowKey] = useState(false)
+  const [modelsList, setModelsList] = useState<string[]>([])
+  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL)
+  const [customModel, setCustomModel] = useState('')
+  const [modelFetchError, setModelFetchError] = useState(false)
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const cacheKey = `${baseUrl}|${key}`
 
   useEffect(() => {
     const savedKey = sessionStorage.getItem(STORAGE_KEYS.key) || ''
     const savedBaseUrl = sessionStorage.getItem(STORAGE_KEYS.baseUrl) || ''
+    const savedModel = sessionStorage.getItem(STORAGE_KEYS.model) || ''
     setKey(savedKey)
     if (savedBaseUrl) setBaseUrl(savedBaseUrl)
+    if (savedModel) setSelectedModel(savedModel)
   }, [])
+
+  const fetchModels = async () => {
+    const savedKey = sessionStorage.getItem(STORAGE_KEYS.key) || ''
+    const savedBaseUrl = sessionStorage.getItem(STORAGE_KEYS.baseUrl) || ''
+    if (!savedKey || !savedBaseUrl) return
+
+    const ck = `${savedBaseUrl}|${savedKey}`
+    const cached = sessionStorage.getItem(STORAGE_KEYS.modelsCache)
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached)
+        if (parsed.key === ck && Array.isArray(parsed.models) && parsed.models.length > 0) {
+          setModelsList(parsed.models)
+          setModelFetchError(false)
+          return
+        }
+      } catch {}
+    }
+
+    try {
+      const res = await fetch('/api/smart-models', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${savedKey}`,
+        },
+        body: JSON.stringify({ backendUrl: savedBaseUrl }),
+      })
+
+      if (!res.ok) {
+        setModelsList([])
+        setModelFetchError(true)
+        return
+      }
+
+      const data = await res.json()
+      const ids: string[] = (data.data || []).map((m: any) => m.id).filter(Boolean)
+
+      if (ids.length > 0) {
+        setModelsList(ids)
+        setModelFetchError(false)
+        sessionStorage.setItem(STORAGE_KEYS.modelsCache, JSON.stringify({ key: ck, models: ids }))
+      } else {
+        setModelsList([])
+        setModelFetchError(true)
+      }
+    } catch {
+      setModelsList([])
+      setModelFetchError(true)
+    }
+  }
+
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    debounceTimer.current = setTimeout(fetchModels, 500)
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    }
+  }, [baseUrl, key])
 
   const handleKeyChange = (newKey: string) => {
     setKey(newKey)
@@ -53,6 +124,11 @@ export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoadin
   const handleBaseUrlChange = (newUrl: string) => {
     setBaseUrl(newUrl)
     sessionStorage.setItem(STORAGE_KEYS.baseUrl, newUrl)
+  }
+
+  const handleModelChange = (model: string) => {
+    setSelectedModel(model)
+    sessionStorage.setItem(STORAGE_KEYS.model, model)
   }
 
   const clearKey = () => {
@@ -165,6 +241,35 @@ export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoadin
                               </button>
                             )}
                           </div>
+                        </div>
+
+                        <div>
+                          <label htmlFor="drawer-model" className="mb-1.5 block text-xs font-medium text-[var(--muted-foreground)]">Model</label>
+                          {modelsList.length > 0 ? (
+                            <select
+                              id="drawer-model"
+                              value={modelsList.includes(selectedModel) ? selectedModel : ''}
+                              onChange={e => handleModelChange(e.target.value)}
+                              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none transition-colors focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
+                            >
+                              <option value="" disabled>Select a model</option>
+                              {modelsList.map(m => (
+                                <option key={m} value={m}>{m}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              id="drawer-model"
+                              type="text"
+                              value={customModel || selectedModel}
+                              onChange={e => {
+                                setCustomModel(e.target.value)
+                                handleModelChange(e.target.value)
+                              }}
+                              placeholder={modelFetchError ? 'Could not load models — type manually' : 'Enter model name'}
+                              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none transition-colors focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
+                            />
+                          )}
                         </div>
 
                         <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3 text-xs text-amber-800 dark:text-amber-200">

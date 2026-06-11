@@ -130,6 +130,9 @@ export async function POST(request: NextRequest) {
       label: 'web-audit',
       wcag: true,
       design: true,
+      seo: true,
+      security: true,
+      legal: true,
       timeout: Math.min(timeout, 7000),
       waitUntil,
       loadImages,
@@ -159,6 +162,15 @@ export async function POST(request: NextRequest) {
     }
     if (result.design) {
       sanitized.design = result.design
+    }
+    if (result.seo) {
+      sanitized.seo = result.seo
+    }
+    if (result.security) {
+      sanitized.security = result.security
+    }
+    if (result.legal) {
+      sanitized.legal = result.legal
     }
     if (viewports && viewports.length >= 2) {
       sanitized.multiViewport = true

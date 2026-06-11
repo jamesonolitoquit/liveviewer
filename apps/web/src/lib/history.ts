@@ -1,3 +1,12 @@
+interface PillarScores {
+  wcag?: number
+  design?: number
+  seo?: number
+  security?: number
+  legal?: number
+  performance?: number
+}
+
 interface HistoryEntry {
   url: string
   timestamp: number
@@ -5,6 +14,7 @@ interface HistoryEntry {
   passCount: number
   failCount: number
   totalElements: number
+  pillars: PillarScores
 }
 
 interface AuditData {
@@ -12,6 +22,11 @@ interface AuditData {
   timestamp: number
   viewport: { width: number; height: number }
   wcag: { totalElements: number; failures: any[]; passCount: number; failCount: number; score: number } | null
+  design?: { failures: any[]; totalChecks: number; passCount: number; failCount: number; score: number } | null
+  seo?: { failures: any[]; totalChecks: number; passCount: number; failCount: number; score: number } | null
+  security?: { failures: any[]; totalChecks: number; passCount: number; failCount: number; score: number } | null
+  legal?: { failures: any[]; totalChecks: number; passCount: number; failCount: number; score: number } | null
+  performance?: { error: string | null; score: number | null } | null
 }
 
 const RETENTION_DAYS = parseInt(process.env.NEXT_PUBLIC_HISTORY_RETENTION_DAYS || '30', 10)
@@ -90,13 +105,34 @@ export function getLocalHistory(url: string, limit = 30): HistoryEntry[] {
 export async function saveAudit(data: AuditData): Promise<void> {
   if (!data.wcag) return
 
+  const pillars: PillarScores = {}
+  if (data.wcag) pillars.wcag = data.wcag.score
+  if (data.design) pillars.design = data.design.score
+  if (data.seo) pillars.seo = data.seo.score
+  if (data.security) pillars.security = data.security.score
+  if (data.legal) pillars.legal = data.legal.score
+  if (data.performance && data.performance.score !== null && data.performance.error === null) {
+    pillars.performance = data.performance.score
+  }
+
+  const scores = Object.values(pillars).filter((s): s is number => s !== undefined)
+  const overallScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : data.wcag.score
+
+  const totalFail = (data.wcag.failCount || 0) +
+    (data.design?.failCount || 0) +
+    (data.seo?.failCount || 0) +
+    (data.security?.failCount || 0) +
+    (data.legal?.failCount || 0) +
+    (data.performance?.error ? 1 : 0)
+
   const entry: HistoryEntry = {
     url: normalizeUrl(data.url),
     timestamp: data.timestamp,
-    score: data.wcag.score,
+    score: overallScore,
     passCount: data.wcag.passCount,
-    failCount: data.wcag.failCount,
-    totalElements: data.wcag.totalElements
+    failCount: totalFail,
+    totalElements: data.wcag.totalElements,
+    pillars
   }
 
   saveToLocalStorage(entry)
@@ -163,4 +199,17 @@ export function formatTimestamp(ts: number): string {
   return new Date(ts).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
   })
+}
+
+export function getAllHistory(limit = 10): HistoryEntry[] {
+  const all = readLocalStorage()
+  const entries: HistoryEntry[] = []
+  for (const key in all) {
+    for (const entry of all[key]) {
+      entries.push(entry)
+    }
+  }
+  return entries
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, limit)
 }

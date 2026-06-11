@@ -124,18 +124,19 @@ async function callOpenAICompatible(
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
 
-  return fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
+  return fetch('/api/smart-proxy', {
     method: 'POST',
     headers,
     body: JSON.stringify({
+      backendUrl: baseUrl.replace(/\/$/, ''),
       model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt }
       ],
-      response_format: { type: 'json_object' },
       temperature: 0.2,
-      max_tokens: maxTokens
+      max_tokens: maxTokens,
+      response_format: { type: 'json_object' }
     })
   })
 }

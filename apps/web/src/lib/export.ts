@@ -270,6 +270,41 @@ export function textFromAudit(data: AuditData): string {
   return lines.join('\n')
 }
 
+export function failuresText(data: AuditData): string {
+  const lines: string[] = []
+
+  if (data.wcag?.failures.length) {
+    lines.push('## WCAG Contrast Failures')
+    for (const f of data.wcag.failures) {
+      const vp = f.viewports?.length
+        ? ` [${f.viewports.map(v => `${v.width}x${v.height}`).join(',')}]`
+        : ''
+      lines.push(`- \`${f.selector}\`${vp} — "${f.text}" — ${f.foreground}/${f.background} — ${f.contrastRatio}:1 (needs ${f.required}:1) — ${f.fontSize}px`)
+    }
+    lines.push('')
+  }
+
+  if (data.design?.failures.length) {
+    lines.push('## Design QA Issues')
+    for (const f of data.design.failures) {
+      lines.push(`- \`${f.selector}\` — ${f.ruleName} — ${f.severity} — found: ${f.value}, expected: ${f.expected} — ${f.description}`)
+    }
+    lines.push('')
+  }
+
+  if (data.recommendations?.length) {
+    lines.push('## Fix Suggestions')
+    for (const r of data.recommendations) {
+      const cur = r.currentValue ? ` (was: ${r.currentValue})` : ''
+      const sug = r.suggestedValue ? ` → ${r.suggestedValue}` : ''
+      lines.push(`- \`${r.selector}\` — ${r.severity} — ${r.recommendation}${cur}${sug}`)
+    }
+    lines.push('')
+  }
+
+  return lines.join('\n')
+}
+
 export function downloadFile(content: string, filename: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType })
   const url = URL.createObjectURL(blob)

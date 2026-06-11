@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { csvFromAudit, jsonFromAudit, textFromAudit, downloadFile } from '@/lib/export'
+import { csvFromAudit, jsonFromAudit, textFromAudit, failuresText, downloadFile } from '@/lib/export'
 import { humanError } from '@/lib/errors'
 import { PdfExportButton } from './pdf-export-button'
 import type { AuditData } from '@/types/audit'
@@ -23,6 +23,7 @@ export function ExportButtons({ data }: ExportButtonsProps) {
   const [error, setError] = useState<string | null>(null)
   const [shareState, setShareState] = useState<'idle' | 'saving' | 'copied' | 'error'>('idle')
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
+  const [copyFailsState, setCopyFailsState] = useState<'idle' | 'copied' | 'error'>('idle')
   const prefix = sanitizeFilename(data.url)
 
   const handleCsv = () => {
@@ -54,6 +55,18 @@ export function ExportButtons({ data }: ExportButtonsProps) {
     } catch {
       setCopyState('error')
       setTimeout(() => setCopyState('idle'), 3000)
+    }
+  }
+
+  const handleCopyFailures = () => {
+    try {
+      const text = failuresText(data)
+      navigator.clipboard.writeText(text)
+      setCopyFailsState('copied')
+      setTimeout(() => setCopyFailsState('idle'), 3000)
+    } catch {
+      setCopyFailsState('error')
+      setTimeout(() => setCopyFailsState('idle'), 3000)
     }
   }
 
@@ -104,6 +117,18 @@ export function ExportButtons({ data }: ExportButtonsProps) {
         }`}
       >
         {copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Nope' : 'Copy Summary'}
+      </button>
+      <button
+        onClick={handleCopyFailures}
+        className={`rounded-lg border px-3 py-1.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 ${
+          copyFailsState === 'copied'
+            ? 'border-[var(--jao-success)] text-[var(--jao-success)]'
+            : copyFailsState === 'error'
+            ? 'border-[var(--jao-destructive)] text-[var(--jao-destructive)]'
+            : 'border-[var(--jao-border)] text-[var(--jao-text-secondary)] hover:bg-[var(--jao-border-subtle)]'
+        }`}
+      >
+        {copyFailsState === 'copied' ? 'Copied' : copyFailsState === 'error' ? 'Nope' : 'Copy Failures'}
       </button>
       <button
         onClick={handleShare}

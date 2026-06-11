@@ -36,7 +36,13 @@ Options for "audit":
   --height <px>       Viewport height (default: 800)
   --label <name>      Label for the audit (default: "audit")
   --wcag              Enable WCAG contrast analysis
-  --design            Enable design QA analysis (typography, line-height, horizontal scroll)
+  --design            Enable design QA analysis (typography, line-height, heading hierarchy)
+  --seo               Enable SEO analysis (title, meta, canonical, structured data, social)
+  --security          Enable security analysis (HTTPS, HSTS, CSP, headers, cookies)
+  --legal             Enable legal & privacy analysis (cookie consent, privacy policy, imprint, terms, data collection)
+  --performance       Enable performance analysis via Lighthouse (LCP, CLS, TBT, FCP)
+  --all               Enable all pillars (WCAG, Design, SEO, Security, Legal, Performance)
+  --json              Output raw JSON to stdout (default when piping)
   --mobile            Audit at both Desktop (1280x800) and Mobile (375x812) viewports, merging results
   --viewports <list>  Comma-separated viewports, e.g. "1280x800,375x812" (overrides --width/--height)
   --fail-on <n>       Exit non-zero if WCAG failures exceed n (for CI)
@@ -119,6 +125,23 @@ async function main() {
   const { renderHtml } = require('@liveviewer/core/src/report');
   const { toSarifLog } = require('@liveviewer/core/src/sarif');
 
+  if (command === 'help') {
+    var helpCmd = process.argv[3];
+    console.log('Liveviewer — Frame-by-frame visual recording and analysis tool\n');
+    console.log('Usage: liveviewer <command> [options]\n');
+    console.log('Commands:');
+    console.log('  record        Record a website with frame timing analysis');
+    console.log('  screenshot    Take a screenshot with performance metadata');
+    console.log('  audit         Audit a website (accessibility, layout, SEO, security, legal, performance)');
+    console.log('  extract       Extract design tokens (colors, typography, spacing)');
+    console.log('  recommend     Generate recommendations from audit data');
+    console.log('  mcp           Start MCP server');
+    console.log('  feedback      Open GitHub Issues for feedback');
+    console.log('  help          Show this help\n');
+    console.log('Run "liveviewer <command> --help" for command-specific options.');
+    process.exit(0);
+  }
+
   switch (command) {
     case 'record': {
       const url = process.argv[3];
@@ -199,9 +222,22 @@ async function main() {
       const width = parseInt(parseArg('--width') || '1280');
       const height = parseInt(parseArg('--height') || '800');
       const label = parseArg('--label') || 'audit';
-      const doWcag = hasFlag('--wcag');
-      const doDesign = hasFlag('--design');
+      const doAll = hasFlag('--all');
+      const doWcag = hasFlag('--wcag') || doAll;
+      const doDesign = hasFlag('--design') || doAll;
+      const doSeo = hasFlag('--seo') || doAll;
+      const doSecurity = hasFlag('--security') || doAll;
+      const doLegal = hasFlag('--legal') || doAll;
+      const doPerformance = hasFlag('--performance') || doAll;
+      const doJson = hasFlag('--json');
       const doMobile = hasFlag('--mobile');
+
+      if (!doAll && !doWcag && !doDesign && !doSeo && !doSecurity && !doLegal && !doPerformance) {
+        console.error('Error: At least one pillar flag required (--wcag, --design, --seo, --security, --legal, --performance) or --all.');
+        console.error('Usage: liveviewer audit <url> [--wcag] [--design] [--seo] [--security] [--legal] [--performance] [--all]');
+        process.exit(1);
+      }
+
       const viewportsArg = parseArg('--viewports');
       let auditViewports;
       if (viewportsArg) {
@@ -235,6 +271,22 @@ async function main() {
         }
       }
 
+      const doSarif = hasFlag('--sarif');
+      const doCrawl = hasFlag('--crawl');
+      if (doSarif && doCrawl) {
+        console.error('Error: --sarif is not supported with --crawl in this version. Use --sarif with single pages only.');
+        process.exit(1);
+      }
+
+      // When --json or --sarif is set, suppress human-readable output for clean stdout
+      const sarifOutputPath = parseArg('--sarif-output');
+      var savedLog = console.log;
+      var jsonBuffer = [];
+      var suppressOutput = doJson || (doSarif && !sarifOutputPath);
+      if (suppressOutput) {
+        console.log = function() { jsonBuffer.push(Array.prototype.slice.call(arguments).join(' ')); };
+      }
+
       if (auditViewports) {
         console.log(`Auditing ${url} at ${auditViewports.length} viewport(s): ${auditViewports.map(v => `${v.width}x${v.height}`).join(', ')}...`);
       } else {
@@ -245,28 +297,35 @@ async function main() {
         label,
         wcag: doWcag,
         design: doDesign,
+        seo: doSeo,
+        security: doSecurity,
+        legal: doLegal,
+        performance: doPerformance,
         timeout,
         waitUntil
       };
       if (auditViewports) auditOpts.viewports = auditViewports;
-
-      const doCrawl = hasFlag('--crawl');
       const crawlMaxPages = parseInt(parseArg('--max-pages') || '50');
       const crawlDepth = parseInt(parseArg('--depth') || '3');
-      const crawlConcurrency = parseInt(parseArg('--concurrency') || '3');
+      var crawlConcurrency = parseInt(parseArg('--concurrency') || '3');
+      // Performance audits spawn a separate Chrome process — limit to 1 at a time
+      if (doPerformance && doCrawl) {
+        crawlConcurrency = Math.min(crawlConcurrency, 1);
+      }
       const crawlDelay = parseInt(parseArg('--delay') || '200');
       const crawlNoCache = hasFlag('--no-cache');
       const crawlCacheDir = parseArg('--cache-dir') || '.liveviewer-cache';
       const crawlCacheTtl = parseInt(parseArg('--cache-ttl') || '24');
 
-      // Start spinner (only if stdout is a TTY — pipes, redirects, tests get silent)
+// Start spinner (only if stdout is a TTY — pipes, redirects, tests get silent)
       const isTTY = process.stdout.isTTY;
       let spinnerInterval;
       if (isTTY) {
         const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
         let spinnerIdx = 0;
+        var crawlLabel = doCrawl ? ' (max ' + crawlMaxPages + ' pages)' : '';
         spinnerInterval = setInterval(() => {
-          process.stdout.write(`\r${spinnerFrames[spinnerIdx++ % spinnerFrames.length]} Auditing...`);
+          process.stdout.write(`\r${spinnerFrames[spinnerIdx++ % spinnerFrames.length]} Auditing${crawlLabel}...`);
         }, 80);
       }
 
@@ -284,6 +343,10 @@ async function main() {
             cacheTtl: crawlCacheTtl,
             wcag: doWcag,
             design: doDesign,
+            seo: doSeo,
+          security: doSecurity,
+          legal: doLegal,
+          performance: doPerformance,
             viewport: { width, height },
             viewports: auditViewports || undefined,
             timeout,
@@ -302,13 +365,25 @@ async function main() {
         console.log(`\nCrawl complete! ${s.totalPages} pages in ${(s.totalDuration / 1000).toFixed(1)}s`);
         if (s.averageWcagScore !== null) console.log(`  Avg WCAG:   ${s.averageWcagScore}%`);
         if (s.averageDesignScore !== null) console.log(`  Avg Design: ${s.averageDesignScore}%`);
+        if (s.averageSeoScore !== null) console.log(`  Avg SEO:    ${s.averageSeoScore}%`);
+        if (s.averageSecurityScore !== null) console.log(`  Avg Security: ${s.averageSecurityScore}%`);
+        if (s.averageLegalScore !== null) console.log(`  Avg Legal: ${s.averageLegalScore}%`);
+        if (s.averagePerformanceScore !== null) console.log(`  Avg Performance: ${s.averagePerformanceScore}%`);
         if (s.worstWcagPage) console.log(`  Worst WCAG: ${s.worstWcagPage.url} (${s.worstWcagPage.score}%)`);
         if (s.worstDesignPage) console.log(`  Worst Design: ${s.worstDesignPage.url} (${s.worstDesignPage.score}%)`);
+        if (s.worstSeoPage) console.log(`  Worst SEO:    ${s.worstSeoPage.url} (${s.worstSeoPage.score}%)`);
+        if (s.worstSecurityPage) console.log(`  Worst Security: ${s.worstSecurityPage.url} (${s.worstSecurityPage.score}%)`);
+        if (s.worstLegalPage) console.log(`  Worst Legal: ${s.worstLegalPage.url} (${s.worstLegalPage.score}%)`);
+        if (s.worstPerformancePage) console.log(`  Worst Performance: ${s.worstPerformancePage.url} (${s.worstPerformancePage.score}%)`);
         console.log(`  Total failures: ${s.totalFailures}`);
         for (const p of result.pages) {
           const w = p.wcagScore !== null ? `WCAG ${p.wcagScore}%` : '';
           const d = p.designScore !== null ? `Design ${p.designScore}%` : '';
-          const scores = [w, d].filter(Boolean).join(', ');
+          const e = p.seoScore !== null ? `SEO ${p.seoScore}%` : '';
+          const sec = p.securityScore !== null ? `Security ${p.securityScore}%` : '';
+          const leg = p.legalScore !== null ? `Legal ${p.legalScore}%` : '';
+          const perf = p.performanceScore !== null ? `Perf ${p.performanceScore}%` : '';
+          const scores = [w, d, e, sec, leg, perf].filter(Boolean).join(', ');
           console.log(`  ${scores ? scores.padEnd(20) : ''} ${p.url}`);
         }
         const crawlPath = `audits/crawl-${Date.now()}.json`;
@@ -339,6 +414,47 @@ async function main() {
           }
         }
 
+        if (result.seo) {
+          console.log(`  SEO:         ${result.seo.score}% (${result.seo.failCount} issue(s))`);
+          if (result.seo.failures?.length > 0) {
+            for (const s of result.seo.failures) {
+              console.log(`    - [${s.severity.toUpperCase()}] ${s.selector}: ${s.ruleName} (${s.value}, expected ${s.expected})`);
+            }
+          }
+        }
+
+        if (result.legal) {
+          console.log(`  Legal:       ${result.legal.score}% (${result.legal.failCount} issue(s))`);
+          if (result.legal.failures?.length > 0) {
+            for (const l of result.legal.failures) {
+              console.log(`    - [${l.severity.toUpperCase()}] ${l.selector}: ${l.ruleName} (${l.value})`);
+            }
+          }
+        }
+
+        if (result.performance && !result.performance.error) {
+          console.log(`  Performance: ${result.performance.grade} (${result.performance.score})`);
+          console.log(`    LCP: ${result.performance.lcp !== null ? result.performance.lcp + 's' : 'N/A'} | CLS: ${result.performance.cls !== null ? result.performance.cls : 'N/A'} | TBT: ${result.performance.tbt !== null ? result.performance.tbt + 'ms' : 'N/A'}`);
+          console.log(`    FCP: ${result.performance.fcp !== null ? result.performance.fcp + 's' : 'N/A'} | Speed Index: ${result.performance.speedIndex !== null ? result.performance.speedIndex + 's' : 'N/A'} | TTI: ${result.performance.tti !== null ? result.performance.tti + 's' : 'N/A'}`);
+          if (result.performance.recommendations?.length > 0) {
+            console.log(`    Recommendations:`);
+            for (var prIdx = 0; prIdx < Math.min(result.performance.recommendations.length, 5); prIdx++) {
+              console.log(`      - ${result.performance.recommendations[prIdx]}`);
+            }
+          }
+        } else if (result.performance && result.performance.error) {
+          console.log(`  Performance: \u26A0 ${result.performance.error}`);
+        }
+
+        if (result.security) {
+          console.log(`  Security:    ${result.security.score}% (${result.security.failCount} issue(s))`);
+          if (result.security.failures?.length > 0) {
+            for (const s of result.security.failures) {
+              console.log(`    - [${s.severity.toUpperCase()}] ${s.selector}: ${s.ruleName} (${s.value}, expected ${s.expected})`);
+            }
+          }
+        }
+
         const fixSuggestions = generateFixSuggestions(result);
         if (fixSuggestions.length > 0) {
           console.log('\n  \u{1F4CB} Fix Suggestions (deterministic):');
@@ -361,9 +477,10 @@ async function main() {
       if (doSmartPrompt) {
         const wcagFails = result.wcag?.failures || [];
         const designFails = result.design?.failures || [];
-        if (wcagFails.length > 0 || designFails.length > 0) {
+        const seoFails = result.seo?.failures || [];
+        if (wcagFails.length > 0 || designFails.length > 0 || seoFails.length > 0) {
           const { buildPrompt, SYSTEM_PROMPT } = require('@liveviewer/llm');
-          const userPrompt = buildPrompt(wcagFails, 'default', designFails.slice(0, 30), context || undefined);
+          const userPrompt = buildPrompt(wcagFails, 'default', designFails.slice(0, 30), seoFails.slice(0, 30), context || undefined);
           console.log('\n' + '='.repeat(50));
           console.log('SYSTEM PROMPT');
           console.log('='.repeat(50));
@@ -425,26 +542,40 @@ async function main() {
 
       }
 
-      const doSarif = hasFlag('--sarif');
-      const sarifOutput = parseArg('--sarif-output');
-      if (doSarif || sarifOutput) {
+      if (doSarif || sarifOutputPath) {
         const sarifLog = toSarifLog(result);
         const sarifStr = JSON.stringify(sarifLog, null, 2);
-        if (sarifOutput) {
-          fs.writeFileSync(sarifOutput, sarifStr, 'utf-8');
-          console.log(`\n  SARIF report written to ${sarifOutput}`);
+        if (sarifOutputPath) {
+          fs.writeFileSync(sarifOutputPath, sarifStr, 'utf-8');
+          console.error(`SARIF report written to ${sarifOutputPath}`);
         } else {
-          console.log('\n' + sarifStr);
+          // When !sarifOutputPath, SARIF JSON must go to stdout cleanly
+          console.log = savedLog;
+          console.log(sarifStr);
         }
       }
 
       const failOn = parseArg('--fail-on');
-      if (failOn !== null && result.wcag) {
+      if (failOn !== null) {
         const threshold = parseInt(failOn, 10);
-        if (result.wcag.failCount > threshold) {
-          console.error(`WCAG failures (${result.wcag.failCount}) exceed threshold (${threshold})`);
+        // Check total failures across all active pillars
+        var totalFailures = 0;
+        if (doWcag && result.wcag) totalFailures += result.wcag.failCount;
+        if (doDesign && result.design) totalFailures += result.design.failCount;
+        if (doSeo && result.seo) totalFailures += result.seo.failCount;
+        if (doSecurity && result.security) totalFailures += result.security.failCount;
+        if (doLegal && result.legal) totalFailures += result.legal.failCount;
+        if (doPerformance && result.performance) totalFailures += (result.performance.error ? 1 : 0);
+        if (totalFailures > threshold) {
+          console.error(`Total failures (${totalFailures}) exceed threshold (${threshold})`);
           process.exit(1);
         }
+      }
+
+      // Final dump for --json (JSON to stdout) or --sarif without output path
+      if (doJson) {
+        console.log = savedLog;
+        console.log(JSON.stringify(result, null, 2));
       }
       break;
     }

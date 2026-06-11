@@ -2,6 +2,9 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const wcag = require('wcag-contrast');
+const { checkHeadingHierarchy } = require('./heading');
+const { runSecurityChecks } = require('./security');
+const { runLegalChecks } = require('./legal');
 
 const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL_ENV;
 
@@ -332,22 +335,24 @@ function mergeWcagResults(results) {
 }
 
 async function runDesignPageChecks(page) {
-  return page.evaluate(() => {
-    const docWidth = document.body.scrollWidth;
-    const viewWidth = window.innerWidth;
-    const results = [];
+  return page.evaluate((fnSrc) => {
+    eval(fnSrc);
+    var docWidth = document.body.scrollWidth;
+    var viewWidth = window.innerWidth;
+    var results = [];
 
     // Horizontal scroll check
     if (docWidth > viewWidth) {
-      let selector = 'body';
-      const all = document.querySelectorAll('*');
-      for (const el of all) {
-        const rect = el.getBoundingClientRect();
+      var selector = 'body';
+      var all = document.querySelectorAll('*');
+      for (var i = 0; i < all.length; i++) {
+        var el = all[i];
+        var rect = el.getBoundingClientRect();
         if (rect.right > viewWidth + 1 && rect.width > 10) {
-          const tag = el.tagName.toLowerCase();
-          const id = el.id ? '#' + el.id : '';
-          const cls = typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
-          const clsStr = cls ? '.' + cls.trim().split(/\s+/).filter(Boolean).join('.') : '';
+          var tag = el.tagName.toLowerCase();
+          var id = el.id ? '#' + el.id : '';
+          var cls = typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
+          var clsStr = cls ? '.' + cls.trim().split(/\s+/).filter(Boolean).join('.') : '';
           selector = tag + id + clsStr;
           break;
         }
@@ -356,7 +361,7 @@ async function runDesignPageChecks(page) {
         ruleId: 'horizontal-scroll',
         ruleName: 'No horizontal scroll at viewport width',
         category: 'spacing',
-        selector,
+        selector: selector,
         description: 'Page overflows horizontally by ' + (docWidth - viewWidth) + 'px at ' + viewWidth + 'px viewport width',
         severity: 'high',
         value: (docWidth - viewWidth) + 'px overflow',
@@ -364,54 +369,8 @@ async function runDesignPageChecks(page) {
       });
     }
 
-    // Heading hierarchy check
-    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    let prevLevel = 0;
-    let h1Count = 0;
-    for (const h of headings) {
-      const level = parseInt(h.tagName[1]);
-      if (level === 1) h1Count++;
-      if (prevLevel > 0 && level > prevLevel + 1) {
-        const tag = h.tagName.toLowerCase();
-        const id = h.id ? '#' + h.id : '';
-        const cls = typeof h.className === 'string' ? h.className : (h.getAttribute('class') || '');
-        const clsStr = cls ? '.' + cls.trim().split(/\s+/).filter(Boolean).join('.') : '';
-        results.push({
-          ruleId: 'heading-hierarchy',
-          ruleName: 'Heading hierarchy not skipped',
-          category: 'typography',
-          selector: tag + id + clsStr,
-          description: 'Heading level skipped from h' + prevLevel + ' to h' + level + ' (' + (h.textContent || '').trim().slice(0, 40) + ')',
-          severity: 'medium',
-          value: 'h' + prevLevel + ' → h' + level,
-          expected: 'no skipped levels'
-        });
-      }
-      prevLevel = level;
-    }
-    if (h1Count === 0) {
-      results.push({
-        ruleId: 'heading-hierarchy',
-        ruleName: 'Page should have one h1',
-        category: 'typography',
-        selector: 'body',
-        description: 'No h1 element found on the page',
-        severity: 'high',
-        value: '0 h1 elements',
-        expected: '1 h1 element'
-      });
-    } else if (h1Count > 1) {
-      results.push({
-        ruleId: 'heading-hierarchy',
-        ruleName: 'Page should have exactly one h1',
-        category: 'typography',
-        selector: 'body',
-        description: 'Multiple h1 elements found (' + h1Count + ')',
-        severity: 'medium',
-        value: h1Count + ' h1 elements',
-        expected: '1 h1 element'
-      });
-    }
+    // Heading hierarchy check (shared with SEO)
+    results.push.apply(results, checkHeadingHierarchy('typography'));
 
     // Typography: font-size and line-height checks
     const BODY_TAGS = new Set(['p', 'li', 'td', 'th', 'dd', 'dt', 'figcaption', 'label', 'span', 'a', 'button', 'div']);
@@ -470,7 +429,201 @@ async function runDesignPageChecks(page) {
     }
 
     return results;
-  });
+  }, checkHeadingHierarchy.toString());
+}
+
+async function runSeoPageChecks(page) {
+  return page.evaluate((fnSrc) => {
+    eval(fnSrc);
+    var results = [];
+
+    // 1. Title tag
+    var titleEl = document.querySelector('title');
+    var titleText = titleEl ? (titleEl.textContent || '').trim() : '';
+    if (!titleEl || !titleText) {
+      results.push({
+        ruleId: 'missing-title',
+        ruleName: 'Page must have a title tag',
+        category: 'seo',
+        selector: 'head',
+        description: 'No <title> tag found on the page',
+        severity: 'high',
+        value: 'no title tag',
+        expected: '<title> tag with 10\u201370 characters'
+      });
+    } else if (titleText.length < 10) {
+      results.push({
+        ruleId: 'missing-title',
+        ruleName: 'Title tag is too short',
+        category: 'seo',
+        selector: 'title',
+        description: 'Title is ' + titleText.length + ' characters; minimum recommended is 10',
+        severity: 'medium',
+        value: titleText.length + ' chars',
+        expected: '\u2265 10 chars'
+      });
+    } else if (titleText.length > 70) {
+      results.push({
+        ruleId: 'missing-title',
+        ruleName: 'Title tag is too long',
+        category: 'seo',
+        selector: 'title',
+        description: 'Title is ' + titleText.length + ' characters; maximum recommended is 70',
+        severity: 'medium',
+        value: titleText.length + ' chars',
+        expected: '\u2264 70 chars'
+      });
+    }
+
+    // 2. Meta description
+    var metaDesc = document.querySelector('meta[name="description"]');
+    var descContent = metaDesc ? (metaDesc.getAttribute('content') || '').trim() : '';
+    if (!metaDesc || !descContent) {
+      results.push({
+        ruleId: 'missing-meta-description',
+        ruleName: 'Page must have a meta description',
+        category: 'seo',
+        selector: 'head',
+        description: 'No meta description found on the page',
+        severity: 'high',
+        value: 'no meta description',
+        expected: '<meta name="description"> with 50\u2013160 characters'
+      });
+    } else if (descContent.length < 50) {
+      results.push({
+        ruleId: 'missing-meta-description',
+        ruleName: 'Meta description is too short',
+        category: 'seo',
+        selector: 'meta[name="description"]',
+        description: 'Description is ' + descContent.length + ' characters; minimum recommended is 50',
+        severity: 'medium',
+        value: descContent.length + ' chars',
+        expected: '\u2265 50 chars'
+      });
+    } else if (descContent.length > 160) {
+      results.push({
+        ruleId: 'missing-meta-description',
+        ruleName: 'Meta description is too long',
+        category: 'seo',
+        selector: 'meta[name="description"]',
+        description: 'Description is ' + descContent.length + ' characters; maximum recommended is 160',
+        severity: 'medium',
+        value: descContent.length + ' chars',
+        expected: '\u2264 160 chars'
+      });
+    }
+
+    // 3. Canonical link
+    var canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      results.push({
+        ruleId: 'missing-canonical',
+        ruleName: 'Page should have a canonical URL',
+        category: 'seo',
+        selector: 'head',
+        description: 'No <link rel="canonical"> found on the page',
+        severity: 'medium',
+        value: 'no canonical tag',
+        expected: '<link rel="canonical" href="...">'
+      });
+    }
+
+    // 4. JSON-LD structured data
+    var jsonld = document.querySelector('script[type="application/ld+json"]');
+    if (!jsonld) {
+      results.push({
+        ruleId: 'missing-jsonld',
+        ruleName: 'Page should have JSON-LD structured data',
+        category: 'seo',
+        selector: 'head',
+        description: 'No <script type="application/ld+json"> found on the page',
+        severity: 'low',
+        value: 'no JSON-LD',
+        expected: '<script type="application/ld+json">{...}</script>'
+      });
+    }
+
+    // 5. Viewport meta
+    var viewportMeta = document.querySelector('meta[name="viewport"]');
+    var vpContent = viewportMeta ? (viewportMeta.getAttribute('content') || '') : '';
+    if (!viewportMeta || vpContent.indexOf('width=device-width') === -1) {
+      results.push({
+        ruleId: 'missing-viewport',
+        ruleName: 'Page must have a viewport meta tag',
+        category: 'seo',
+        selector: 'head',
+        description: !viewportMeta
+          ? 'No <meta name="viewport"> found on the page'
+          : 'Viewport meta does not contain width=device-width',
+        severity: 'high',
+        value: !viewportMeta ? 'no viewport meta' : vpContent,
+        expected: '<meta name="viewport" content="width=device-width, initial-scale=1">'
+      });
+    }
+
+    // 6. Robots meta (informational)
+    var robotsMeta = document.querySelector('meta[name="robots"]');
+    var robotsContent = robotsMeta ? (robotsMeta.getAttribute('content') || '') : '';
+    if (robotsContent.indexOf('noindex') !== -1 || robotsContent.indexOf('nofollow') !== -1) {
+      results.push({
+        ruleId: 'robots-blocked',
+        ruleName: 'Robots meta blocks indexing',
+        category: 'seo',
+        selector: 'meta[name="robots"]',
+        description: 'Robots meta contains blocking directives: "' + robotsContent + '"',
+        severity: 'low',
+        value: robotsContent,
+        expected: 'index,follow (allow indexing)'
+      });
+    }
+
+    // 7. Open Graph tags
+    var ogTitle = document.querySelector('meta[property="og:title"]');
+    var ogDesc = document.querySelector('meta[property="og:description"]');
+    var ogImage = document.querySelector('meta[property="og:image"]');
+    if (!ogTitle || !ogDesc || !ogImage) {
+      var missing = [];
+      if (!ogTitle) missing.push('og:title');
+      if (!ogDesc) missing.push('og:description');
+      if (!ogImage) missing.push('og:image');
+      results.push({
+        ruleId: 'missing-open-graph',
+        ruleName: 'Page should have Open Graph tags',
+        category: 'seo',
+        selector: 'head',
+        description: 'Missing Open Graph tags: ' + missing.join(', '),
+        severity: 'medium',
+        value: 'missing: ' + missing.join(', '),
+        expected: 'og:title, og:description, og:image'
+      });
+    }
+
+    // 8. Twitter Card tags
+    var twCard = document.querySelector('meta[name="twitter:card"]');
+    var twTitle = document.querySelector('meta[name="twitter:title"]');
+    var twDesc = document.querySelector('meta[name="twitter:description"]');
+    if (!twCard || !twTitle || !twDesc) {
+      var twMissing = [];
+      if (!twCard) twMissing.push('twitter:card');
+      if (!twTitle) twMissing.push('twitter:title');
+      if (!twDesc) twMissing.push('twitter:description');
+      results.push({
+        ruleId: 'twitter-card-missing',
+        ruleName: 'Page should have Twitter Card tags',
+        category: 'seo',
+        selector: 'head',
+        description: 'Missing Twitter Card tags: ' + twMissing.join(', '),
+        severity: 'medium',
+        value: 'missing: ' + twMissing.join(', '),
+        expected: 'twitter:card, twitter:title, twitter:description'
+      });
+    }
+
+    // 9. Heading hierarchy (shared with design)
+    results.push.apply(results, checkHeadingHierarchy('seo'));
+
+    return results;
+  }, checkHeadingHierarchy.toString());
 }
 
 async function runA11yPageChecks(page) {
@@ -627,6 +780,10 @@ async function audit(url, options = {}) {
     label = 'audit',
     wcag: doWcag = false,
     design: doDesign = false,
+    seo: doSeo = false,
+    security: doSecurity = false,
+    legal: doLegal = false,
+    performance: doPerformance = false,
     timeout = 30000,
     waitUntil = 'domcontentloaded',
     loadImages = false,
@@ -696,13 +853,15 @@ async function audit(url, options = {}) {
           });
         }
 
-        await page.goto(url, { waitUntil, timeout: navigationTimeout });
+        const mainResponse = await page.goto(url, { waitUntil, timeout: navigationTimeout });
+        const responseHeaders = mainResponse ? mainResponse.headers() : {};
         await page.waitForSelector('body', { timeout: 2000 }).catch(() => {});
         await page.waitForSelector('h1, main, [role="main"]', { timeout: 5000 }).catch(() => {});
 
         const viewportResults = [];
         let lastElements = [];
         const pageLevelFailures = [];
+        let seoFailures = [];
         for (let i = 0; i < vps.length; i++) {
           const vp = vps[i];
           if (i > 0) {
@@ -720,6 +879,10 @@ async function audit(url, options = {}) {
             const a11yFails = await runA11yPageChecks(page);
             pageLevelFailures.push(...a11yFails);
           }
+          if (doSeo) {
+            const result = await runSeoPageChecks(page);
+            seoFailures.push(...result);
+          }
         }
 
         let mergedWcag = null;
@@ -728,6 +891,23 @@ async function audit(url, options = {}) {
         }
 
         let designResult = null;
+        let seoResult = null;
+        let securityResult = null;
+        if (doSeo) {
+          const seen = new Set();
+          const unique = [];
+          for (const f of seoFailures) {
+            const key = f.selector + '|' + f.ruleId;
+            if (!seen.has(key)) { seen.add(key); unique.push(f); }
+          }
+          seoResult = {
+            failures: unique,
+            totalChecks: unique.length,
+            passCount: 0,
+            failCount: unique.length,
+            score: unique.length > 0 ? 0 : 100
+          };
+        }
         if (doDesign) {
           const allFailures = [...pageLevelFailures];
           const seen = new Set();
@@ -778,19 +958,61 @@ async function audit(url, options = {}) {
           }
         }
 
+        if (doSecurity) {
+          var securityFails = await runSecurityChecks(page, context, url, responseHeaders);
+          securityResult = {
+            failures: securityFails,
+            totalChecks: securityFails.length,
+            passCount: 0,
+            failCount: securityFails.length,
+            score: securityFails.length > 0 ? 0 : 100
+          };
+        }
+
+        var legalResult = null;
+        if (doLegal) {
+          try {
+            var legalFails = await runLegalChecks(page);
+            legalResult = {
+              failures: legalFails,
+              totalChecks: legalFails.length,
+              passCount: 0,
+              failCount: legalFails.length,
+              score: legalFails.length > 0 ? 0 : 100
+            };
+          } catch (e) {
+            legalResult = { failures: [], totalChecks: 0, passCount: 0, failCount: 0, score: 100 };
+          }
+        }
+
         const screenshotPromise = page.screenshot({ path: filepath, fullPage: false });
         await screenshotPromise;
         await context.close();
-        return { viewportResults, mergedWcag, designResult };
+
+        var perfResult = null;
+        if (doPerformance) {
+          try {
+            var { runPerformanceChecks } = require('./performance');
+            perfResult = await runPerformanceChecks(url, chromePath);
+          } catch (e) {
+            perfResult = { error: e.message, score: null, lcp: null, cls: null, tbt: null, fcp: null, speedIndex: null, tti: null, grade: null, recommendations: [] };
+          }
+        }
+
+        return { viewportResults, mergedWcag, designResult, seo: seoResult, security: securityResult, legal: legalResult, performance: perfResult };
       })();
 
-      const { viewportResults, mergedWcag, designResult } = await Promise.race([auditWork, hardTimeout]);
+      const { viewportResults, mergedWcag, designResult, seo: seoResult, security: securityResult, legal: legalResult, performance: perfResult } = await Promise.race([auditWork, hardTimeout]);
       return {
         filepath, filename, timestamp, url,
         viewport: vps[0],
         viewports: viewportResults,
         wcag: mergedWcag,
         design: designResult,
+        seo: seoResult,
+        security: securityResult,
+        legal: legalResult,
+        performance: perfResult,
         timedOut: false
       };
     } catch (err) {
@@ -818,4 +1040,4 @@ async function audit(url, options = {}) {
   }
 }
 
-module.exports = { audit, getChromium, isVercel, CHROMIUM_VERSION };
+module.exports = { audit, getChromium, isVercel, CHROMIUM_VERSION, runSeoPageChecks, runSecurityChecks, runPerformanceChecks: require('./performance').runPerformanceChecks };

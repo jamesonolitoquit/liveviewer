@@ -1,0 +1,43 @@
+{
+  "title-pass.html": [],
+  "title-fail.html": [
+    {"ruleId": "missing-title", "fixture": "title-fail.html"}
+  ],
+  "meta-description-pass.html": [],
+  "meta-description-fail.html": [
+    {"ruleId": "missing-meta-description", "fixture": "meta-description-fail.html"}
+  ],
+  "canonical-pass.html": [],
+  "canonical-fail.html": [
+    {"ruleId": "missing-canonical", "fixture": "canonical-fail.html"}
+  ],
+  "jsonld-pass.html": [],
+  "jsonld-fail.html": [
+    {"ruleId": "missing-jsonld", "fixture": "jsonld-fail.html"}
+  ],
+  "viewport-pass.html": [],
+  "viewport-fail.html": [
+    {"ruleId": "missing-viewport", "fixture": "viewport-fail.html"}
+  ],
+  "robots-pass.html": [],
+  "robots-fail.html": [
+    {"ruleId": "robots-blocked", "fixture": "robots-fail.html"}
+  ],
+  "og-pass.html": [],
+  "og-fail.html": [
+    {"ruleId": "missing-open-graph", "fixture": "og-fail.html"},
+    {"ruleId": "twitter-card-missing", "fixture": "og-fail.html"}
+  ],
+  "seo-perfect.html": [],
+  "seo-mixed.html": [
+    {"ruleId": "missing-title", "fixture": "seo-mixed.html"},
+    {"ruleId": "missing-meta-description", "fixture": "seo-mixed.html"},
+    {"ruleId": "missing-canonical", "fixture": "seo-mixed.html"},
+    {"ruleId": "missing-jsonld", "fixture": "seo-mixed.html"},
+    {"ruleId": "missing-viewport", "fixture": "seo-mixed.html"},
+    {"ruleId": "robots-blocked", "fixture": "seo-mixed.html"},
+    {"ruleId": "missing-open-graph", "fixture": "seo-mixed.html"},
+    {"ruleId": "twitter-card-missing", "fixture": "seo-mixed.html"},
+    {"ruleId": "heading-hierarchy", "fixture": "seo-mixed.html"}
+  ]
+}

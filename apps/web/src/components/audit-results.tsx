@@ -1,8 +1,10 @@
+import { useRef } from 'react'
 import type { AuditData, DesignFailure, FixSuggestion } from '@/types/audit'
 import { SmartFixButton } from './smart-fix-button'
 
 interface AuditResultsProps {
   data: AuditData
+  children?: React.ReactNode
 }
 
 function scoreStyles(score: number) {
@@ -96,10 +98,21 @@ function FailureCard({ children, severity }: { children: React.ReactNode; severi
   )
 }
 
-export function AuditResults({ data }: AuditResultsProps) {
+export function AuditResults({ data, children }: AuditResultsProps) {
   const wcag = data.wcag
   const design = data.design
   const multi = data.multiViewport && data.viewports && data.viewports.length >= 2
+  const resultsRef = useRef<HTMLElement>(null)
+
+  const expandAll = () => {
+    resultsRef.current?.querySelectorAll<HTMLElement>('details')
+      .forEach(el => el.setAttribute('open', ''))
+  }
+
+  const collapseAll = () => {
+    resultsRef.current?.querySelectorAll<HTMLElement>('details')
+      .forEach(el => el.removeAttribute('open'))
+  }
 
   if (!wcag && !design) {
     return (
@@ -110,10 +123,33 @@ export function AuditResults({ data }: AuditResultsProps) {
   }
 
   return (
-    <section className="card overflow-hidden" aria-label="Audit results">
+    <section ref={resultsRef} className="card overflow-hidden" aria-label="Audit results">
+      {children && (
+        <div className="sticky top-0 z-10 border-b border-[var(--jao-border)] bg-[var(--jao-surface)] px-6 py-3 shadow-sm">
+          {children}
+        </div>
+      )}
       {(wcag || design) && (
         <div className="border-b border-[var(--jao-border)] p-6">
-          <h2 className="mb-1 font-semibold text-lg">Audit Results</h2>
+          <div className="mb-1 flex items-center justify-between">
+            <h2 className="font-semibold text-lg">Audit Results</h2>
+            <div className="flex gap-1">
+              <button
+                data-testid="expand-all"
+                onClick={expandAll}
+                className="rounded border border-[var(--jao-border)] px-2 py-0.5 text-[10px] text-[var(--jao-text-secondary)] hover:bg-[var(--jao-border-subtle)] transition-colors"
+              >
+                ↕ Expand All
+              </button>
+              <button
+                data-testid="collapse-all"
+                onClick={collapseAll}
+                className="rounded border border-[var(--jao-border)] px-2 py-0.5 text-[10px] text-[var(--jao-text-secondary)] hover:bg-[var(--jao-border-subtle)] transition-colors"
+              >
+                ➖ Collapse All
+              </button>
+            </div>
+          </div>
           <p className="mb-5 truncate text-sm text-[var(--jao-text-secondary)]">{data.url}</p>
           {(() => {
             const showMulti = multi && data.viewports && data.viewports.length >= 2

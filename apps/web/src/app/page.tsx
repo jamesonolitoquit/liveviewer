@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { AuditForm } from '@/components/audit-form'
-import { AuditResults } from '@/components/audit-results'
+import { Dashboard } from '@/components/dashboard'
 import { ExportButtons } from '@/components/export-buttons'
 import { Checklist } from '@/components/checklist'
 import { SmartPanel } from '@/components/smart-panel'
@@ -15,6 +16,8 @@ import { OnboardingModal } from '@/components/onboarding-modal'
 import { humanError } from '@/lib/errors'
 import type { AuditData, DesignData, WcagData } from '@/types/audit'
 
+const AuditResults = dynamic(() => import('@/components/audit-results').then(m => ({ default: m.AuditResults })), { ssr: false })
+
 type AuditStatus = 'idle' | 'running' | 'complete' | 'error'
 
 const VIEWPORT_MAP: Record<string, { width: number; height: number }> = {
@@ -26,7 +29,14 @@ export default function Home() {
   const [status, setStatus] = useState<AuditStatus>('idle')
   const [data, setData] = useState<AuditData | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [viewportMode, setViewportMode] = useState<'desktop' | 'mobile' | 'both'>('both')
+  const [viewportMode, setViewportMode] = useState<'desktop' | 'mobile' | 'both'>(() => {
+    try {
+      return (localStorage.getItem('liveviewer_viewport') as 'desktop' | 'mobile' | 'both') || 'both'
+    } catch {
+      return 'both'
+    }
+  })
+  const [historyEntries, setHistoryEntries] = useState<any[]>([])
   const [llmEnabled, setLlmEnabled] = useState(false)
   const [llmResult, setLlmResult] = useState<any>(null)
   const [llmLoading, setLlmLoading] = useState(false)
@@ -39,6 +49,8 @@ export default function Home() {
       if (!localStorage.getItem('liveviewer_onboarded')) {
         setDemoUrl('https://web.dev')
       }
+      const { getAllHistory } = require('@/lib/history')
+      setHistoryEntries(getAllHistory(5))
     } catch {}
   }, [])
   const resultsRef = useRef<HTMLDivElement>(null)
@@ -62,6 +74,13 @@ export default function Home() {
   const dismissError = useCallback(() => {
     setError(null)
     setStatus('idle')
+  }, [])
+
+  const refreshHistory = useCallback(() => {
+    try {
+      const { getAllHistory } = require('@/lib/history')
+      setHistoryEntries(getAllHistory(5))
+    } catch {}
   }, [])
 
   const cancelAudit = useCallback(() => {
@@ -121,12 +140,18 @@ export default function Home() {
       setError(err instanceof Error ? err.message : humanError('audit'))
       setStatus('error')
     }
+    try { localStorage.setItem('liveviewer_viewport', viewportMode) } catch {}
   }, [viewportMode])
+
+  const handleReAudit = useCallback((url: string) => {
+    runAudit(url)
+  }, [runAudit])
 
   const saveToHistory = useCallback(async (auditData: AuditData) => {
     try {
-      const { saveAudit } = await import('@/lib/history')
+      const { saveAudit, getAllHistory } = await import('@/lib/history')
       await saveAudit(auditData)
+      setHistoryEntries(getAllHistory(5))
     } catch {
       // best-effort
     }
@@ -157,12 +182,13 @@ export default function Home() {
 
       const key = (sessionStorage.getItem('liveviewer_llm_key') || '').trim()
       const baseUrl = (sessionStorage.getItem('liveviewer_llm_base_url') || '').trim()
+      const model = (sessionStorage.getItem('liveviewer_llm_model') || 'deepseek-chat').trim()
 
       if (!key) {
         throw new Error('Enter your access key in the settings panel')
       }
 
-      const result = await enrichWithLLM(wcagFails || [], 'openai-compatible', 'deepseek-chat', key, baseUrl || 'https://api.deepseek.com/v1', designFails || [], context || undefined)
+      const result = await enrichWithLLM(wcagFails || [], 'openai-compatible', model, key, baseUrl || 'https://api.deepseek.com/v1', designFails || [], context || undefined)
       setLlmResult({ ...result, cached: false })
     } catch (err) {
       setLlmResult({ error: err instanceof Error ? err.message : humanError('llm'), provider: 'client', model: '', perFailure: [], summary: '' })
@@ -281,7 +307,13 @@ export default function Home() {
           <ErrorToast message={error} onDismiss={dismissError} />
         )}
 
-        {status === 'idle' && !data && (
+        {status === 'idle' && !data && historyEntries.length > 0 && (
+          <div className="mt-10">
+            <Dashboard entries={historyEntries} onReAudit={handleReAudit} />
+          </div>
+        )}
+
+        {status === 'idle' && !data && historyEntries.length === 0 && (
           <div className="mt-20 text-center">
             <JaoLogo size={48} className="mx-auto text-[var(--jao-border)] opacity-30" />
             <p className="mt-4 text-base text-[var(--jao-text-tertiary)]">
@@ -296,9 +328,9 @@ export default function Home() {
             tabIndex={-1}
             className="mt-8 space-y-6 focus:outline-none"
           >
-            <AuditResults data={data} />
-
-            <ExportButtons data={data} />
+            <AuditResults data={data}>
+              <ExportButtons data={data} />
+            </AuditResults>
 
             <Checklist currentUrl={data.url} />
 
@@ -310,7 +342,7 @@ export default function Home() {
         <SmartPanel
           enabled={llmEnabled}
           onToggle={setLlmEnabled}
-          hasFailures={(data.wcag?.failures?.length ?? 0) > 0}
+          hasFailures={((data.wcag?.failures?.length ?? 0) + (data.design?.failures?.length ?? 0)) > 0}
           onEnrich={runLlmEnrichment}
           llmLoading={llmLoading}
           llmResult={llmResult}

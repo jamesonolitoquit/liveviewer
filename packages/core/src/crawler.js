@@ -13,6 +13,10 @@ const DEFAULT_OPTIONS = {
   cacheDir: '.liveviewer-cache',
   wcag: false,
   design: false,
+  seo: false,
+  security: false,
+  legal: false,
+  performance: false,
   viewport: { width: 1280, height: 800 },
   viewports: null,
   label: 'crawl',
@@ -21,7 +25,7 @@ const DEFAULT_OPTIONS = {
 };
 
 function hashKey(url, opts) {
-  const raw = `${url}|${opts.wcag}|${opts.design}|${opts.viewport.width}|${opts.viewport.height}`;
+  const raw = `${url}|${opts.wcag}|${opts.design}|${opts.seo}|${opts.security}|${opts.legal}|${opts.performance}|${opts.viewport.width}|${opts.viewport.height}`;
   return crypto.createHash('md5').update(raw).digest('hex');
 }
 
@@ -130,6 +134,10 @@ async function crawl(startUrl, options = {}) {
         label: opts.label,
         wcag: opts.wcag,
         design: opts.design,
+        seo: opts.seo,
+        security: opts.security,
+        legal: opts.legal,
+        performance: opts.performance,
         timeout: opts.timeout,
         waitUntil: opts.waitUntil,
       };
@@ -140,8 +148,14 @@ async function crawl(startUrl, options = {}) {
           url: item.url,
           wcagScore: auditResult.wcag?.score ?? null,
           designScore: auditResult.design?.score ?? null,
+          seoScore: auditResult.seo?.score ?? null,
+          securityScore: auditResult.security?.score ?? null,
+          legalScore: auditResult.legal?.score ?? null,
+          performanceScore: auditResult.performance?.score ?? null,
           wcagFailures: auditResult.wcag?.failures?.length ?? 0,
           designFailures: auditResult.design?.failures?.length ?? 0,
+          seoFailures: auditResult.seo?.failures?.length ?? 0,
+          securityFailures: auditResult.security?.failures?.length ?? 0,
           timestamp: auditResult.timestamp,
           timedOut: auditResult.timedOut ?? false,
         };
@@ -175,18 +189,38 @@ async function crawl(startUrl, options = {}) {
   }
 
   const duration = Date.now() - startTime;
-  const scored = results.filter(r => r.wcagScore !== null || r.designScore !== null);
+  const scored = results.filter(r => r.wcagScore !== null || r.designScore !== null || r.seoScore !== null || r.securityScore !== null || r.legalScore !== null || r.performanceScore !== null);
   const avgWcag = scored.length > 0
     ? Math.round(scored.reduce((s, r) => s + (r.wcagScore ?? 0), 0) / scored.length)
     : null;
   const avgDesign = scored.length > 0
     ? Math.round(scored.reduce((s, r) => s + (r.designScore ?? 0), 0) / scored.length)
     : null;
+  const avgSeo = scored.length > 0
+    ? Math.round(scored.reduce((s, r) => s + (r.seoScore ?? 0), 0) / scored.length)
+    : null;
+  const avgSecurity = scored.length > 0
+    ? Math.round(scored.reduce((s, r) => s + (r.securityScore ?? 0), 0) / scored.length)
+    : null;
+  const avgPerformance = scored.length > 0
+    ? Math.round(scored.reduce((s, r) => s + (r.performanceScore ?? 0), 0) / scored.length)
+    : null;
+  const avgLegal = scored.length > 0
+    ? Math.round(scored.reduce((s, r) => s + (r.legalScore ?? 0), 0) / scored.length)
+    : null;
   const worstWcag = results.filter(r => r.wcagScore !== null)
     .sort((a, b) => (a.wcagScore ?? 100) - (b.wcagScore ?? 100))[0] ?? null;
   const worstDesign = results.filter(r => r.designScore !== null)
     .sort((a, b) => (a.designScore ?? 100) - (b.designScore ?? 100))[0] ?? null;
-  const totalFailures = results.reduce((s, r) => s + (r.wcagFailures ?? 0) + (r.designFailures ?? 0), 0);
+  const worstSeo = results.filter(r => r.seoScore !== null)
+    .sort((a, b) => (a.seoScore ?? 100) - (b.seoScore ?? 100))[0] ?? null;
+  const worstSecurity = results.filter(r => r.securityScore !== null)
+    .sort((a, b) => (a.securityScore ?? 100) - (b.securityScore ?? 100))[0] ?? null;
+  const worstPerformance = results.filter(r => r.performanceScore !== null)
+    .sort((a, b) => (a.performanceScore ?? 100) - (b.performanceScore ?? 100))[0] ?? null;
+  const worstLegal = results.filter(r => r.legalScore !== null)
+    .sort((a, b) => (a.legalScore ?? 100) - (b.legalScore ?? 100))[0] ?? null;
+  const totalFailures = results.reduce((s, r) => s + (r.wcagFailures ?? 0) + (r.designFailures ?? 0) + (r.seoFailures ?? 0) + (r.securityFailures ?? 0), 0);
 
   return {
     pages: results,
@@ -195,8 +229,16 @@ async function crawl(startUrl, options = {}) {
       totalDuration: duration,
       averageWcagScore: avgWcag,
       averageDesignScore: avgDesign,
+      averageSeoScore: avgSeo,
+      averageSecurityScore: avgSecurity,
+      averagePerformanceScore: avgPerformance,
+      averageLegalScore: avgLegal,
       worstWcagPage: worstWcag ? { url: worstWcag.url, score: worstWcag.wcagScore } : null,
       worstDesignPage: worstDesign ? { url: worstDesign.url, score: worstDesign.designScore } : null,
+      worstSeoPage: worstSeo ? { url: worstSeo.url, score: worstSeo.seoScore } : null,
+      worstSecurityPage: worstSecurity ? { url: worstSecurity.url, score: worstSecurity.securityScore } : null,
+      worstPerformancePage: worstPerformance ? { url: worstPerformance.url, score: worstPerformance.performanceScore } : null,
+      worstLegalPage: worstLegal ? { url: worstLegal.url, score: worstLegal.legalScore } : null,
       totalFailures,
     },
   };
