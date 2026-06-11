@@ -1028,11 +1028,17 @@ async function audit(url, options = {}) {
           };
         }
         if (doDesign) {
-          const allFailures = [...pageLevelFailures];
+          // Deduplicate page-level failures across viewports
           const seen = new Set();
-          for (const f of allFailures) {
-            seen.add(f.selector + '|' + f.ruleId);
+          const uniquePageFails = [];
+          for (const f of pageLevelFailures) {
+            const key = f.selector + '|' + f.ruleId;
+            if (!seen.has(key)) {
+              seen.add(key);
+              uniquePageFails.push(f);
+            }
           }
+          const allFailures = [...uniquePageFails];
           if (lastElements.length > 0) {
             try {
               const engine = await import('@liveviewer/engine');
@@ -1044,7 +1050,7 @@ async function audit(url, options = {}) {
                   allFailures.push(f);
                 }
               }
-              const totalChecks = elementResult.totalChecks + pageLevelFailures.length;
+              const totalChecks = elementResult.totalChecks + uniquePageFails.length;
               const failCount = allFailures.length;
               designResult = {
                 failures: allFailures,
@@ -1056,22 +1062,22 @@ async function audit(url, options = {}) {
                   : 0
               };
             } catch (_) {
-              if (pageLevelFailures.length > 0) {
+              if (uniquePageFails.length > 0) {
                 designResult = {
-                  failures: pageLevelFailures,
-                  totalChecks: pageLevelFailures.length,
+                  failures: uniquePageFails,
+                  totalChecks: uniquePageFails.length,
                   passCount: 0,
-                  failCount: pageLevelFailures.length,
+                  failCount: uniquePageFails.length,
                   score: 0
                 };
               }
             }
-          } else if (pageLevelFailures.length > 0) {
+          } else if (uniquePageFails.length > 0) {
             designResult = {
-              failures: pageLevelFailures,
-              totalChecks: pageLevelFailures.length,
+              failures: uniquePageFails,
+              totalChecks: uniquePageFails.length,
               passCount: 0,
-              failCount: pageLevelFailures.length,
+              failCount: uniquePageFails.length,
               score: 0
             };
           }
