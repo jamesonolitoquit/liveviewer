@@ -104,19 +104,19 @@ export function Checklist({ currentUrl }: ChecklistProps) {
   }, [currentUrl, categories])
 
   return (
-    <section className="rounded-lg border border-[var(--border)] bg-[var(--card)]" aria-label="Manual WCAG checklist">
-      <div className="border-b border-[var(--border)] p-4">
+    <section className="rounded-lg border border-[var(--jao-border)] bg-[var(--jao-surface)]" aria-label="Manual WCAG checklist">
+      <div className="border-b border-[var(--jao-border)] p-4">
         <h2 className="font-semibold">Manual WCAG 2.2 AA Checklist</h2>
-        <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+        <p className="mt-1 text-xs text-[var(--jao-text-tertiary)]">
           Automated tools find ~30-40% of issues. Verify the rest manually.
         </p>
-        <div className="mt-2 flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
+        <div className="mt-2 flex items-center gap-3 text-xs text-[var(--jao-text-tertiary)]">
           <span>{tested}/{total} tested</span>
-          <span className="text-[var(--success)]">{passed} pass</span>
-          {failed > 0 && <span className="text-[var(--destructive)]">{failed} fail</span>}
+          <span className="text-[var(--jao-success)]">{passed} pass</span>
+          {failed > 0 && <span className="text-[var(--jao-destructive)]">{failed} fail</span>}
           <button
             onClick={resetUrlChecklist}
-            className="ml-auto text-[var(--muted-foreground)] underline hover:no-underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+            className="ml-auto text-[var(--jao-text-tertiary)] underline hover:no-underline focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
           >
             Reset
           </button>
@@ -129,31 +129,31 @@ export function Checklist({ currentUrl }: ChecklistProps) {
           const isExpanded = expanded[cat.category] ?? false
           const allPassedInCat = cat.items.every(i => (statusMap[i.id] ?? 'untested') === 'pass')
           return (
-            <div key={cat.category} className="rounded border border-[var(--border)]">
+            <div key={cat.category} className="rounded border border-[var(--jao-border)]">
               <button
                 onClick={() => toggleExpand(cat.category)}
-                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--primary)]/30"
+                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--jao-primary)]/30"
                 aria-expanded={isExpanded}
               >
-                <span className="text-[var(--muted-foreground)]">{isExpanded ? '▾' : '▸'}</span>
+                <span className="text-[var(--jao-text-tertiary)]">{isExpanded ? '▾' : '▸'}</span>
                 <span className="flex-1">{cat.category}</span>
-                {allPassedInCat && testedInCat > 0 && <span className="text-[var(--success)]">✓</span>}
-                {failedInCat > 0 && <span className="text-[var(--destructive)]">{failedInCat} failed</span>}
-                <span className="text-[var(--muted-foreground)]">({testedInCat}/{cat.items.length})</span>
+                {allPassedInCat && testedInCat > 0 && <span className="text-[var(--jao-success)]">✓</span>}
+                {failedInCat > 0 && <span className="text-[var(--jao-destructive)]">{failedInCat} failed</span>}
+                <span className="text-[var(--jao-text-tertiary)]">({testedInCat}/{cat.items.length})</span>
               </button>
               {isExpanded && (
-                <div className="border-t border-[var(--border)] px-3 py-2 space-y-1.5">
+                <div className="border-t border-[var(--jao-border)] px-3 py-2 space-y-1.5">
                   {cat.items.map(item => {
                     const status = statusMap[item.id] ?? 'untested'
                     return (
                       <div key={item.id} className="flex items-start gap-2 py-1">
                         <button
                           onClick={() => toggleStatus(item.id)}
-                          className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border text-[10px] flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 ${
-                            status === 'pass' ? 'bg-[var(--success)] border-[var(--success)] text-white' :
-                            status === 'fail' ? 'bg-[var(--destructive)] border-[var(--destructive)] text-white' :
-                            status === 'na' ? 'bg-[var(--muted)] border-[var(--border)] text-[var(--muted-foreground)]' :
-                            'border-[var(--border)] hover:border-[var(--primary)]'
+                          className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border text-[10px] flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 ${
+                            status === 'pass' ? 'bg-[var(--jao-success)] border-[var(--jao-success)] text-white' :
+                            status === 'fail' ? 'bg-[var(--jao-destructive)] border-[var(--jao-destructive)] text-white' :
+                            status === 'na' ? 'bg-[var(--jao-border-subtle)] border-[var(--jao-border)] text-[var(--jao-text-tertiary)]' :
+                            'border-[var(--jao-border)] hover:border-[var(--jao-primary)]'
                           }`}
                           role="checkbox"
                           aria-checked={status !== 'untested'}
@@ -169,7 +169,7 @@ export function Checklist({ currentUrl }: ChecklistProps) {
                           <span className={`ml-1.5 inline-block rounded px-1 py-0.5 text-[10px] font-medium ${severityColor(item.severity)}`}>
                             {item.severity}
                           </span>
-                          <span className="ml-1 text-[10px] text-[var(--muted-foreground)]">{item.wcagRef}</span>
+                          <span className="ml-1 text-[10px] text-[var(--jao-text-tertiary)]">{item.wcagRef}</span>
                         </label>
                       </div>
                     )

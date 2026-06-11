@@ -83,7 +83,7 @@ export default function HistoryPage() {
     <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12">
       <header className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Audit History</h1>
-        <p className="mt-1 text-[var(--muted-foreground)]">
+        <p className="mt-1 text-[var(--jao-text-tertiary)]">
           Track WCAG scores over time for any URL.
         </p>
       </header>
@@ -97,25 +97,25 @@ export default function HistoryPage() {
           onChange={e => setUrl(e.target.value)}
           placeholder="https://example.com"
           required
-          className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/30"
+          className="min-w-0 flex-1 rounded-lg border border-[var(--jao-border)] bg-[var(--jao-surface)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/30"
         />
         <button
           type="submit"
           disabled={loading || !url.trim()}
-          className="inline-flex min-h-11 items-center rounded-lg bg-[var(--primary)] px-5 py-2.5 text-sm font-medium text-[var(--primary-foreground)] transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
+          className="inline-flex min-h-11 items-center rounded-lg bg-[var(--jao-primary)] px-5 py-2.5 text-sm font-medium text-[#fff] transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'View History'}
         </button>
       </form>
 
       {error && (
-        <div className="mt-6 rounded-lg border border-[var(--destructive)]/30 bg-[var(--destructive)]/5 p-4 text-sm text-[var(--destructive)]" role="alert">
+        <div className="mt-6 rounded-lg border border-[var(--jao-destructive)]/30 bg-[var(--jao-destructive)]/5 p-4 text-sm text-[var(--jao-destructive)]" role="alert">
           {error}
         </div>
       )}
 
       {searched && !loading && !error && entries.length === 0 && (
-        <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted-foreground)]" role="status">
+        <div className="mt-6 rounded-lg border border-[var(--jao-border)] bg-[var(--jao-surface)] p-8 text-center text-sm text-[var(--jao-text-tertiary)]" role="status">
           No audit history found for this URL. Run an audit first.
         </div>
       )}
@@ -123,34 +123,34 @@ export default function HistoryPage() {
       {entries.length > 0 && (
         <div className="mt-6 space-y-6">
           {latest && (
-            <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+            <div className="rounded-lg border border-[var(--jao-border)] bg-[var(--jao-surface)] p-4">
               <h2 className="text-sm font-semibold">Latest Score</h2>
               <div className="mt-2 flex items-baseline gap-3">
                 <span className={`text-3xl font-bold ${
-                  latest.score >= 90 ? 'text-[var(--success)]' :
-                  latest.score >= 70 ? 'text-[var(--warning)]' :
-                  'text-[var(--destructive)]'
+                  latest.score >= 90 ? 'text-[var(--jao-success)]' :
+                  latest.score >= 70 ? 'text-[var(--jao-warning)]' :
+                  'text-[var(--jao-destructive)]'
                 }`}>
                   {latest.score}%
                 </span>
                 {diff !== null && (
                   <span className={`text-sm font-medium ${
-                    diff > 0 ? 'text-[var(--success)]' :
-                    diff < 0 ? 'text-[var(--destructive)]' :
-                    'text-[var(--muted-foreground)]'
+                    diff > 0 ? 'text-[var(--jao-success)]' :
+                    diff < 0 ? 'text-[var(--jao-destructive)]' :
+                    'text-[var(--jao-text-tertiary)]'
                   }`}>
                     {diff > 0 ? '+' : ''}{diff} pts
                     {diff <= -5 && ' ⚠ regression'}
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+              <p className="mt-1 text-xs text-[var(--jao-text-tertiary)]">
                 {latest.passCount}/{latest.totalElements} elements pass · {formatTimestamp(latest.timestamp)}
               </p>
             </div>
           )}
 
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+          <div className="rounded-lg border border-[var(--jao-border)] bg-[var(--jao-surface)] p-4">
             <h2 className="mb-3 text-sm font-semibold">Score Trend</h2>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -179,12 +179,12 @@ export default function HistoryPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+          <div className="rounded-lg border border-[var(--jao-border)] bg-[var(--jao-surface)] p-4">
             <h2 className="mb-3 text-sm font-semibold">Recent Audits ({entries.length})</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-[var(--border)] text-[var(--muted-foreground)]">
+                  <tr className="border-b border-[var(--jao-border)] text-[var(--jao-text-tertiary)]">
                     <th className="pb-2 pr-3 text-left font-medium">Date</th>
                     <th className="pb-2 pr-3 text-left font-medium">Score</th>
                     <th className="pb-2 pr-3 text-right font-medium">Pass</th>
@@ -194,16 +194,16 @@ export default function HistoryPage() {
                 </thead>
                 <tbody>
                   {[...entries].reverse().map((e, i) => (
-                    <tr key={i} className="border-b border-[var(--border)] last:border-0">
-                      <td className="py-2 pr-3 text-[var(--muted-foreground)]">{formatTimestamp(e.timestamp)}</td>
+                    <tr key={i} className="border-b border-[var(--jao-border)] last:border-0">
+                      <td className="py-2 pr-3 text-[var(--jao-text-tertiary)]">{formatTimestamp(e.timestamp)}</td>
                       <td className={`py-2 pr-3 font-medium ${
-                        e.score >= 90 ? 'text-[var(--success)]' :
-                        e.score >= 70 ? 'text-[var(--warning)]' :
-                        'text-[var(--destructive)]'
+                        e.score >= 90 ? 'text-[var(--jao-success)]' :
+                        e.score >= 70 ? 'text-[var(--jao-warning)]' :
+                        'text-[var(--jao-destructive)]'
                       }`}>{e.score}%</td>
-                      <td className="py-2 pr-3 text-right text-[var(--success)]">{e.passCount}</td>
-                      <td className="py-2 pr-3 text-right text-[var(--destructive)]">{e.failCount}</td>
-                      <td className="py-2 text-right text-[var(--muted-foreground)]">{e.totalElements}</td>
+                      <td className="py-2 pr-3 text-right text-[var(--jao-success)]">{e.passCount}</td>
+                      <td className="py-2 pr-3 text-right text-[var(--jao-destructive)]">{e.failCount}</td>
+                      <td className="py-2 text-right text-[var(--jao-text-tertiary)]">{e.totalElements}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -216,7 +216,7 @@ export default function HistoryPage() {
       <div className="mt-8 text-center">
         <a
           href="/"
-          className="text-sm text-[var(--primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+          className="text-sm text-[var(--jao-primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
         >
           ← Back to Audit
         </a>

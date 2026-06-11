@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
+import { X } from 'lucide-react'
 
 interface SmartPanelProps {
   enabled: boolean
@@ -167,10 +168,7 @@ export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoadin
                       className="rounded-full p-1 text-[var(--jao-text-secondary)] hover:text-[var(--jao-text)] hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 transition-colors"
                       aria-label="Close panel"
                     >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
+                      <X size={18} />
                     </button>
                   </div>
 
@@ -178,7 +176,7 @@ export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoadin
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium">Smart Analysis</p>
-                        <p className="text-xs text-[var(--muted-foreground)]">Get detailed fix suggestions</p>
+                        <p className="text-xs text-[var(--jao-text-tertiary)]">Get detailed fix suggestions</p>
                       </div>
                       <label className="relative inline-flex cursor-pointer items-center">
                         <input
@@ -187,32 +185,32 @@ export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoadin
                           onChange={e => onToggle(e.target.checked)}
                           className="peer sr-only"
                         />
-                        <div className="h-5 w-9 rounded-full bg-gray-300 after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:bg-[var(--primary)] peer-checked:after:translate-x-full" />
+                        <div className="h-5 w-9 rounded-full bg-gray-300 after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:bg-[var(--jao-primary)] peer-checked:after:translate-x-full" />
                       </label>
                     </div>
 
                     {enabled && (
                       <div className="space-y-4">
                         {!hasFailures && (
-                          <p className="text-xs text-[var(--muted-foreground)]">
+                          <p className="text-xs text-[var(--jao-text-tertiary)]">
                             No failures to analyze. Run an audit with failures first.
                           </p>
                         )}
 
                         <div>
-                          <label htmlFor="drawer-base-url" className="mb-1.5 block text-xs font-medium text-[var(--muted-foreground)]">Backend URL</label>
+                          <label htmlFor="drawer-base-url" className="mb-1.5 block text-xs font-medium text-[var(--jao-text-tertiary)]">Backend URL</label>
                           <input
                             id="drawer-base-url"
                             type="url"
                             value={baseUrl}
                             onChange={e => handleBaseUrlChange(e.target.value)}
                             placeholder={DEFAULT_BASE_URL}
-                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none transition-colors focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
+                            className="w-full rounded-lg border border-[var(--jao-border)] bg-[var(--jao-bg)] px-3 py-2 text-sm outline-none transition-colors focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
                           />
                         </div>
 
                         <div>
-                          <label htmlFor="drawer-access-key" className="mb-1.5 block text-xs font-medium text-[var(--muted-foreground)]">Access Key</label>
+                          <label htmlFor="drawer-access-key" className="mb-1.5 block text-xs font-medium text-[var(--jao-text-tertiary)]">Access Key</label>
                           <div className="flex gap-2">
                             <div className="relative flex-1">
                               <input
@@ -221,12 +219,12 @@ export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoadin
                                 value={key}
                                 onChange={e => handleKeyChange(e.target.value)}
                                 placeholder="sk-..."
-                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 pr-8 text-sm outline-none transition-colors focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
+                                className="w-full rounded-lg border border-[var(--jao-border)] bg-[var(--jao-bg)] px-3 py-2 pr-8 text-sm outline-none transition-colors focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
                               />
                               <button
                                 type="button"
                                 onClick={() => setShowKey(!showKey)}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--jao-text-tertiary)] hover:text-[var(--jao-text)]"
                                 aria-label={showKey ? 'Hide key' : 'Show key'}
                               >
                                 {showKey ? '🙈' : '👁'}
@@ -235,7 +233,7 @@ export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoadin
                             {key && (
                               <button
                                 onClick={clearKey}
-                                className="rounded-lg border border-[var(--border)] px-2.5 text-xs text-[var(--muted-foreground)] hover:text-[var(--destructive)] transition-colors"
+                                className="rounded-lg border border-[var(--jao-border)] px-2.5 text-xs text-[var(--jao-text-tertiary)] hover:text-[var(--jao-destructive)] transition-colors"
                               >
                                 Clear
                               </button>
@@ -244,13 +242,13 @@ export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoadin
                         </div>
 
                         <div>
-                          <label htmlFor="drawer-model" className="mb-1.5 block text-xs font-medium text-[var(--muted-foreground)]">Model</label>
+                          <label htmlFor="drawer-model" className="mb-1.5 block text-xs font-medium text-[var(--jao-text-tertiary)]">Model</label>
                           {modelsList.length > 0 ? (
                             <select
                               id="drawer-model"
                               value={modelsList.includes(selectedModel) ? selectedModel : ''}
                               onChange={e => handleModelChange(e.target.value)}
-                              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none transition-colors focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
+                              className="w-full rounded-lg border border-[var(--jao-border)] bg-[var(--jao-bg)] px-3 py-2 text-sm outline-none transition-colors focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
                             >
                               <option value="" disabled>Select a model</option>
                               {modelsList.map(m => (
@@ -267,7 +265,7 @@ export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoadin
                                 handleModelChange(e.target.value)
                               }}
                               placeholder={modelFetchError ? 'Could not load models — type manually' : 'Enter model name'}
-                              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none transition-colors focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
+                              className="w-full rounded-lg border border-[var(--jao-border)] bg-[var(--jao-bg)] px-3 py-2 text-sm outline-none transition-colors focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
                             />
                           )}
                         </div>

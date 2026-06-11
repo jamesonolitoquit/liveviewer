@@ -1,5 +1,5 @@
 async function runLegalChecks(page) {
-  return page.evaluate(function() {
+  return page.evaluate(() => {
     var results = [];
     var text = document.body ? document.body.innerText || '' : '';
     var html = document.documentElement ? document.documentElement.innerHTML || '' : '';

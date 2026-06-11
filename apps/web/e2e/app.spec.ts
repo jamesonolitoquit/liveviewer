@@ -84,7 +84,7 @@ test.describe('Liveviewer web app', () => {
     await page.click('button[type="submit"]')
 
     await expect(page.getByText('98%', { exact: true })).toBeVisible()
-    await expect(page.locator('h3:has-text("failures")')).toBeVisible()
+    await expect(page.locator('h3:has-text("Accessibility — 2")')).toBeVisible()
     await expect(page.locator('text=/Welcome/')).toBeVisible()
   })
 

@@ -16,6 +16,7 @@
     "@headlessui/react": "^2.2.10",
     "@sparticuz/chromium": "^149.0.0",
     "@sparticuz/chromium-min": "^149.0.0",
+    "lucide-react": "^1.17.0",
     "next": "^15.0.0",
     "playwright": "^1.60.0",
     "playwright-core": "^1.60.0",

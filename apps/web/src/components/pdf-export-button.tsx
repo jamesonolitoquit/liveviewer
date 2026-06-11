@@ -94,12 +94,12 @@ export function PdfExportButton({ data, prefix }: PdfExportButtonProps) {
       <button
         onClick={handlePdf}
         disabled={loading}
-        className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
+        className="rounded-lg border border-[var(--jao-border)] px-3 py-1.5 text-xs text-[var(--jao-text-tertiary)] transition-colors hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 disabled:opacity-50"
       >
         {loading ? 'PDF...' : 'PDF'}
       </button>
       {error && (
-        <span className="text-xs text-[var(--destructive)]" role="alert">{error}</span>
+        <span className="text-xs text-[var(--jao-destructive)]" role="alert">{error}</span>
       )}
     </>
   )

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Copy } from 'lucide-react'
 import { humanError } from '@/lib/errors'
 import type { FixSuggestion } from '@/lib/llm-client'
 
@@ -60,11 +61,11 @@ export function SmartFixButton({ failure }: SmartFixButtonProps) {
       </button>
 
       {error && (
-        <p className="mt-1 text-[10px] text-[var(--destructive)]">{error}</p>
+        <p className="mt-1 text-[10px] text-[var(--jao-destructive)]">{error}</p>
       )}
 
       {suggestion && (
-        <div className="mt-2 rounded border border-[var(--border)] bg-[var(--muted)] p-2">
+        <div className="mt-2 rounded border border-[var(--jao-border)] bg-[var(--jao-border-subtle)] p-2">
           <div className="mb-1 flex items-center gap-1.5">
             <span className={`inline-block rounded px-1 py-0.5 text-[9px] font-medium uppercase ${
               suggestion.priority === 'high' ? 'bg-red-100 text-red-700' :
@@ -73,22 +74,19 @@ export function SmartFixButton({ failure }: SmartFixButtonProps) {
             }`}>
               {suggestion.priority}
             </span>
-            <span className="text-[10px] text-[var(--muted-foreground)]">Suggestion</span>
+            <span className="text-[10px] text-[var(--jao-text-tertiary)]">Suggestion</span>
           </div>
-          <p className="text-[10px] text-[var(--muted-foreground)]">{suggestion.explanation}</p>
+          <p className="text-[10px] text-[var(--jao-text-tertiary)]">{suggestion.explanation}</p>
           <div className="relative mt-1">
-            <pre className="rounded bg-[var(--card)] p-1.5 pr-7 text-[10px] font-mono text-[var(--foreground)] overflow-x-auto">
+            <pre className="rounded bg-[var(--jao-surface)] p-1.5 pr-7 text-[10px] font-mono text-[var(--jao-text)] overflow-x-auto">
               {suggestion.cssFix}
             </pre>
             <button
               onClick={() => navigator.clipboard.writeText(suggestion.cssFix)}
-              className="absolute right-1 top-1 rounded px-1 py-0.5 text-[10px] text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+              className="absolute right-1 top-1 rounded px-1 py-0.5 text-[10px] text-[var(--jao-text-tertiary)] transition-colors hover:text-[var(--jao-text)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
               title="Copy CSS fix"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
+              <Copy size={12} aria-hidden="true" />
             </button>
           </div>
         </div>

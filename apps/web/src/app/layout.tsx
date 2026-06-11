@@ -8,11 +8,11 @@ const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-int
 const baseUrl = 'https://jao-liveviewer.vercel.app'
 
 export const metadata: Metadata = {
-  title: 'Liveviewer - Accessibility & Design QA',
-  description: 'Free design QA and accessibility tool. Checks WCAG contrast, font size, heading hierarchy, and ARIA — with fix suggestions you can act on. No API key needed, no signup required.',
+  title: 'Liveviewer – Complete Website Quality Audits',
+  description: 'Audit WCAG contrast, design QA, SEO, security headers, legal compliance, and performance. Free, open-source, no tracking.',
   openGraph: {
-    title: 'Liveviewer - Accessibility & Design QA',
-    description: 'Free design QA and accessibility tool. Checks WCAG contrast, font size, heading hierarchy, and ARIA — with fix suggestions you can act on. No API key needed, no signup required.',
+    title: 'Liveviewer – Complete Website Quality Audits',
+    description: 'Audit WCAG contrast, design QA, SEO, security headers, legal compliance, and performance. Free, open-source, no tracking.',
     url: baseUrl,
     siteName: 'Liveviewer',
     images: [{ url: `${baseUrl}/og-image.svg`, width: 1200, height: 630 }],
@@ -21,8 +21,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Liveviewer - Accessibility & Design QA',
-    description: 'Free design QA and accessibility tool. Checks WCAG contrast, font size, heading hierarchy, and ARIA — with fix suggestions you can act on. No API key needed, no signup required.',
+    title: 'Liveviewer – Complete Website Quality Audits',
+    description: 'Audit WCAG contrast, design QA, SEO, security headers, legal compliance, and performance. Free, open-source, no tracking.',
     images: [`${baseUrl}/og-image.svg`],
   },
   robots: {

@@ -1,39 +1,24 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { Wand2, CheckCircle, MessageSquare } from 'lucide-react'
 import { JaoLogo } from './jao-logo'
 
 const ONBOARDED_KEY = 'liveviewer_onboarded'
 
 const STEPS = [
   {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
-        <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
-        <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
-        <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
-      </svg>
-    ),
+    icon: <Wand2 size={24} aria-hidden="true" />,
     title: 'Enter a URL',
     desc: 'Type any website URL and click "Run Audit". We\'ll check WCAG contrast and design quality.',
   },
   {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-        <polyline points="22 4 12 14.01 9 11.01" />
-      </svg>
-    ),
+    icon: <CheckCircle size={24} aria-hidden="true" />,
     title: 'Review scores',
     desc: 'See which elements fail. Failures are grouped by severity — expand low-severity items to see details.',
   },
   {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
-    ),
+    icon: <MessageSquare size={24} aria-hidden="true" />,
     title: 'Get detailed fixes (optional)',
     desc: 'Enable enhanced analysis for detailed fix suggestions.',
   },

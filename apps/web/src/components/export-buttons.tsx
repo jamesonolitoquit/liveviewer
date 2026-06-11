@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { FileDown, FileJson, FileText, ClipboardList, Share2, AlertCircle } from 'lucide-react'
 import { csvFromAudit, jsonFromAudit, textFromAudit, failuresText, downloadFile } from '@/lib/export'
 import { humanError } from '@/lib/errors'
 import { PdfExportButton } from './pdf-export-button'

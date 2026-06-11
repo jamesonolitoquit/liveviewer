@@ -124,7 +124,7 @@ async function runSecurityChecks(page, context, url, responseHeaders) {
   // 8. Mixed content (only when served over HTTPS)
   if (isHttps) {
     try {
-      var mcResults = await page.evaluate(function() {
+      var mcResults = await page.evaluate(() => {
         var res = [];
         var httpResources = [];
         var tags = ['img', 'script', 'link', 'iframe', 'source', 'video', 'audio', 'object', 'embed'];

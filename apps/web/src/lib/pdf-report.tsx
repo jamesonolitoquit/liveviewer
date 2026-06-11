@@ -168,7 +168,7 @@ export function AuditPdfDocument({ data }: { data: AuditData }) {
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.title}>Accessibility & Design Audit Report</Text>
+          <Text style={styles.title}>Liveviewer Full Quality Report</Text>
           <Text style={styles.subtitle}>URL: {data.url}</Text>
           <Text style={styles.subtitle}>Date: {date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</Text>
           <Text style={styles.subtitle}>Viewport: {data.viewport.width}x{data.viewport.height}</Text>

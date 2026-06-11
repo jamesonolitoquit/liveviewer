@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, FormEvent, useRef, useEffect, useCallback } from 'react'
+import { Activity } from 'lucide-react'
 
 interface AuditFormProps {
   onRun: (url: string) => void
@@ -233,9 +234,7 @@ export function AuditForm({ onRun, isRunning, defaultUrl }: AuditFormProps) {
           </>
         ) : (
           <>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-            </svg>
+            <Activity size={18} aria-hidden="true" />
             Run Audit
           </>
         )}

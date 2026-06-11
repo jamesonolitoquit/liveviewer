@@ -455,7 +455,7 @@ function mergeWcagResults(results) {
 
 async function runDesignPageChecks(page) {
   return page.evaluate((fnSrc) => {
-    eval(fnSrc);
+    var checkHeadingHierarchy = eval('(' + fnSrc + ')');
     var docWidth = document.body.scrollWidth;
     var viewWidth = window.innerWidth;
     var results = [];
@@ -553,7 +553,7 @@ async function runDesignPageChecks(page) {
 
 async function runSeoPageChecks(page) {
   return page.evaluate((fnSrc) => {
-    eval(fnSrc);
+    var checkHeadingHierarchy = eval('(' + fnSrc + ')');
     var results = [];
 
     // 1. Title tag
