@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const nextConfig = {
+  serverExternalPackages: ['lighthouse', 'chrome-launcher'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
   transpilePackages: ['@liveviewer/core'],
   experimental: {
