@@ -108,6 +108,14 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           >
             GitHub
           </a>
+          {' / '}
+          <a href="/terms" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
+            Terms of Service
+          </a>
+          {' / '}
+          <a href="/imprint" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
+            Imprint
+          </a>
         </p>
       </footer>
     </div>

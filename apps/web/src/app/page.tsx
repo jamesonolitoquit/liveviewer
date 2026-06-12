@@ -3,21 +3,22 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { ChevronUp } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { AuditForm } from '@/components/audit-form'
-import { Dashboard } from '@/components/dashboard'
-import { ExportButtons } from '@/components/export-buttons'
-import { Checklist } from '@/components/checklist'
-import { SmartPanel } from '@/components/smart-panel'
 import { LoadingSkeleton } from '@/components/loading-skeleton'
-import { ErrorToast } from '@/components/error-toast'
 import { JaoLogo } from '@/components/jao-logo'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { HistoryDropdown } from '@/components/history-dropdown'
-import { OnboardingModal } from '@/components/onboarding-modal'
+
 import { humanError } from '@/lib/errors'
 import type { AuditData, DesignData, WcagData } from '@/types/audit'
 
-const AuditResults = dynamic(() => import('@/components/audit-results').then(m => ({ default: m.AuditResults })), { ssr: false })
+const AuditResults = dynamic(() => import('@/components/audit-results').then(m => ({ default: m.AuditResults })), { ssr: false, loading: () => <LoadingSkeleton /> })
+const Dashboard = dynamic(() => import('@/components/dashboard').then(m => ({ default: m.Dashboard })), { ssr: false })
+const ExportButtons = dynamic(() => import('@/components/export-buttons').then(m => ({ default: m.ExportButtons })), { ssr: false })
+const Checklist = dynamic(() => import('@/components/checklist').then(m => ({ default: m.Checklist })), { ssr: false })
+const SmartPanel = dynamic(() => import('@/components/smart-panel').then(m => ({ default: m.SmartPanel })), { ssr: false })
+const ErrorToast = dynamic(() => import('@/components/error-toast').then(m => ({ default: m.ErrorToast })), { ssr: false })
 
 type AuditStatus = 'idle' | 'running' | 'complete' | 'error'
 
@@ -222,7 +223,7 @@ export default function Home() {
           <p className="mt-2 text-base text-[var(--jao-text-secondary)] mx-auto">
             Accessibility, design, SEO, security, legal compliance, and performance — one tool, zero signup.
           </p>
-          <p className="mt-4 text-sm text-[var(--jao-text-tertiary)] mx-auto">
+          <p className="mt-4 text-base text-[var(--jao-text-tertiary)] mx-auto">
             Deterministic fix suggestions for every issue. Open source, community-driven.
           </p>
         </div>
@@ -363,7 +364,7 @@ export default function Home() {
           </a>
           &nbsp;Independent dev tool, made with care.
         </p>
-        <p className="mt-2 text-sm text-[var(--jao-text-tertiary)]">
+        <p className="mt-2 text-base text-[var(--jao-text-tertiary)]">
           <a href="/about" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">About</a>
           {' / '}
           <a href="/privacy" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">Privacy</a>
@@ -385,10 +386,20 @@ export default function Home() {
           >
             Changelog
           </a>
+          {' / '}
+          <Link href="/terms" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
+            Terms of Service
+          </Link>
+          {' / '}
+          <Link href="/imprint" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
+            Imprint
+          </Link>
+        </p>
+        <p className="mt-4 text-base text-[var(--jao-text-tertiary)]">
+          We do not collect or share your data. See our <a href="/privacy" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">privacy policy</a>.
         </p>
       </footer>
     </div>
-    <OnboardingModal />
     {showScrollTop && (
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}

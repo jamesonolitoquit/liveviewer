@@ -46,6 +46,7 @@ export function HistoryDropdown({ onSelect }: { onSelect: (url: string) => void 
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-label="Audit history"
         title="Audit history"
         className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] hover:text-[var(--jao-text)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
       >

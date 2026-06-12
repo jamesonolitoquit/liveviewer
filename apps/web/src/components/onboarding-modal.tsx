@@ -24,18 +24,21 @@ const STEPS = [
   },
 ]
 
-export function OnboardingModal() {
-  const [show, setShow] = useState(false)
+export function OnboardingModal({ initialShow = false }: { initialShow?: boolean }) {
+  const [show, setShow] = useState(initialShow)
 
   useEffect(() => {
     try {
-      if (!localStorage.getItem(ONBOARDED_KEY)) setShow(true)
+      if (localStorage.getItem(ONBOARDED_KEY)) setShow(false)
     } catch {}
   }, [])
 
   const dismiss = useCallback(() => {
     setShow(false)
-    try { localStorage.setItem(ONBOARDED_KEY, '1') } catch {}
+    try {
+      localStorage.setItem(ONBOARDED_KEY, '1')
+      document.cookie = 'liveviewer_onboarded=1; path=/; max-age=31536000; SameSite=Lax'
+    } catch {}
   }, [])
 
   useEffect(() => {
@@ -68,8 +71,8 @@ export function OnboardingModal() {
                 {step.icon}
               </div>
               <div>
-                <h3 className="text-sm font-semibold">{step.title}</h3>
-                <p className="text-xs text-[var(--jao-text-secondary)]">{step.desc}</p>
+                <h2 className="text-sm font-semibold">{step.title}</h2>
+                <p className="text-base text-[var(--jao-text-secondary)]">{step.desc}</p>
               </div>
             </div>
           ))}
@@ -78,13 +81,13 @@ export function OnboardingModal() {
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={dismiss}
-            className="rounded-full border border-[var(--jao-border)] px-5 py-2 text-sm text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
+            className="rounded-full border border-[var(--jao-border)] px-5 py-2 text-base text-[var(--jao-text-secondary)] transition-colors hover:bg-[var(--jao-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30"
           >
             Skip
           </button>
           <button
             onClick={dismiss}
-            className="btn-gradient inline-flex rounded-full px-5 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/50"
+            className="btn-gradient inline-flex rounded-full px-5 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/50"
           >
             Start auditing →
           </button>

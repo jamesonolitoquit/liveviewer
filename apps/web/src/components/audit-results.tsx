@@ -483,7 +483,7 @@ export function AuditResults({ data, children }: AuditResultsProps) {
                       Performance
                       <span className="inline-flex cursor-help items-center rounded-full border border-[var(--jao-border)] px-1.5 py-0.5 text-[9px] text-[var(--jao-text-tertiary)]" title="Lighthouse performance score based on LCP, FCP, TBT, CLS, and Speed Index.">&#9432;</span>
                     </h3>
-                    <ScoreCard score={performance.score ?? 0} size={36} title="Performance score" subtitle={performance.grade ? `Grade ${performance.grade}` : ''} />
+                    {performance.score != null && <ScoreCard score={performance.score} size={36} title="Performance score" subtitle={performance.grade ? `Grade ${performance.grade}` : ''} />}
                   </div>
                 )}
               </div>

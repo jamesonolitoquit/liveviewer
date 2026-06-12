@@ -1,13 +1,20 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import { cookies } from 'next/headers'
 import './globals.css'
 import { FeedbackButton } from '../components/feedback-button'
+import { CookieConsent } from '../components/cookie-consent'
+import { OnboardingModal } from '../components/onboarding-modal'
 
-const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' })
+const inter = Inter({ subsets: ['latin'], display: 'optional', variable: '--font-inter' })
 
 const baseUrl = 'https://jao-liveviewer.vercel.app'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://jao-liveviewer.vercel.app'),
+  alternates: {
+    canonical: '/',
+  },
   title: 'Liveviewer – Complete Website Quality Audits',
   description: 'Audit WCAG contrast, design QA, SEO, security headers, legal compliance, and performance. Free, open-source, no tracking.',
   openGraph: {
@@ -31,11 +38,17 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: {
   children: React.ReactNode
 }) {
+  let initialShow = false
+  try {
+    const cookieStore = await cookies()
+    initialShow = !cookieStore.has('liveviewer_onboarded')
+  } catch {}
+
   return (
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <head>
@@ -75,6 +88,8 @@ export default function RootLayout({
           Skip to content
         </a>
         {children}
+        <OnboardingModal initialShow={initialShow} />
+        <CookieConsent />
         <FeedbackButton />
       </body>
     </html>

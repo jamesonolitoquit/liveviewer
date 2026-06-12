@@ -1,11 +1,30 @@
 function checkHeadingHierarchy(category) {
   var results = [];
-  var headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  var seen = new Set();
+  var headingEls = [];
+  var all = document.querySelectorAll('h1, h2, h3, h4, h5, h6, [role="heading"]');
+  for (var i = 0; i < all.length; i++) {
+    var el = all[i];
+    if (seen.has(el)) continue;
+    seen.add(el);
+    var tag = el.tagName.toLowerCase();
+    var level;
+    if (tag.match(/^h[1-6]$/)) {
+      level = parseInt(tag[1]);
+    } else if (el.getAttribute('role') === 'heading') {
+      var al = el.getAttribute('aria-level');
+      level = al ? parseInt(al) : 2;
+      if (isNaN(level) || level < 1 || level > 6) level = 2;
+    } else {
+      continue;
+    }
+    headingEls.push({ element: el, level: level });
+  }
   var prevLevel = 0;
   var h1Count = 0;
-  for (var i = 0; i < headings.length; i++) {
-    var h = headings[i];
-    var level = parseInt(h.tagName[1]);
+  for (var i = 0; i < headingEls.length; i++) {
+    var h = headingEls[i].element;
+    var level = headingEls[i].level;
     if (level === 1) h1Count++;
     if (prevLevel > 0 && level > prevLevel + 1) {
       var tag = h.tagName.toLowerCase();

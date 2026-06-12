@@ -11,14 +11,14 @@ export default function AboutPage() {
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-16">
       <Link
         href="/"
-        className="mb-8 inline-flex items-center gap-1 text-sm text-[var(--jao-text-secondary)] underline decoration-dotted underline-offset-2 transition-colors hover:text-[var(--jao-primary)]"
+        className="mb-8 inline-flex items-center gap-1 text-base text-[var(--jao-text-secondary)] underline decoration-dotted underline-offset-2 transition-colors hover:text-[var(--jao-primary)]"
       >
         &larr; Back to audits
       </Link>
 
       <h1 className="text-3xl font-bold tracking-tight">About Liveviewer</h1>
 
-      <section className="mt-8 space-y-4 text-base leading-relaxed text-[var(--jao-text-secondary)]">
+      <section className="mt-8 space-y-4 text-base leading-normal text-[var(--jao-text-secondary)]">
         <p>
           I kept finding low-contrast text on my own projects. Text that looked fine to me but failed
           WCAG standards. Tools existed, but they were either too heavy (full Lighthouse audits), too
@@ -121,9 +121,13 @@ export default function AboutPage() {
           </a>
           . Independent dev tool, made with care.
         </p>
-        <p className="mt-2 text-sm text-[var(--jao-text-tertiary)]">
+        <p className="mt-2 text-base text-[var(--jao-text-tertiary)]">
           <Link href="/" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
             Back to Liveviewer
+          </Link>
+          {' / '}
+          <Link href="/privacy" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
+            Privacy
           </Link>
           {' / '}
           <a
@@ -143,6 +147,14 @@ export default function AboutPage() {
           >
             Changelog
           </a>
+          {' / '}
+          <Link href="/terms" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
+            Terms of Service
+          </Link>
+          {' / '}
+          <Link href="/imprint" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
+            Imprint
+          </Link>
         </p>
       </section>
     </div>

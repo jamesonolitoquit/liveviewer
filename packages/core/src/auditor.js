@@ -287,8 +287,12 @@ async function runWcagOnPage(page) {
         traverseRoot(el.shadowRoot);
       }
 
-      const text = el.textContent.trim();
-      if (!text || el.children.length > 0) return;
+      var directText = '';
+      for (var cn = el.firstChild; cn; cn = cn.nextSibling) {
+        if (cn.nodeType === 3) directText += cn.textContent;
+      }
+      const text = directText.trim();
+      if (!text) return;
 
       // Skip single-char interactive elements (non-human-language exception, WCAG SC 1.4.3)
       if (text.length <= 1 && ['button', 'a', 'input', 'select', 'textarea'].includes(tag)) return;
@@ -499,8 +503,8 @@ async function runDesignPageChecks(page) {
       if (!el) continue;
       const tag = el.tagName.toLowerCase();
       if (!BODY_TAGS.has(tag)) continue;
-      const text = el.textContent.trim();
-      if (!text || el.children.length > 0) continue;
+      const text = walker.currentNode.textContent.trim();
+      if (!text) continue;
       const style = getComputedStyle(el);
       // Skip visually hidden elements (sr-only pattern)
       if (style.position === 'absolute') {
@@ -919,8 +923,8 @@ async function audit(url, options = {}) {
     performance: doPerformance = false,
     timeout = 30000,
     waitUntil = 'domcontentloaded',
-    loadImages = false,
-    blockFonts = true,
+    loadImages = true,
+    blockFonts = false,
     blockMedia = true,
     disableJavaScript = false,
     navigationTimeout = 8000,
@@ -1043,12 +1047,16 @@ async function audit(url, options = {}) {
             const key = f.selector + '|' + f.ruleId;
             if (!seen.has(key)) { seen.add(key); unique.push(f); }
           }
+          const seoTotalChecks = 9;
+          const seoFailCount = unique.length;
           seoResult = {
             failures: unique,
-            totalChecks: unique.length,
-            passCount: 0,
-            failCount: unique.length,
-            score: unique.length > 0 ? 0 : 100
+            totalChecks: seoTotalChecks,
+            passCount: Math.max(0, seoTotalChecks - seoFailCount),
+            failCount: seoFailCount,
+            score: seoTotalChecks > 0
+              ? Math.round(Math.max(0, seoTotalChecks - seoFailCount) / seoTotalChecks * 1000) / 10
+              : 100
           };
         }
         if (doDesign) {
@@ -1111,12 +1119,16 @@ async function audit(url, options = {}) {
 
         if (doSecurity) {
           var securityFails = await runSecurityChecks(page, context, url, responseHeaders);
+          var securityTotalChecks = 9;
+          var securityFailCount = securityFails.length;
           securityResult = {
             failures: securityFails,
-            totalChecks: securityFails.length,
-            passCount: 0,
-            failCount: securityFails.length,
-            score: securityFails.length > 0 ? 0 : 100
+            totalChecks: securityTotalChecks,
+            passCount: Math.max(0, securityTotalChecks - securityFailCount),
+            failCount: securityFailCount,
+            score: securityTotalChecks > 0
+              ? Math.round(Math.max(0, securityTotalChecks - securityFailCount) / securityTotalChecks * 1000) / 10
+              : 100
           };
         }
 

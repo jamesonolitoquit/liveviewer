@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy - Liveviewer',
-  description: 'How Liveviewer handles your data.',
+  description: 'How Liveviewer handles your data — no tracking, no storage, no surprises.',
 }
 
 export default function PrivacyPage() {
@@ -11,14 +11,14 @@ export default function PrivacyPage() {
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-16">
       <Link
         href="/"
-        className="mb-8 inline-flex items-center gap-1 text-sm text-[var(--jao-text-secondary)] underline decoration-dotted underline-offset-2 transition-colors hover:text-[var(--jao-primary)]"
+        className="mb-8 inline-flex items-center gap-1 text-base text-[var(--jao-text-secondary)] underline decoration-dotted underline-offset-2 transition-colors hover:text-[var(--jao-primary)]"
       >
         &larr; Back to audits
       </Link>
 
       <h1 className="text-3xl font-bold tracking-tight">Privacy Policy</h1>
 
-      <section className="mt-8 space-y-6 text-base leading-relaxed text-[var(--jao-text-secondary)]">
+      <section className="mt-8 space-y-6 text-base leading-normal text-[var(--jao-text-secondary)]">
         <p>
           Liveviewer is designed to run in your browser and keep your data on your
           machine. We do not collect, sell, or share any personal information.
@@ -70,15 +70,19 @@ export default function PrivacyPage() {
           of Liveviewer after changes means you accept the updated policy.
         </p>
 
-        <p className="pt-4 text-sm text-[var(--jao-text-tertiary)]">
+        <p className="pt-4 text-base text-[var(--jao-text-tertiary)]">
           Last updated: June 2026
         </p>
       </section>
 
       <section className="mt-12 border-t border-[var(--jao-border-subtle)] pt-8 text-center">
-        <p className="text-sm text-[var(--jao-text-tertiary)]">
+        <p className="text-base text-[var(--jao-text-tertiary)]">
           <Link href="/" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
             Back to Liveviewer
+          </Link>
+          {' / '}
+          <Link href="/privacy" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
+            Privacy Policy
           </Link>
           {' / '}
           <a
@@ -89,6 +93,14 @@ export default function PrivacyPage() {
           >
             GitHub
           </a>
+          {' / '}
+          <Link href="/terms" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
+            Terms of Service
+          </Link>
+          {' / '}
+          <Link href="/imprint" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
+            Imprint
+          </Link>
         </p>
       </section>
     </div>

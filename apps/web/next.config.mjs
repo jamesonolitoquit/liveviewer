@@ -7,6 +7,7 @@ const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, '../../'),
   transpilePackages: ['@liveviewer/core'],
   experimental: {
+    optimizePackageImports: ['lucide-react', '@headlessui/react'],
     serverActions: {
       bodySizeLimit: '2mb'
     }

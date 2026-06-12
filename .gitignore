@@ -4,6 +4,7 @@ audits/
 screenshots/
 extracts/
 benchmark-artifacts/
+.liveviewer-cache/
 llm-cache/
 packages/*/dist/
 .next/
