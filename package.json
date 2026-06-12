@@ -25,7 +25,7 @@
     "mcp": "node --import tsx/esm packages/cli/bin/liveviewer.js mcp",
     "web": "npm -w apps/web run dev",
     "web:build": "npm -w apps/web run build",
-    "postinstall": "patch-package",
+    "postinstall": "node scripts/patch-lighthouse.js && patch-package",
     "verify:deployment": "node scripts/verify-deployment.js"
   },
   "engines": {
