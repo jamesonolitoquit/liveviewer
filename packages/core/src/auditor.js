@@ -10,6 +10,14 @@ const { runMobileChecks } = require('./mobile');
 
 const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL_ENV;
 
+class PageTooLargeError extends Error {
+  constructor(reason, details) {
+    super(reason);
+    this.name = 'PageTooLargeError';
+    this.details = details;
+  }
+}
+
 const CHROMIUM_VERSION = '149.0.0';
 const CHROMIUM_PACK_URL = process.env.CHROMIUM_PACK_URL ||
   `https://github.com/Sparticuz/chromium/releases/download/v${CHROMIUM_VERSION}/chromium-v${CHROMIUM_VERSION}-pack.x64.tar`;
@@ -1178,7 +1186,8 @@ async function audit(url, options = {}) {
     blockMedia = true,
     disableJavaScript = false,
     navigationTimeout = 8000,
-    waitStable = false
+    waitStable = false,
+    pageSizeLimit = null
   } = options;
 
   const vps = viewports && viewports.length > 0
@@ -1246,6 +1255,21 @@ async function audit(url, options = {}) {
         await page.waitForSelector('body', { timeout: 2000 }).catch(() => {});
         await page.waitForSelector('h1, main, [role="main"]', { timeout: 5000 }).catch(() => {});
         if (waitStable) await waitForStableDOM(page);
+
+        if (pageSizeLimit) {
+          if (pageSizeLimit.htmlBytes && responseHeaders['content-length']) {
+            var contentLength = parseInt(responseHeaders['content-length'], 10);
+            if (contentLength > pageSizeLimit.htmlBytes) {
+              throw new PageTooLargeError('Page HTML exceeds size limit', { reason: 'content_length', limit: pageSizeLimit.htmlBytes, actual: contentLength });
+            }
+          }
+          if (pageSizeLimit.domElements) {
+            var domCount = await page.evaluate(function() { return document.querySelectorAll('*').length; });
+            if (domCount > pageSizeLimit.domElements) {
+              throw new PageTooLargeError('Page has too many DOM elements', { reason: 'dom_elements', limit: pageSizeLimit.domElements, actual: domCount });
+            }
+          }
+        }
 
         const viewportResults = [];
         let lastElements = [];
@@ -1547,4 +1571,4 @@ async function audit(url, options = {}) {
   }
 }
 
-module.exports = { audit, getChromium, isVercel, CHROMIUM_VERSION, runSeoPageChecks, runSecurityChecks, runPerformanceChecks: require('./performance').runPerformanceChecks };
+module.exports = { audit, getChromium, isVercel, CHROMIUM_VERSION, PageTooLargeError, runSeoPageChecks, runSecurityChecks, runPerformanceChecks: require('./performance').runPerformanceChecks };

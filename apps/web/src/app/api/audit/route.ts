@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       waitUntil = 'load',
       waitStable = false,
       bypassCache,
-      loadImages = false,
+      pillars: rawPillars,
       context: bodyContext
     } = body
 
@@ -124,22 +124,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const pillars = Array.isArray(rawPillars) ? rawPillars.filter((p: string) => ['wcag','design','seo','security','legal','performance'].includes(p)) : undefined
+
     const auditOptions: any = {
       viewport: { width: 1024, height: 768 },
       label: 'web-audit',
-      wcag: true,
-      design: true,
-      seo: true,
-      security: true,
-      legal: true,
-      performance: true,
-      timeout: Math.min(timeout, 7000),
+      wcag: !pillars || pillars.includes('wcag'),
+      design: !pillars || pillars.includes('design'),
+      seo: !pillars || pillars.includes('seo'),
+      security: !pillars || pillars.includes('security'),
+      legal: !pillars || pillars.includes('legal'),
+      performance: !pillars || pillars.includes('performance'),
+      timeout: Math.min(timeout, 15000),
       waitUntil,
       waitStable,
-      loadImages,
       blockFonts: true,
       blockMedia: true,
-      navigationTimeout: 7000
+      navigationTimeout: 15000,
+      pageSizeLimit: { htmlBytes: 5242880, domElements: 8000 }
     }
     if (viewports) {
       auditOptions.viewports = viewports
@@ -152,28 +154,31 @@ export async function POST(request: NextRequest) {
     const sanitized: any = {
       url: result.url,
       timestamp: result.timestamp,
-      viewport: result.viewport,
-      wcag: result.wcag
+      viewport: result.viewport
+    }
+    if (!pillars || pillars.includes('wcag')) {
+      sanitized.wcag = result.wcag
     }
     if (result.viewports) {
-      sanitized.viewports = result.viewports.map((r: any) => ({
-        viewport: r.viewport,
-        wcag: r.wcag
-      }))
+      sanitized.viewports = result.viewports.map((r: any) => {
+        const v: any = { viewport: r.viewport }
+        if (!pillars || pillars.includes('wcag')) v.wcag = r.wcag
+        return v
+      })
     }
-    if (result.design) {
+    if (result.design && (!pillars || pillars.includes('design'))) {
       sanitized.design = result.design
     }
-    if (result.seo) {
+    if (result.seo && (!pillars || pillars.includes('seo'))) {
       sanitized.seo = result.seo
     }
-    if (result.security) {
+    if (result.security && (!pillars || pillars.includes('security'))) {
       sanitized.security = result.security
     }
-    if (result.legal) {
+    if (result.legal && (!pillars || pillars.includes('legal'))) {
       sanitized.legal = result.legal
     }
-    if (result.performance) {
+    if (result.performance && (!pillars || pillars.includes('performance'))) {
       sanitized.performance = result.performance
     }
     if (viewports && viewports.length >= 2) {
@@ -190,13 +195,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: sanitized, cached: false })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
+    const name = err instanceof Error ? err.name : ''
     const reason = isServerlessConstraint(err) ? 'serverless_constraint' : 'audit_failed'
+
+    if (name === 'PageTooLargeError') {
+      return NextResponse.json(
+        {
+          error: 'Page too large for server-side audit.',
+          reason: 'page_too_large',
+          recommendation: 'use_cli'
+        },
+        { status: 413 }
+      )
+    }
 
     if (reason === 'serverless_constraint') {
       return NextResponse.json(
         {
           error: 'Server-side audit unavailable. Try the CLI: npm install -g @liveviewer/cli',
           reason: 'serverless_constraint',
+          recommendation: 'use_cli',
           fallback: true
         },
         { status: 503 }

@@ -11,6 +11,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { HistoryDropdown } from '@/components/history-dropdown'
 
 import { humanError } from '@/lib/errors'
+import { PILLARS } from '@/lib/pillars'
 import type { AuditData, DesignData, WcagData } from '@/types/audit'
 
 const AuditResults = dynamic(() => import('@/components/audit-results').then(m => ({ default: m.AuditResults })), { ssr: false, loading: () => <LoadingSkeleton /> })
@@ -45,6 +46,8 @@ export default function Home() {
   const [context, setContext] = useState('')
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [demoUrl, setDemoUrl] = useState<string | undefined>(undefined)
+  const [selectedPillars, setSelectedPillars] = useState<string[]>(PILLARS.map(p => p.key))
+  const [cliRecommendation, setCliRecommendation] = useState<string | null>(null)
 
   useEffect(() => {
     try {
@@ -91,18 +94,26 @@ export default function Home() {
     setStatus('idle')
   }, [])
 
+  const togglePillar = useCallback((key: string) => {
+    setSelectedPillars(prev => {
+      if (prev.includes(key) && prev.length <= 1) return prev
+      return prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    })
+  }, [])
+
   const runAudit = useCallback(async (url: string, attempt = 1) => {
     auditUrlRef.current = url
     setStatus('running')
     setError(null)
     setData(null)
     setLlmResult(null)
+    setCliRecommendation(null)
 
     const controller = new AbortController()
     abortRef.current = controller
 
     try {
-      const body: any = { url }
+      const body: any = { url, pillars: selectedPillars }
       const vps = viewportMode === 'both'
         ? [VIEWPORT_MAP.desktop, VIEWPORT_MAP.mobile]
         : [VIEWPORT_MAP[viewportMode]]
@@ -117,6 +128,11 @@ export default function Home() {
       const json = await res.json()
 
       if (!res.ok || !json.success) {
+        if (json.recommendation === 'use_cli') {
+          setCliRecommendation(json.error || 'Page too large for web app. Use CLI instead.')
+          setStatus('idle')
+          return
+        }
         const isRetryable = res.status === 503 || res.status === 429 || !res.ok
         if (isRetryable && attempt < 2 && json.reason === 'serverless_constraint') {
           await new Promise(r => setTimeout(r, 2000))
@@ -229,7 +245,7 @@ export default function Home() {
 
       <main id="main-content" tabIndex={-1} className="flex-1 pb-16">
         <div className="mb-10 text-center">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Full Site Quality Audit</h1>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">All in One Audit</h1>
           <p className="mt-2 text-base text-[var(--jao-text-secondary)] mx-auto">
             Accessibility, design, SEO, security, legal compliance, and performance — one tool, zero signup.
           </p>
@@ -261,6 +277,38 @@ export default function Home() {
               </button>
             )
           })}
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Audit pillars">
+            {PILLARS.map(({ key, label }) => {
+              const isActive = selectedPillars.includes(key)
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="checkbox"
+                  aria-checked={isActive}
+                  onClick={() => togglePillar(key)}
+                  disabled={status === 'running'}
+                  className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 ${
+                    isActive
+                      ? 'border-[var(--jao-primary)] bg-[var(--jao-primary)]/10 text-[var(--jao-primary)]'
+                      : 'border-[var(--jao-border)] text-[var(--jao-text-secondary)] hover:text-[var(--jao-text)]'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
+            <span className="ml-1 text-sm text-[var(--jao-text-tertiary)]">{selectedPillars.length} of {PILLARS.length}</span>
+            <button
+              type="button"
+              onClick={() => setSelectedPillars(selectedPillars.length < PILLARS.length ? PILLARS.map(p => p.key) : PILLARS.slice(0, 1).map(p => p.key))}
+              disabled={status === 'running'}
+              className="ml-1 rounded-full px-2 py-1 text-xs text-[var(--jao-text-tertiary)] underline decoration-dotted underline-offset-2 transition-colors hover:text-[var(--jao-text)]"
+            >
+              {selectedPillars.length < PILLARS.length ? 'All' : 'Min'}
+            </button>
           </div>
 
           <details className="mt-3 group">
@@ -316,6 +364,20 @@ export default function Home() {
 
         {status === 'error' && error && (
           <ErrorToast message={error} onDismiss={dismissError} />
+        )}
+
+        {cliRecommendation && (
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800/30 dark:bg-amber-900/20 dark:text-amber-200">
+            <p className="font-medium">Page too large for web audit</p>
+            <p className="mt-1">{cliRecommendation}</p>
+            <code className="mt-2 block rounded bg-amber-100 px-2 py-1 text-xs dark:bg-amber-900/40">npm install -g @liveviewer/cli</code>
+            <button
+              onClick={() => setCliRecommendation(null)}
+              className="mt-2 underline decoration-dotted underline-offset-2"
+            >
+              Dismiss
+            </button>
+          </div>
         )}
 
         {status === 'idle' && !data && historyEntries.length > 0 && (
