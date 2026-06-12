@@ -11,7 +11,7 @@ test.describe('Liveviewer web app', () => {
     await page.goto('/')
 
     const heading = page.locator('h1')
-    await expect(heading).toHaveText('Full Site Quality Audit')
+    await expect(heading).toHaveText('All in One Audit')
 
     const input = page.locator('input[type="url"]')
     await expect(input).toBeVisible()
