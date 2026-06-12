@@ -3,7 +3,7 @@ import type { LLMResponse, FailureAnalysis } from './types.js'
 export const MOCK_SUCCESS_RESPONSE: LLMResponse = {
   provider: 'mock',
   model: 'mock-v1',
-  summary: '3 contrast failures on headings and buttons, 1 design issue',
+  summary: '3 contrast failures on headings and buttons, 1 design issue, 2 SEO issues, 1 missing security header',
   perFailure: [
     {
       selector: 'h1.hero-title',
@@ -22,6 +22,48 @@ export const MOCK_SUCCESS_RESPONSE: LLMResponse = {
       severity: 'medium'
     }
   ],
+  perPillarFixes: {
+    seo: [
+      {
+        pillar: 'seo',
+        selector: 'head',
+        ruleId: 'missing-meta-description',
+        explanation: 'Missing meta description reduces search result click-through rate',
+        suggestion: 'Add <meta name="description"> with a concise page summary',
+        severity: 'medium'
+      }
+    ],
+    security: [
+      {
+        pillar: 'security',
+        selector: 'head',
+        ruleId: 'missing-hsts',
+        explanation: 'Missing Strict-Transport-Security header allows downgrade attacks',
+        suggestion: 'Add Strict-Transport-Security: max-age=31536000; includeSubDomains',
+        severity: 'high'
+      }
+    ],
+    legal: [
+      {
+        pillar: 'legal',
+        selector: 'body',
+        ruleId: 'cookie-consent',
+        explanation: 'No cookie consent banner detected for GDPR compliance',
+        suggestion: 'Add a cookie consent banner and cookie policy page',
+        severity: 'high'
+      }
+    ],
+    performance: [
+      {
+        pillar: 'performance',
+        selector: 'page',
+        ruleId: 'lcp',
+        explanation: 'LCP of 3.2s exceeds 2.5s target',
+        suggestion: 'Optimise hero image with compression and preload',
+        severity: 'medium'
+      }
+    ]
+  },
   cached: false
 }
 

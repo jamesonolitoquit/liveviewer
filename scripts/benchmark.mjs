@@ -48,6 +48,7 @@ const ruleResults = [];
 
 for (const ruleFile of ruleFiles) {
   const expected = JSON.parse(fs.readFileSync(path.join(expectedDir, ruleFile), 'utf-8'));
+  if (!expected.testCases || !Array.isArray(expected.testCases)) continue;
   console.log(`\n# ${ruleFile.replace('.json', '')} — ${expected.name}`);
   console.log(`  WCAG SC: ${expected.wcag}\n`);
 

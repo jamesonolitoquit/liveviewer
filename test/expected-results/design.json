@@ -74,6 +74,7 @@
       "expectedFailures": [
         { "ruleId": "heading-hierarchy", "selector": "body" },
         { "ruleId": "heading-hierarchy", "selector": "h3" },
+        { "ruleId": "font-size-legible", "selector": "p.small" },
         { "ruleId": "font-size-legible", "selector": "span.tight" },
         { "ruleId": "line-height-readable", "selector": "span.tight" },
         { "ruleId": "font-size-legible", "selector": "p.small.tight" },

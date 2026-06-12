@@ -137,6 +137,49 @@ describe('buildPrompt', () => {
     expect(ctxIdx).toBeGreaterThan(-1)
     expect(wcagIdx).toBeGreaterThan(ctxIdx)
   })
+
+  it('includes AI detection section when aiResult is provided', () => {
+    const failures = [makeFailure()]
+    const aiResult = {
+      failures: [{
+        ruleId: 'ai-generated-content',
+        ruleName: 'Content may be AI-generated',
+        category: 'ai',
+        selector: 'body',
+        description: 'AI detection confidence: 85%. Signals: 4',
+        severity: 'info',
+        value: '85% confidence',
+        expected: 'human-authored content expected (no AI signals)'
+      }] as any[],
+      confidence: 85,
+      level: 'likely',
+      signals: [{ type: 'ai-disclosure', detail: 'AI disclosure', weight: 0.3 }],
+      totalChecks: 1,
+      failCount: 1,
+      passCount: 0,
+      score: 0
+    }
+    const prompt = buildPrompt(failures, 'default', [], undefined, [], [], [], undefined, aiResult)
+    expect(prompt).toContain('AI Detection')
+    expect(prompt).toContain('85% confidence')
+    expect(prompt).toContain('AI detection confidence: 85%')
+  })
+
+  it('omits AI section when aiResult has no failures', () => {
+    const failures = [makeFailure()]
+    const aiResult: AuditResults['ai'] = {
+      failures: [],
+      confidence: 0,
+      level: 'unlikely',
+      signals: [],
+      totalChecks: 1,
+      failCount: 0,
+      passCount: 1,
+      score: 100
+    }
+    const prompt = buildPrompt(failures, 'default', [], undefined, [], [], [], undefined, aiResult)
+    expect(prompt).not.toContain('AI Detection')
+  })
 })
 
 describe('createMockClient', () => {

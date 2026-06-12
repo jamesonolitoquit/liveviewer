@@ -1,6 +1,6 @@
 {
   "name": "Liveviewer Legal & Privacy Rules",
-  "description": "Test suite for cookie consent, privacy, imprint, terms of service, and data collection checks.",
+  "description": "Test suite for cookie consent (including CMP & revocation), privacy, imprint (15 languages), terms of service (15+ languages), and data collection checks.",
   "testCases": [
     {
       "id": "consent-pass",
@@ -9,10 +9,28 @@
     },
     {
       "id": "consent-fail",
-      "label": "No cookie consent — cookie-consent fails",
+      "label": "No cookie consent — cookie-consent and consent-revocation fail",
       "expectedFailures": [
-        {"ruleId": "cookie-consent", "fixture": "consent-fail.html"}
+        {"ruleId": "cookie-consent", "fixture": "consent-fail.html"},
+        {"ruleId": "consent-revocation", "fixture": "consent-fail.html"}
       ]
+    },
+    {
+      "id": "consent-revocation-fail",
+      "label": "Cookie banner present but no consent revocation link — consent-revocation fails",
+      "expectedFailures": [
+        {"ruleId": "consent-revocation", "fixture": "consent-revocation-fail.html"}
+      ]
+    },
+    {
+      "id": "consent-revocation-pass",
+      "label": "Cookie banner present with Cookie Settings button — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "cmp-present",
+      "label": "CMP wrapper DOM element instead of cookie banner — no failures",
+      "expectedFailures": []
     },
     {
       "id": "privacy-pass",
@@ -28,7 +46,7 @@
     },
     {
       "id": "imprint-pass",
-      "label": "Imprint link present — no failures",
+      "label": "Imprint link present (English) — no failures",
       "expectedFailures": []
     },
     {
@@ -39,8 +57,18 @@
       ]
     },
     {
+      "id": "imprint-fr-pass",
+      "label": "French imprint (mentions legales) detected — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "imprint-it-pass",
+      "label": "Italian imprint (note legali) detected — no failures",
+      "expectedFailures": []
+    },
+    {
       "id": "tos-pass",
-      "label": "Terms of service link present — no failures",
+      "label": "Terms of service link present (English) — no failures",
       "expectedFailures": []
     },
     {
@@ -49,6 +77,16 @@
       "expectedFailures": [
         {"ruleId": "terms-of-service", "fixture": "tos-fail.html"}
       ]
+    },
+    {
+      "id": "tos-de-pass",
+      "label": "German ToS (Allgemeine Geschaftsbedingungen) detected — no failures",
+      "expectedFailures": []
+    },
+    {
+      "id": "tos-es-pass",
+      "label": "Spanish ToS (Terminos y condiciones) detected — no failures",
+      "expectedFailures": []
     },
     {
       "id": "data-pass",
@@ -63,15 +101,23 @@
       ]
     },
     {
+      "id": "data-fail-strict",
+      "label": "Generic text with no privacy language — data-collection-notice fails (tests tightened patterns)",
+      "expectedFailures": [
+        {"ruleId": "data-collection-notice", "fixture": "data-fail-strict.html"}
+      ]
+    },
+    {
       "id": "legal-perfect",
       "label": "All legal requirements met — no failures",
       "expectedFailures": []
     },
     {
       "id": "legal-mixed",
-      "label": "No legal requirements met — all 5 fail",
+      "label": "No legal requirements met — all 6 fail",
       "expectedFailures": [
         {"ruleId": "cookie-consent", "fixture": "legal-mixed.html"},
+        {"ruleId": "consent-revocation", "fixture": "legal-mixed.html"},
         {"ruleId": "privacy-policy", "fixture": "legal-mixed.html"},
         {"ruleId": "imprint", "fixture": "legal-mixed.html"},
         {"ruleId": "terms-of-service", "fixture": "legal-mixed.html"},

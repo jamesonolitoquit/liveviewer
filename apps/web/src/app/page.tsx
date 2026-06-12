@@ -174,7 +174,13 @@ export default function Home() {
     if (!llmEnabled) return
     const wcagFails = data?.wcag?.failures
     const designFails = data?.design?.failures
-    if ((!wcagFails || wcagFails.length === 0) && (!designFails || designFails.length === 0)) return
+    const seoFails = data?.seo?.failures
+    const securityFails = data?.security?.failures
+    const legalFails = data?.legal?.failures
+    const hasAny = (wcagFails && wcagFails.length > 0) || (designFails && designFails.length > 0) ||
+      (seoFails && seoFails.length > 0) || (securityFails && securityFails.length > 0) ||
+      (legalFails && legalFails.length > 0)
+    if (!hasAny) return
 
     setLlmLoading(true)
     setLlmResult(null)
@@ -190,7 +196,11 @@ export default function Home() {
         throw new Error('Enter your access key in the settings panel')
       }
 
-      const result = await enrichWithLLM(wcagFails || [], 'openai-compatible', model, key, baseUrl || 'https://api.deepseek.com/v1', designFails || [], context || undefined)
+      const result = await enrichWithLLM(
+        wcagFails || [], 'openai-compatible', model, key, baseUrl || 'https://api.deepseek.com/v1',
+        designFails || [], context || undefined,
+        seoFails || [], securityFails || [], legalFails || []
+      )
       setLlmResult({ ...result, cached: false })
     } catch (err) {
       setLlmResult({ error: err instanceof Error ? err.message : humanError('llm'), provider: 'client', model: '', perFailure: [], summary: '' })

@@ -24,7 +24,7 @@ function roundTo(v, decimals) {
   return v !== null ? Math.round(v * f) / f : null;
 }
 
-async function runPerformanceChecks(url, chromePath) {
+async function runPerformanceChecks(url, chromePath, formFactor) {
   var lighthouse, chromeLauncher;
 
   try {
@@ -54,7 +54,7 @@ async function runPerformanceChecks(url, chromePath) {
       output: 'json',
       logLevel: 'error',
       onlyCategories: ['performance'],
-      formFactor: 'desktop',
+      formFactor: formFactor || 'desktop',
       screenEmulation: { disabled: true },
       maxWaitForLoad: PERFORMANCE_TIMEOUT
     });

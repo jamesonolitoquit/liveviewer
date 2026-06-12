@@ -147,9 +147,48 @@ function viewportSummary(viewports) {
   return '';
 }
 
+var FIX_TEMPLATES = {
+  // SEO
+  'missing-title': 'Add a descriptive <title> tag to the page head. Recommended length is 10\u201370 characters.',
+  'missing-meta-description': 'Add a <meta name="description"> tag with a concise summary (50\u2013160 characters) of the page content.',
+  'missing-canonical': 'Add a <link rel="canonical"> tag to specify the preferred URL and avoid duplicate content issues.',
+  'missing-jsonld': 'Add JSON-LD structured data via <script type="application/ld+json"> for rich search results.',
+  'missing-viewport': 'Add <meta name="viewport" content="width=device-width, initial-scale=1"> for proper mobile rendering.',
+  'robots-blocked': 'Remove noindex/nofollow directives from the robots meta tag to allow indexing.',
+  'missing-open-graph': 'Add Open Graph meta tags (og:title, og:description, og:image) for better social sharing previews.',
+  'twitter-card-missing': 'Add Twitter Card meta tags (twitter:card, twitter:title, twitter:description) for rich Twitter previews.',
+  // Security
+  'missing-https': 'Enforce HTTPS by redirecting HTTP to HTTPS and using HSTS.',
+  'missing-hsts': 'Add Strict-Transport-Security header with max-age=31536000; includeSubDomains to enforce HTTPS.',
+  'missing-csp': 'Add a Content-Security-Policy header to control resource loading and prevent XSS attacks.',
+  'missing-xfo': 'Add X-Frame-Options: DENY header to prevent clickjacking.',
+  'missing-xcto': 'Add X-Content-Type-Options: nosniff header to prevent MIME type sniffing.',
+  'missing-referrer-policy': 'Add Referrer-Policy header (e.g. strict-origin-when-cross-origin) to control referrer information.',
+  'missing-permissions-policy': 'Add Permissions-Policy header to restrict browser feature access.',
+  'mixed-content': 'Load all resources over HTTPS to avoid mixed content warnings.',
+  'missing-secure-cookies': 'Set the Secure flag on all cookies transmitted over HTTPS.',
+  // Legal
+  'cookie-consent': 'Add a cookie consent banner or notice that complies with GDPR/ePrivacy requirements.',
+  'missing-privacy-policy': 'Create and link a privacy policy page describing data collection and processing practices.',
+  'missing-imprint': 'Add an imprint (impressum) page with legally required contact and business information.',
+  'missing-tos': 'Add a Terms of Service page outlining user rights, responsibilities, and acceptable use.',
+  'missing-data-notice': 'Add a data collection notice informing users what data is collected and for what purpose.',
+  // Performance
+  'lcp': 'Optimise the Largest Contentful Paint element: reduce image/file size, add loading="lazy", or preload critical resources.',
+  'cls': 'Reduce Cumulative Layout Shift by specifying explicit width/height on images and embeds, and avoiding late-loading content shifts.',
+  'tbt': 'Reduce Total Blocking Time by breaking up long JavaScript tasks with setTimeout or using web workers.',
+  'fcp': 'Improve First Contentful Paint by eliminating render-blocking resources, reducing server response time, and preloading key assets.',
+  'speed-index': 'Improve Speed Index by reducing above-the-fold content complexity and optimising critical rendering path.',
+  'tti': 'Reduce Time to Interactive by deferring non-critical JavaScript and prioritising visible content.'
+};
+
 function generateFixSuggestions(auditResult) {
   const wcagFails = (auditResult.wcag && auditResult.wcag.failures) || [];
   const designFails = (auditResult.design && auditResult.design.failures) || [];
+  const seoFails = (auditResult.seo && auditResult.seo.failures) || [];
+  const securityFails = (auditResult.security && auditResult.security.failures) || [];
+  const legalFails = (auditResult.legal && auditResult.legal.failures) || [];
+  const perfData = auditResult.performance || null;
   const suggestions = [];
 
   for (const f of wcagFails) {
@@ -160,9 +199,9 @@ function generateFixSuggestions(auditResult) {
       selector: f.selector,
       text: f.text ? f.text.slice(0, 60) : '',
       currentValue: `fg ${f.foreground} / bg ${f.background} (ratio ${f.contrastRatio}:1)`,
-      suggestedValue: `needs ≥ ${f.required}:1${vp}`,
+      suggestedValue: `needs \u2265 ${f.required}:1${vp}`,
       recommendation:
-        `Increase contrast on "${f.selector}": change ${f.foreground} or ${f.background} to achieve ratio ≥ ${f.required}:1 (current ${f.contrastRatio}:1).${vp}`
+        `Increase contrast on "${f.selector}": change ${f.foreground} or ${f.background} to achieve ratio \u2265 ${f.required}:1 (current ${f.contrastRatio}:1).${vp}`
     });
   }
 
@@ -171,35 +210,29 @@ function generateFixSuggestions(auditResult) {
     let recommendation = '';
 
     if (d.ruleId === 'font-size-legible') {
-      recommendation =
-        `Increase font-size on "${d.selector}" from ${d.value} to at least ${d.expected} for legibility.`;
+      recommendation = `Increase font-size on "${d.selector}" from ${d.value} to at least ${d.expected} for legibility.`;
     } else if (d.ruleId === 'line-height-readable') {
-      recommendation =
-        `Adjust line-height on "${d.selector}" from ${d.value} to between ${d.expected} for readability.`;
+      recommendation = `Adjust line-height on "${d.selector}" from ${d.value} to between ${d.expected} for readability.`;
     } else if (d.ruleId === 'horizontal-scroll') {
-      recommendation =
-        `Prevent overflow on "${d.selector}": set max-width: 100% or add overflow-x: hidden (detected ${d.value}).`;
+      recommendation = `Prevent overflow on "${d.selector}": set max-width: 100% or add overflow-x: hidden (detected ${d.value}).`;
     } else if (d.ruleId === 'heading-hierarchy') {
-      recommendation =
-        `Fix heading hierarchy on "${d.selector}": ${d.description}. Ensure heading levels are not skipped.`;
+      recommendation = `Fix heading hierarchy on "${d.selector}": ${d.description}. Ensure heading levels are not skipped.`;
     } else if (d.ruleId === 'missing-alt') {
-      recommendation =
-        `Add alt text to "${d.selector}": ${d.description}. Provide descriptive text or add role="presentation" for decorative images.`;
+      recommendation = `Add alt text to "${d.selector}": ${d.description}. Provide descriptive text or add role="presentation" for decorative images.`;
     } else if (d.ruleId === 'empty-interactive') {
-      recommendation =
-        `Add accessible name to "${d.selector}": ${d.description}. Add text content or an aria-label attribute.`;
+      recommendation = `Add accessible name to "${d.selector}": ${d.description}. Add text content or an aria-label attribute.`;
     } else if (d.ruleId === 'missing-lang') {
-      recommendation =
-        `Add lang attribute to <html>: ${d.description}. Set lang="en" (or the appropriate language code).`;
+      recommendation = `Add lang attribute to <html>: ${d.description}. Set lang="en" (or the appropriate language code).`;
     } else if (d.ruleId === 'missing-label') {
-      recommendation =
-        `Add accessible label to "${d.selector}": ${d.description}. Wrap in a <label> element, or add aria-label/aria-labelledby attribute.`;
+      recommendation = `Add accessible label to "${d.selector}": ${d.description}. Wrap in a <label> element, or add aria-label/aria-labelledby attribute.`;
     } else if (d.ruleId === 'skip-navigation') {
-      recommendation =
-        `Add skip navigation link: ${d.description}. Add a skip link like <a href="#main-content">Skip to main</a> and a role="main" landmark.`;
+      recommendation = `Add skip navigation link: ${d.description}. Add a skip link like <a href="#main-content">Skip to main</a> and a role="main" landmark.`;
+    } else if (d.ruleId === 'focus-indicator') {
+      recommendation = `Add visible focus indicator: ${d.description}. Remove outline:none or add a :focus-visible style with a 2px solid outline.`;
+    } else if (d.ruleId === 'positive-tabindex') {
+      recommendation = `Remove positive tabindex on "${d.selector}": ${d.description}. Use tabindex="0" to follow natural DOM order instead.`;
     } else {
-      recommendation =
-        `Fix ${d.ruleName} on "${d.selector}": expected ${d.expected}, found ${d.value}.`;
+      recommendation = `Fix ${d.ruleName} on "${d.selector}": expected ${d.expected}, found ${d.value}.`;
     }
 
     suggestions.push({
@@ -213,8 +246,140 @@ function generateFixSuggestions(auditResult) {
     });
   }
 
-  suggestions.sort((a, b) => {
-    const order = { high: 0, medium: 1, low: 2 };
+  for (const f of seoFails) {
+    var template = FIX_TEMPLATES[f.ruleId];
+    suggestions.push({
+      type: f.ruleId,
+      severity: f.severity || 'medium',
+      selector: f.selector,
+      text: f.description || '',
+      currentValue: f.value,
+      suggestedValue: f.expected,
+      recommendation: template
+        ? template + ' ' + f.description
+        : 'Fix SEO issue on "' + f.selector + '": expected ' + f.expected + ', found ' + f.value + '.'
+    });
+  }
+
+  for (const f of securityFails) {
+    var template = FIX_TEMPLATES[f.ruleId];
+    suggestions.push({
+      type: f.ruleId,
+      severity: f.severity || 'high',
+      selector: f.selector,
+      text: f.description || '',
+      currentValue: f.value,
+      suggestedValue: f.expected,
+      recommendation: template
+        ? template + ' ' + f.description
+        : 'Fix security issue on "' + f.selector + '": expected ' + f.expected + ', found ' + f.value + '.'
+    });
+  }
+
+  for (const f of legalFails) {
+    var template = FIX_TEMPLATES[f.ruleId];
+    suggestions.push({
+      type: f.ruleId,
+      severity: f.severity || 'medium',
+      selector: f.selector,
+      text: f.description || '',
+      currentValue: f.value,
+      suggestedValue: f.expected,
+      recommendation: template
+        ? template + ' ' + f.description
+        : 'Fix legal issue on "' + f.selector + '": expected ' + f.expected + ', found ' + f.value + '.'
+    });
+  }
+
+  const aiResult = auditResult.ai || null;
+  if (aiResult && aiResult.failures) {
+    for (const f of aiResult.failures) {
+      suggestions.push({
+        type: f.ruleId,
+        severity: f.severity || 'info',
+        selector: f.selector,
+        text: f.description || '',
+        currentValue: f.value,
+        suggestedValue: f.expected,
+        recommendation: 'Review content for AI-generated patterns: ' + f.description + '. Consider adding AI disclosure, human review, or author attribution.'
+      });
+    }
+  }
+
+  if (perfData && perfData.grade && perfData.grade !== 'A') {
+    if (perfData.lcp && perfData.lcp > 2500) {
+      suggestions.push({
+        type: 'lcp',
+        severity: perfData.lcp > 4000 ? 'high' : 'medium',
+        selector: 'page',
+        text: 'LCP ' + perfData.lcp + 'ms (target < 2500ms)',
+        currentValue: perfData.lcp + 'ms',
+        suggestedValue: '< 2500ms',
+        recommendation: FIX_TEMPLATES['lcp'] + ' Current LCP: ' + perfData.lcp + 'ms.'
+      });
+    }
+    if (perfData.cls && perfData.cls > 0.1) {
+      suggestions.push({
+        type: 'cls',
+        severity: perfData.cls > 0.25 ? 'high' : 'medium',
+        selector: 'page',
+        text: 'CLS ' + perfData.cls + ' (target < 0.1)',
+        currentValue: String(perfData.cls),
+        suggestedValue: '< 0.1',
+        recommendation: FIX_TEMPLATES['cls'] + ' Current CLS: ' + perfData.cls + '.'
+      });
+    }
+    if (perfData.tbt && perfData.tbt > 200) {
+      suggestions.push({
+        type: 'tbt',
+        severity: perfData.tbt > 500 ? 'high' : 'medium',
+        selector: 'page',
+        text: 'TBT ' + perfData.tbt + 'ms (target < 200ms)',
+        currentValue: perfData.tbt + 'ms',
+        suggestedValue: '< 200ms',
+        recommendation: FIX_TEMPLATES['tbt'] + ' Current TBT: ' + perfData.tbt + 'ms.'
+      });
+    }
+    if (perfData.fcp && perfData.fcp > 1800) {
+      suggestions.push({
+        type: 'fcp',
+        severity: perfData.fcp > 3000 ? 'high' : 'medium',
+        selector: 'page',
+        text: 'FCP ' + perfData.fcp + 'ms (target < 1800ms)',
+        currentValue: perfData.fcp + 'ms',
+        suggestedValue: '< 1800ms',
+        recommendation: FIX_TEMPLATES['fcp'] + ' Current FCP: ' + perfData.fcp + 'ms.'
+      });
+    }
+    if (perfData.speedIndex && perfData.speedIndex > 3400) {
+      suggestions.push({
+        type: 'speed-index',
+        severity: perfData.speedIndex > 5800 ? 'high' : 'medium',
+        selector: 'page',
+        text: 'Speed Index ' + perfData.speedIndex + 'ms (target < 3400ms)',
+        currentValue: perfData.speedIndex + 'ms',
+        suggestedValue: '< 3400ms',
+        recommendation: FIX_TEMPLATES['speed-index'] + ' Current Speed Index: ' + perfData.speedIndex + 'ms.'
+      });
+    }
+    if (perfData.recommendations && perfData.recommendations.length > 0) {
+      for (var pi = 0; pi < perfData.recommendations.length && pi < 3; pi++) {
+        var rec = perfData.recommendations[pi];
+        suggestions.push({
+          type: 'performance',
+          severity: 'medium',
+          selector: 'page',
+          text: rec.title || rec.description || 'Lighthouse recommendation',
+          currentValue: '',
+          suggestedValue: '',
+          recommendation: rec.title + (rec.description ? ': ' + rec.description : '')
+        });
+      }
+    }
+  }
+
+  suggestions.sort(function(a, b) {
+    var order = { high: 0, medium: 1, low: 2 };
     return (order[a.severity] ?? 2) - (order[b.severity] ?? 2);
   });
 

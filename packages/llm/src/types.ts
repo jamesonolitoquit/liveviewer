@@ -78,12 +78,82 @@ export interface DesignFix {
   severity: string
 }
 
+export interface GeneralFix {
+  pillar: string
+  selector: string
+  ruleId: string
+  explanation: string
+  suggestion: string
+  severity: string
+}
+
+export interface AuditSeoResult {
+  failures: DesignFailure[]
+  totalChecks: number
+  passCount: number
+  failCount: number
+  score: number
+}
+
+export interface AuditSecurityResult {
+  failures: DesignFailure[]
+  totalChecks: number
+  passCount: number
+  failCount: number
+  score: number
+}
+
+export interface AuditLegalResult {
+  failures: DesignFailure[]
+  totalChecks: number
+  passCount: number
+  failCount: number
+  score: number
+}
+
+export interface AuditPerformanceResult {
+  score: number | null
+  lcp: number | null
+  cls: number | null
+  tbt: number | null
+  fcp: number | null
+  speedIndex: number | null
+  tti: number | null
+  grade: string | null
+  recommendations?: Array<{ title: string; description?: string }>
+}
+
+export interface AuditAiResult {
+  failures: DesignFailure[]
+  confidence: number
+  level: string
+  signals: Array<{ type: string; detail: string; weight: number }>
+  totalChecks: number
+  failCount: number
+  passCount: number
+  score: number
+}
+
+export interface AuditMobileResult {
+  failures: DesignFailure[]
+  totalChecks: number
+  failCount: number
+  passCount: number
+  score: number
+}
+
 export interface AuditResults {
   url: string
   timestamp: number
   filepath?: string
   wcag: AuditWcagResult | null
   design?: AuditDesignResult | null
+  seo?: AuditSeoResult | null
+  security?: AuditSecurityResult | null
+  legal?: AuditLegalResult | null
+  performance?: AuditPerformanceResult | null
+  mobile?: AuditMobileResult | null
+  ai?: AuditAiResult | null
 }
 
 export interface LLMResponse {
@@ -92,6 +162,13 @@ export interface LLMResponse {
   summary: string
   perFailure: FailureAnalysis[]
   designFixes?: DesignFix[]
+  perPillarFixes?: {
+    seo?: GeneralFix[]
+    security?: GeneralFix[]
+    legal?: GeneralFix[]
+    performance?: GeneralFix[]
+    ai?: GeneralFix[]
+  }
   cached: boolean
 }
 

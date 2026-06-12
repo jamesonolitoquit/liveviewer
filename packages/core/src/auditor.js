@@ -5,6 +5,8 @@ const wcag = require('wcag-contrast');
 const { checkHeadingHierarchy } = require('./heading');
 const { runSecurityChecks } = require('./security');
 const { runLegalChecks } = require('./legal');
+const { runAiDetectionChecks } = require('./ai-detect');
+const { runMobileChecks } = require('./mobile');
 
 const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL_ENV;
 
@@ -151,34 +153,63 @@ async function runWcagOnPage(page) {
       return { r: parseInt(m[1]), g: parseInt(m[2]), b: parseInt(m[3]) };
     }
 
-    function parseLinearGradient(bgImage) {
-      var m = bgImage.match(/linear-gradient\s*\(([^)]+)\)/i);
-      if (!m) return null;
-      var inner = m[1];
+    function parseGradient(bgImage) {
+      var gradRe = /(?:repeating-)?(?:-webkit-)?(?:linear|radial)-gradient\s*\(/i;
+      var start = bgImage.search(gradRe);
+      if (start === -1) return null;
+      var openParen = bgImage.indexOf('(', start);
+      if (openParen === -1) return null;
+      var depth = 0, inner = '';
+      for (var ci = openParen + 1; ci < bgImage.length; ci++) {
+        var ch = bgImage[ci];
+        if (ch === '(') { depth++; inner += ch; }
+        else if (ch === ')') {
+          if (depth === 0) break;
+          depth--; inner += ch;
+        } else { inner += ch; }
+      }
+      if (inner.length === 0) return null;
       var stops = [];
-      var i = 0, parenDepth = 0, current = '';
+      var parenDepth = 0, current = '';
       var chars = inner.split('');
-      for (var ci = 0; ci < chars.length; ci++) {
-        var ch = chars[ci];
-        if (ch === '(') { parenDepth++; current += ch; }
-        else if (ch === ')') { parenDepth--; current += ch; }
-        else if (ch === ',' && parenDepth === 0) {
+      for (var ci2 = 0; ci2 < chars.length; ci2++) {
+        var ch2 = chars[ci2];
+        if (ch2 === '(') { parenDepth++; current += ch2; }
+        else if (ch2 === ')') { parenDepth--; current += ch2; }
+        else if (ch2 === ',' && parenDepth === 0) {
           stops.push(current.trim());
           current = '';
-        } else { current += ch; }
+        } else { current += ch2; }
       }
       if (current.trim()) stops.push(current.trim());
       if (stops.length === 0) return null;
       var first = stops[0].trim().toLowerCase();
-      if (first === 'to bottom' || first === 'to top' || first === 'to left' || first === 'to right' ||
-          first.indexOf('deg') !== -1 || first.indexOf('turn') !== -1 || first.indexOf('rad') !== -1 ||
-          first === 'to bottom left' || first === 'to bottom right' || first === 'to top left' || first === 'to top right') {
-        stops.shift();
+      var isRadial = bgImage.slice(start, openParen).toLowerCase().indexOf('radial') !== -1;
+      if (!isRadial) {
+        if (first === 'to bottom' || first === 'to top' || first === 'to left' || first === 'to right' ||
+            first.indexOf('deg') !== -1 || first.indexOf('turn') !== -1 || first.indexOf('rad') !== -1 ||
+            first === 'to bottom left' || first === 'to bottom right' || first === 'to top left' || first === 'to top right') {
+          stops.shift();
+        }
+      } else {
+        var radialKeywords = ['circle', 'ellipse', 'closest-side', 'farthest-side', 'closest-corner', 'farthest-corner', 'at'];
+        var hasRadialToken = false;
+        while (stops.length > 0) {
+          var token = stops[0].trim().toLowerCase();
+          if (radialKeywords.some(function(kw) { return token.indexOf(kw) !== -1; }) ||
+              token.indexOf('px') !== -1 || token.indexOf('%') !== -1 || token.indexOf('deg') !== -1) {
+            stops.shift();
+            hasRadialToken = true;
+          } else { break; }
+        }
       }
       if (stops.length === 0) return null;
-      var rSum = 0, gSum = 0, bSum = 0, count = 0;
+      var parsedStops = [];
       for (var si = 0; si < stops.length; si++) {
-        var colorPart = stops[si].replace(/\s+\d+%$/, '').replace(/\s+\d+px$/, '').trim();
+        var stop = stops[si];
+        var posMatch = stop.match(/(\d+(?:\.\d+)?)(%)$/);
+        var pos = posMatch ? parseFloat(posMatch[1]) / 100 : null;
+        var colorPart = stop.replace(/\s+\d+(?:\.\d+)?%$/, '').replace(/\s+\d+px$/, '').trim();
         var parsed = parseRgb(colorPart);
         if (!parsed) {
           var temp = document.createElement('div');
@@ -188,10 +219,45 @@ async function runWcagOnPage(page) {
           document.body.removeChild(temp);
           parsed = parseRgb(computed);
         }
-        if (parsed) { rSum += parsed.r; gSum += parsed.g; bSum += parsed.b; count++; }
+        if (parsed) parsedStops.push({ r: parsed.r, g: parsed.g, b: parsed.b, pos: pos });
       }
-      if (count === 0) return null;
-      return 'rgb(' + Math.round(rSum / count) + ',' + Math.round(gSum / count) + ',' + Math.round(bSum / count) + ')';
+      if (parsedStops.length === 0) return null;
+      if (parsedStops.length === 1) {
+        var s = parsedStops[0];
+        return 'rgb(' + s.r + ',' + s.g + ',' + s.b + ')';
+      }
+      for (var pi = 0; pi < parsedStops.length; pi++) {
+        if (parsedStops[pi].pos === null) {
+          if (pi === 0) parsedStops[pi].pos = 0;
+          else if (pi === parsedStops.length - 1) parsedStops[pi].pos = 1;
+          else {
+            var prev = parsedStops[pi - 1].pos;
+            var next = null;
+            for (var ni = pi + 1; ni < parsedStops.length; ni++) {
+              if (parsedStops[ni].pos !== null) { next = parsedStops[ni].pos; break; }
+            }
+            parsedStops[pi].pos = next !== null ? (prev + next) / 2 : prev;
+          }
+        }
+      }
+      var weightSum = 0, rSw = 0, gSw = 0, bSw = 0;
+      for (var wi = 0; wi < parsedStops.length; wi++) {
+        var cur = parsedStops[wi];
+        var prevP = wi === 0 ? cur.pos : parsedStops[wi - 1].pos;
+        var nextP = wi === parsedStops.length - 1 ? cur.pos : parsedStops[wi + 1].pos;
+        var weight = (nextP - prevP) / 2;
+        if (wi === 0) weight = parsedStops[1].pos - cur.pos;
+        else if (wi === parsedStops.length - 1) weight = cur.pos - parsedStops[wi - 1].pos;
+        rSw += cur.r * weight; gSw += cur.g * weight; bSw += cur.b * weight;
+        weightSum += weight;
+      }
+      if (weightSum <= 0) {
+        for (var ai = 0; ai < parsedStops.length; ai++) {
+          rSw += parsedStops[ai].r; gSw += parsedStops[ai].g; bSw += parsedStops[ai].b;
+        }
+        weightSum = parsedStops.length;
+      }
+      return 'rgb(' + Math.round(rSw / weightSum) + ',' + Math.round(gSw / weightSum) + ',' + Math.round(bSw / weightSum) + ')';
     }
 
     function parseTextShadowValue(ts) {
@@ -219,7 +285,7 @@ async function runWcagOnPage(page) {
         const bgImage = style.backgroundImage;
         if (bgImage !== 'none') {
           // Try to parse gradient
-          const gradColor = parseLinearGradient(bgImage);
+          const gradColor = parseGradient(bgImage);
           if (gradColor) {
             bg = gradColor;
             break;
@@ -260,10 +326,27 @@ async function runWcagOnPage(page) {
       let hasDisabledAncestor = false;
       while (dParent) {
         if (dParent.tagName === 'FIELDSET' && dParent.disabled) { hasDisabledAncestor = true; break; }
+        if (dParent.getAttribute && dParent.getAttribute('aria-disabled') === 'true') { hasDisabledAncestor = true; break; }
         if (dParent.tagName === 'BODY') break;
         dParent = dParent.parentElement;
       }
       if (hasDisabledAncestor) return;
+
+      // Skip if this element is a label associated with a disabled input
+      if (el.tagName === 'LABEL' && el.getAttribute('for')) {
+        var forEl = document.getElementById(el.getAttribute('for'));
+        if (forEl && (forEl.disabled || forEl.getAttribute('aria-disabled') === 'true')) return;
+      }
+
+      // Skip if this element contains a nested disabled input (label wrapping input)
+      if (el.tagName === 'LABEL') {
+        var nestedInputs = el.querySelectorAll('input, select, textarea, button');
+        var allDisabled = true;
+        for (var ni = 0; ni < nestedInputs.length; ni++) {
+          if (!nestedInputs[ni].disabled) { allDisabled = false; break; }
+        }
+        if (nestedInputs.length > 0 && allDisabled) return;
+      }
 
       // Skip if this element is an aria-labelledby target for a disabled element
       var elId = el.id;
@@ -457,8 +540,8 @@ function mergeWcagResults(results) {
   };
 }
 
-async function runDesignPageChecks(page) {
-  return page.evaluate((fnSrc) => {
+async function runDesignPageChecks(page, designSkipSelectors) {
+  return page.evaluate(({ fnSrc, skipSelectors }) => {
     var checkHeadingHierarchy = eval('(' + fnSrc + ')');
     var docWidth = document.body.scrollWidth;
     var viewWidth = window.innerWidth;
@@ -520,6 +603,24 @@ async function runDesignPageChecks(page) {
       const cls = rawCls ? '.' + rawCls.trim().split(/\s+/).filter(Boolean).join('.') : '';
       const sel = tag + (el.id ? '#' + el.id : '') + cls;
 
+      // Check if this element matches any skip selectors
+      var skipResult = false;
+      if (skipSelectors && skipSelectors.length > 0) {
+        for (var si = 0; si < skipSelectors.length; si++) {
+          var ss = skipSelectors[si].trim();
+          if (ss.charAt(0) === '.') {
+            var clsArr = rawCls.trim().split(/\s+/);
+            var target = ss.slice(1);
+            for (var cj = 0; cj < clsArr.length; cj++) {
+              if (clsArr[cj] === target) { skipResult = true; break; }
+            }
+          } else if (el.matches(ss)) {
+            skipResult = true; break;
+          }
+        }
+      }
+      if (skipResult) continue;
+
       if (fontSize < 16 && !isLarge) {
         results.push({
           ruleId: 'font-size-legible',
@@ -552,7 +653,7 @@ async function runDesignPageChecks(page) {
     }
 
     return results;
-  }, checkHeadingHierarchy.toString());
+  }, { fnSrc: checkHeadingHierarchy.toString(), skipSelectors: designSkipSelectors });
 }
 
 async function runSeoPageChecks(page) {
@@ -561,9 +662,10 @@ async function runSeoPageChecks(page) {
     var results = [];
 
     // 1. Title tag
-    var titleEl = document.querySelector('title');
-    var titleText = titleEl ? (titleEl.textContent || '').trim() : '';
-    if (!titleEl || !titleText) {
+    var allTitles = document.querySelectorAll('title');
+    var titleEl = allTitles.length > 0 ? allTitles[0] : null;
+    var titleCount = allTitles.length;
+    if (!titleEl || !(titleEl.textContent || '').trim()) {
       results.push({
         ruleId: 'missing-title',
         ruleName: 'Page must have a title tag',
@@ -574,28 +676,43 @@ async function runSeoPageChecks(page) {
         value: 'no title tag',
         expected: '<title> tag with 10\u201370 characters'
       });
-    } else if (titleText.length < 10) {
-      results.push({
-        ruleId: 'missing-title',
-        ruleName: 'Title tag is too short',
-        category: 'seo',
-        selector: 'title',
-        description: 'Title is ' + titleText.length + ' characters; minimum recommended is 10',
-        severity: 'medium',
-        value: titleText.length + ' chars',
-        expected: '\u2265 10 chars'
-      });
-    } else if (titleText.length > 70) {
-      results.push({
-        ruleId: 'missing-title',
-        ruleName: 'Title tag is too long',
-        category: 'seo',
-        selector: 'title',
-        description: 'Title is ' + titleText.length + ' characters; maximum recommended is 70',
-        severity: 'medium',
-        value: titleText.length + ' chars',
-        expected: '\u2264 70 chars'
-      });
+    } else {
+      var titleText = titleEl.textContent.trim();
+      if (titleText.length < 10) {
+        results.push({
+          ruleId: 'missing-title',
+          ruleName: 'Title tag is too short',
+          category: 'seo',
+          selector: 'title',
+          description: 'Title is ' + titleText.length + ' characters; minimum recommended is 10',
+          severity: 'medium',
+          value: titleText.length + ' chars',
+          expected: '\u2265 10 chars'
+        });
+      } else if (titleText.length > 70) {
+        results.push({
+          ruleId: 'missing-title',
+          ruleName: 'Title tag is too long',
+          category: 'seo',
+          selector: 'title',
+          description: 'Title is ' + titleText.length + ' characters; maximum recommended is 70',
+          severity: 'medium',
+          value: titleText.length + ' chars',
+          expected: '\u2264 70 chars'
+        });
+      }
+      if (titleCount > 1) {
+        results.push({
+          ruleId: 'duplicate-title',
+          ruleName: 'Page should have exactly one title tag',
+          category: 'seo',
+          selector: 'head',
+          description: 'Found ' + titleCount + ' <title> tags; expected exactly 1',
+          severity: 'high',
+          value: titleCount + ' title tags',
+          expected: '1 title tag'
+        });
+      }
     }
 
     // 2. Meta description
@@ -649,6 +766,20 @@ async function runSeoPageChecks(page) {
         value: 'no canonical tag',
         expected: '<link rel="canonical" href="...">'
       });
+    } else {
+      var canonHref = canonical.getAttribute('href') || '';
+      if (canonHref.indexOf('://') === -1) {
+        results.push({
+          ruleId: 'canonical-invalid',
+          ruleName: 'Canonical URL should be absolute',
+          category: 'seo',
+          selector: 'link[rel="canonical"]',
+          description: 'Canonical URL "' + canonHref + '" is relative; expected absolute URL with scheme',
+          severity: 'medium',
+          value: canonHref,
+          expected: 'absolute URL (https://...)'
+        });
+      }
     }
 
     // 4. JSON-LD structured data
@@ -664,6 +795,33 @@ async function runSeoPageChecks(page) {
         value: 'no JSON-LD',
         expected: '<script type="application/ld+json">{...}</script>'
       });
+    } else {
+      try {
+        var parsed = JSON.parse(jsonld.textContent);
+        if (!parsed['@context'] || !parsed['@type']) {
+          results.push({
+            ruleId: 'invalid-jsonld',
+            ruleName: 'JSON-LD should have @context and @type',
+            category: 'seo',
+            selector: 'script[type="application/ld+json"]',
+            description: 'JSON-LD is valid JSON but missing @context or @type',
+            severity: 'low',
+            value: 'missing @context or @type',
+            expected: '{"@context":"https://schema.org","@type":"...", ...}'
+          });
+        }
+      } catch (e) {
+        results.push({
+          ruleId: 'invalid-jsonld',
+          ruleName: 'JSON-LD should be valid JSON',
+          category: 'seo',
+          selector: 'script[type="application/ld+json"]',
+          description: 'JSON-LD content is not valid JSON',
+          severity: 'low',
+          value: 'parse error: ' + e.message.slice(0, 60),
+          expected: 'valid JSON with @context and @type'
+        });
+      }
     }
 
     // 5. Viewport meta
@@ -684,7 +842,7 @@ async function runSeoPageChecks(page) {
       });
     }
 
-    // 6. Robots meta (informational)
+    // 6. Robots meta
     var robotsMeta = document.querySelector('meta[name="robots"]');
     var robotsContent = robotsMeta ? (robotsMeta.getAttribute('content') || '') : '';
     if (robotsContent.indexOf('noindex') !== -1 || robotsContent.indexOf('nofollow') !== -1) {
@@ -721,10 +879,33 @@ async function runSeoPageChecks(page) {
       });
     }
 
-    // 8. Twitter Card tags
-    var twCard = document.querySelector('meta[name="twitter:card"]');
-    var twTitle = document.querySelector('meta[name="twitter:title"]');
-    var twDesc = document.querySelector('meta[name="twitter:description"]');
+    // 8. Open Graph extras (url, type, site_name, locale)
+    var ogUrl = document.querySelector('meta[property="og:url"]');
+    var ogType = document.querySelector('meta[property="og:type"]');
+    var ogSiteName = document.querySelector('meta[property="og:site_name"]');
+    var ogLocale = document.querySelector('meta[property="og:locale"]');
+    var ogMissing = [];
+    if (!ogUrl) ogMissing.push('og:url');
+    if (!ogType) ogMissing.push('og:type');
+    if (!ogSiteName) ogMissing.push('og:site_name');
+    if (!ogLocale) ogMissing.push('og:locale');
+    if (ogMissing.length >= 2) {
+      results.push({
+        ruleId: 'missing-og-extras',
+        ruleName: 'Page should have additional Open Graph tags',
+        category: 'seo',
+        selector: 'head',
+        description: 'Missing Open Graph tags: ' + ogMissing.join(', '),
+        severity: 'low',
+        value: 'missing: ' + ogMissing.join(', '),
+        expected: 'og:url, og:type, og:site_name, og:locale'
+      });
+    }
+
+    // 9. Twitter Card tags (support both name and property attributes)
+    var twCard = document.querySelector('meta[name="twitter:card"], meta[property="twitter:card"]');
+    var twTitle = document.querySelector('meta[name="twitter:title"], meta[property="twitter:title"]');
+    var twDesc = document.querySelector('meta[name="twitter:description"], meta[property="twitter:description"]');
     if (!twCard || !twTitle || !twDesc) {
       var twMissing = [];
       if (!twCard) twMissing.push('twitter:card');
@@ -742,7 +923,22 @@ async function runSeoPageChecks(page) {
       });
     }
 
-    // 9. Heading hierarchy (shared with design)
+    // 10. Hreflang tags
+    var hreflangLinks = document.querySelectorAll('link[rel="alternate"][hreflang]');
+    if (hreflangLinks.length === 0) {
+      results.push({
+        ruleId: 'missing-hreflang',
+        ruleName: 'Page should have hreflang tags for language/region targeting',
+        category: 'seo',
+        selector: 'head',
+        description: 'No <link rel="alternate" hreflang="..."> found on the page',
+        severity: 'low',
+        value: 'no hreflang tags',
+        expected: '<link rel="alternate" hreflang="en" href="...">'
+      });
+    }
+
+    // 11. Heading hierarchy (shared with design)
     results.push.apply(results, checkHeadingHierarchy('seo'));
 
     return results;
@@ -784,26 +980,76 @@ async function runA11yPageChecks(page) {
       }
     }
 
-    // Empty interactive elements (buttons, links)
-    const buttons = document.querySelectorAll('button, a[href]');
-    for (const el of buttons) {
+    // Empty interactive elements (buttons, links) including icon-only
+    const interactiveEls = document.querySelectorAll('button, a[href], [role="button"]');
+    for (const el of interactiveEls) {
       const text = (el.textContent || '').trim();
       const ariaLabel = el.getAttribute('aria-label');
       const ariaLabelledby = el.getAttribute('aria-labelledby');
       const hasAria = (ariaLabel && ariaLabel.trim()) || (ariaLabelledby && ariaLabelledby.trim());
-      if (!text && !hasAria) {
+      const hasImgAlt = el.querySelector('img[alt]:not([alt=""])');
+      const hasTitle = el.getAttribute('title');
+      const accessible = text || hasAria || hasTitle || hasImgAlt;
+      if (!accessible) {
+        const innerImgs = el.querySelectorAll('img, svg, i, span[class*="icon"]');
+        const iconDesc = innerImgs.length > 0 ? ' (icon-only, no accessible label)' : '';
         const tag = el.tagName.toLowerCase() + (el.id ? '#' + el.id : '');
         results.push({
           ruleId: 'empty-interactive',
           ruleName: 'Interactive elements must have accessible name',
           category: 'interactivity',
           selector: tag,
-          description: el.tagName.toLowerCase() + ' has no text content or aria-label',
-          severity: 'high',
+          description: el.tagName.toLowerCase() + ' has no text content or aria-label' + iconDesc,
+          severity: innerImgs.length > 0 ? 'medium' : 'high',
           value: 'no accessible name',
           expected: 'text content or aria-label'
         });
       }
+    }
+
+    // Tabindex > 0 anti-pattern
+    var posTab = document.querySelectorAll('[tabindex]');
+    for (var ti = 0; ti < posTab.length; ti++) {
+      var val = parseInt(posTab[ti].getAttribute('tabindex'));
+      if (val > 0) {
+        var tag2 = posTab[ti].tagName.toLowerCase() + (posTab[ti].id ? '#' + posTab[ti].id : '');
+        results.push({
+          ruleId: 'positive-tabindex',
+          ruleName: 'Avoid positive tabindex values',
+          category: 'interactivity',
+          selector: tag2,
+          description: 'tabindex="' + val + '" on ' + posTab[ti].tagName.toLowerCase() + ' breaks natural focus order',
+          severity: 'medium',
+          value: 'tabindex="' + val + '"',
+          expected: 'tabindex="0" or tabindex="-1"'
+        });
+      }
+    }
+
+    // Focus indicator check
+    var focusable = document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    var noFocusVisible = [];
+    for (var fi = 0; fi < focusable.length; fi++) {
+      var fEl = focusable[fi];
+      var fStyle = getComputedStyle(fEl);
+      if (fStyle.outlineStyle === 'none' && fStyle.outlineWidth === '0px') {
+        if (!fEl.getAttribute('data-focus-visible') && !fEl.classList.contains('focus-visible')) {
+          var tag3 = fEl.tagName.toLowerCase() + (fEl.id ? '#' + fEl.id : '');
+          if (noFocusVisible.indexOf(tag3) === -1) noFocusVisible.push(tag3);
+        }
+      }
+    }
+    if (noFocusVisible.length > 0) {
+      results.push({
+        ruleId: 'focus-indicator',
+        ruleName: 'Interactive elements must have visible focus indicator',
+        category: 'interactivity',
+        selector: noFocusVisible.slice(0, 3).join(', '),
+        description: noFocusVisible.length + ' interactive element(s) have outline:none without custom focus-visible class: ' + noFocusVisible.slice(0, 5).join(', '),
+        severity: 'high',
+        value: noFocusVisible.length + ' elements with outline:none',
+        expected: ':focus-visible { outline: 2px solid ... } or custom focus class'
+      });
     }
 
     // Missing lang attribute on html
@@ -921,6 +1167,10 @@ async function audit(url, options = {}) {
     security: doSecurity = false,
     legal: doLegal = false,
     performance: doPerformance = false,
+    mobile: doMobile = false,
+    detectai: doAi = false,
+    designSkipSelectors = [],
+    knownFalsePositives = [],
     timeout = 30000,
     waitUntil = 'domcontentloaded',
     loadImages = true,
@@ -1000,6 +1250,7 @@ async function audit(url, options = {}) {
         const viewportResults = [];
         let lastElements = [];
         const pageLevelFailures = [];
+        const mobileFailures = [];
         let seoFailures = [];
         for (let i = 0; i < vps.length; i++) {
           const vp = vps[i];
@@ -1021,10 +1272,14 @@ async function audit(url, options = {}) {
             }
           }
           if (doDesign) {
-            const pageFails = await runDesignPageChecks(page);
+            const pageFails = await runDesignPageChecks(page, designSkipSelectors);
             pageLevelFailures.push(...pageFails);
             const a11yFails = await runA11yPageChecks(page);
             pageLevelFailures.push(...a11yFails);
+          }
+          if (doMobile) {
+            const mobileFails = await runMobileChecks(page, vp);
+            mobileFailures.push(...mobileFails);
           }
           if (doSeo) {
             const result = await runSeoPageChecks(page);
@@ -1047,7 +1302,7 @@ async function audit(url, options = {}) {
             const key = f.selector + '|' + f.ruleId;
             if (!seen.has(key)) { seen.add(key); unique.push(f); }
           }
-          const seoTotalChecks = 9;
+          const seoTotalChecks = 14;
           const seoFailCount = unique.length;
           seoResult = {
             failures: unique,
@@ -1119,7 +1374,7 @@ async function audit(url, options = {}) {
 
         if (doSecurity) {
           var securityFails = await runSecurityChecks(page, context, url, responseHeaders);
-          var securityTotalChecks = 9;
+          var securityTotalChecks = 13;
           var securityFailCount = securityFails.length;
           securityResult = {
             failures: securityFails,
@@ -1135,7 +1390,7 @@ async function audit(url, options = {}) {
         var legalResult = null;
         if (doLegal) {
           try {
-            var legalResultData = await runLegalChecks(page);
+            var legalResultData = await runLegalChecks(page, context);
             var legalFails = legalResultData.failures;
             var legalTotal = legalResultData.totalChecks;
             var legalFailCount = legalFails.length;
@@ -1153,6 +1408,48 @@ async function audit(url, options = {}) {
           }
         }
 
+        var mobileResult = null;
+        if (doMobile) {
+          const seen = new Set();
+          const unique = [];
+          for (const f of mobileFailures) {
+            const key = f.selector + '|' + f.ruleId;
+            if (!seen.has(key)) { seen.add(key); unique.push(f); }
+          }
+          const mobileTotalChecks = 6;
+          const mobileFailCount = unique.length;
+          mobileResult = {
+            failures: unique,
+            totalChecks: mobileTotalChecks,
+            passCount: Math.max(0, mobileTotalChecks - mobileFailCount),
+            failCount: mobileFailCount,
+            score: mobileTotalChecks > 0
+              ? Math.round(Math.max(0, mobileTotalChecks - mobileFailCount) / mobileTotalChecks * 1000) / 10
+              : 100
+          };
+        }
+
+        var aiResult = null;
+        if (doAi) {
+          try {
+            var aiResultData = await runAiDetectionChecks(page);
+            aiResult = {
+              failures: aiResultData.failures,
+              confidence: aiResultData.confidence,
+              level: aiResultData.level,
+              signals: aiResultData.signals,
+              totalChecks: aiResultData.totalChecks,
+              failCount: aiResultData.failures.length,
+              passCount: Math.max(0, aiResultData.totalChecks - aiResultData.failures.length),
+              score: aiResultData.totalChecks > 0
+                ? Math.round(Math.max(0, aiResultData.totalChecks - aiResultData.failures.length) / aiResultData.totalChecks * 1000) / 10
+                : 100
+            };
+          } catch (e) {
+            aiResult = { failures: [], confidence: 0, level: 'unlikely', signals: [], totalChecks: 1, failCount: 0, passCount: 1, score: 100 };
+          }
+        }
+
         const screenshotPromise = page.screenshot({ path: filepath, fullPage: false });
         await screenshotPromise;
         await context.close();
@@ -1161,16 +1458,53 @@ async function audit(url, options = {}) {
         if (doPerformance) {
           try {
             var { runPerformanceChecks } = require('./performance');
-            perfResult = await runPerformanceChecks(url, chromePath);
+            var hasMobileVp = vps.some(function(v) { return v.width <= 768; });
+            perfResult = await runPerformanceChecks(url, chromePath, hasMobileVp ? 'mobile' : 'desktop');
           } catch (e) {
             perfResult = { error: e.message, score: null, lcp: null, cls: null, tbt: null, fcp: null, speedIndex: null, tti: null, grade: null, recommendations: [] };
           }
         }
 
-        return { viewportResults, mergedWcag, designResult, seo: seoResult, security: securityResult, legal: legalResult, performance: perfResult };
+        return { viewportResults, mergedWcag, designResult, seo: seoResult, security: securityResult, legal: legalResult, mobile: mobileResult, performance: perfResult, ai: aiResult };
       })();
 
-      const { viewportResults, mergedWcag, designResult, seo: seoResult, security: securityResult, legal: legalResult, performance: perfResult } = await Promise.race([auditWork, hardTimeout]);
+      const { viewportResults, mergedWcag, designResult, seo: seoResult, security: securityResult, legal: legalResult, mobile: mobileResult, performance: perfResult, ai: aiResult } = await Promise.race([auditWork, hardTimeout]);
+
+      if (knownFalsePositives.length > 0) {
+        function filterFailures(result) {
+          if (!result || !result.failures) return result;
+          var keep = [];
+          for (var fi = 0; fi < result.failures.length; fi++) {
+            var f = result.failures[fi];
+            var match = false;
+            for (var kfi = 0; kfi < knownFalsePositives.length; kfi++) {
+              var kfp = knownFalsePositives[kfi];
+              if (kfp.ruleId === f.ruleId) {
+                if (!kfp.selector || f.selector.indexOf(kfp.selector) !== -1) {
+                  match = true; break;
+                }
+              }
+            }
+            if (!match) keep.push(f);
+          }
+          result.failures = keep;
+          result.failCount = keep.length;
+          result.passCount = Math.max(0, result.totalChecks - keep.length);
+          result.score = result.totalChecks > 0
+            ? Math.round(Math.max(0, result.totalChecks - keep.length) / result.totalChecks * 1000) / 10
+            : 100;
+          return result;
+        }
+        filterFailures(designResult);
+        filterFailures(seoResult);
+        filterFailures(securityResult);
+        filterFailures(legalResult);
+        filterFailures(mobileResult);
+        if (mergedWcag && mergedWcag.viewportMerged) {
+          filterFailures(mergedWcag.viewportMerged);
+        }
+      }
+
       return {
         filepath, filename, timestamp, url,
         viewport: vps[0],
@@ -1180,7 +1514,9 @@ async function audit(url, options = {}) {
         seo: seoResult,
         security: securityResult,
         legal: legalResult,
+        mobile: mobileResult,
         performance: perfResult,
+        ai: aiResult,
         timedOut: false
       };
     } catch (err) {

@@ -11,53 +11,101 @@ import type {
   FailureAnalysis,
   DesignFailure,
   DesignFix,
+  GeneralFix,
   LLMClient
 } from './types.js'
 
 const DEFAULT_CHUNK_SIZE = 20
 const DEFAULT_MAX_SUMMARY_ITEMS = 50
 
-export type { LLMOptions, LLMResponse, LLMError, FailureAnalysis, DesignFix }
+export type { LLMOptions, LLMResponse, LLMError, FailureAnalysis, DesignFix, GeneralFix }
 
-export const SYSTEM_PROMPT = `You are an expert web designer and accessibility consultant. Your task is to analyze the accessibility and design quality issues listed below and provide actionable, concise, and specific fix recommendations.
+export const SYSTEM_PROMPT = `You are an expert web quality auditor. Analyze the accessibility, design, SEO, security, legal, and performance issues listed and provide actionable, concise fix recommendations.
 
-For each failure, you must output a JSON object with the following structure:
+Output a JSON object with this structure:
 
 {
-  "summary": "A one-sentence executive summary of the most critical issues.",
+  "summary": "One-sentence executive summary of the most critical issues across all pillars.",
   "perFailure": [
     {
       "selector": "CSS selector of the failing element (exact from the list)",
-      "ruleId": "WCAG rule ID or 'contrast'",
+      "ruleId": "contrast",
       "explanation": "Why this fails (e.g., 'Text color #777 on white background has insufficient contrast')",
-      "suggestion": "Specific fix (e.g., 'Change text color to #333' or 'Increase font size to 16px')",
+      "suggestion": "Specific fix (e.g., 'Change text color to #333')",
       "severity": "high|medium|low"
     }
   ],
   "designFixes": [
     {
-      "selector": "CSS selector of the element with design issue",
-      "ruleId": "font-size-legible | line-height-readable | horizontal-scroll | ...",
-      "explanation": "Why this design choice is problematic (e.g., 'Body text below 16px reduces readability')",
-      "suggestion": "Specific fix (e.g., 'Increase font size to at least 16px' or 'Set line-height to 1.5')",
+      "selector": "CSS selector (exact)",
+      "ruleId": "font-size-legible | line-height-readable | horizontal-scroll | heading-hierarchy | missing-alt | empty-interactive | missing-lang | missing-label | skip-navigation | focus-indicator | positive-tabindex",
+      "explanation": "Why problematic",
+      "suggestion": "Specific CSS fix",
       "severity": "high|medium|low"
     }
-  ]
+  ],
+  "perPillarFixes": {
+    "seo": [
+      {
+        "pillar": "seo",
+        "selector": "CSS selector (exact)",
+        "ruleId": "missing-title | missing-meta-description | missing-canonical | missing-jsonld | missing-viewport | robots-blocked | missing-open-graph | twitter-card-missing",
+        "explanation": "Why this issue matters for search visibility",
+        "suggestion": "Specific fix instruction",
+        "severity": "high|medium|low"
+      }
+    ],
+    "security": [
+      {
+        "pillar": "security",
+        "selector": "CSS selector (exact)",
+        "ruleId": "missing-https | missing-hsts | missing-csp | missing-xfo | missing-xcto | missing-referrer-policy | missing-permissions-policy | mixed-content | missing-secure-cookies",
+        "explanation": "Why this header matters for security",
+        "suggestion": "Specific header value to set",
+        "severity": "high|medium|low"
+      }
+    ],
+    "legal": [
+      {
+        "pillar": "legal",
+        "selector": "CSS selector (exact)",
+        "ruleId": "cookie-consent | missing-privacy-policy | missing-imprint | missing-tos | missing-data-notice",
+        "explanation": "Why this legal requirement matters",
+        "suggestion": "Specific implementation advice",
+        "severity": "high|medium|low"
+      }
+    ],
+    "performance": [
+      {
+        "pillar": "performance",
+        "selector": "page",
+        "ruleId": "lcp | cls | tbt | fcp | speed-index | tti",
+        "explanation": "Why this metric is below target",
+        "suggestion": "Specific optimisation advice",
+        "severity": "high|medium|low"
+      }
+    ],
+    "ai": [
+      {
+        "pillar": "ai",
+        "selector": "CSS selector (exact)",
+        "ruleId": "ai-generated-content",
+        "explanation": "Why this content may be AI-generated",
+        "suggestion": "Specific advice for adding human review or AI disclosure",
+        "severity": "high|medium|low|info"
+      }
+    ]
+  }
 }
 
 Important rules:
 - Return ONLY valid JSON. No extra text, no markdown formatting.
-- If a failure is not applicable (e.g., no design issues), return an empty array for that field.
+- If a pillar has no issues, omit the key or use an empty array.
 - Use the exact selectors provided. Do not modify them.
 - Severity mapping:
-  - high: critical for accessibility or usability (e.g., contrast < 3:1, font-size < 12px, line-height < 1.2, overlapping content).
-  - medium: important but not blocking (e.g., contrast 3:1–4.5:1, font-size 12–16px, line-height 1.2–1.4 or 1.6–1.8).
-  - low: minor improvements (e.g., small spacing issues, non-critical overlap).
-- For horizontal scroll: suggest \`overflow-x: hidden\` or responsive width adjustments.
-- For missing labels: suggest adding a <label> or aria-label.
-- For skip navigation: suggest adding a skip link or role="main".
-
-If the user provided additional context (e.g., site purpose, audience, brand guidelines), incorporate that context into your explanations and suggestions. For example, if the site is a dark-mode dashboard, you may suggest lighter text on dark backgrounds; if it's a mobile-first e-commerce site, prioritize touch targets and font legibility.`
+  - high: critical (contrast < 3:1, font-size < 12px, line-height < 1.2, missing security headers, missing legal requirements).
+  - medium: important but not blocking (contrast 3:1&#8211;4.5:1, font-size 12&#8211;16px, missing SEO tags).
+  - low: minor improvements (e.g., JSON-LD, non-critical recommendations).`
 
 export function summarizeFailures(
   failures: AuditFailure[],
@@ -91,6 +139,25 @@ function buildDesignSection(designFails: DesignFailure[]): string {
   return '# Design Quality\n' + lines
 }
 
+function buildGenericSection(label: string, fails: DesignFailure[]): string {
+  if (fails.length === 0) return ''
+  const lines = fails.map(d =>
+    `- ${d.selector}: ${d.description} (value: ${d.value}, expected: ${d.expected})`
+  ).join('\n')
+  return `# ${label}\n` + lines
+}
+
+function buildPerformanceSection(perf: AuditResults['performance']): string {
+  if (!perf || !perf.grade) return ''
+  const lines: string[] = [`- Grade: ${perf.grade}, Score: ${perf.score}`]
+  if (perf.lcp != null) lines.push(`- LCP: ${perf.lcp}ms (target < 2500ms)`)
+  if (perf.cls != null) lines.push(`- CLS: ${perf.cls} (target < 0.1)`)
+  if (perf.tbt != null) lines.push(`- TBT: ${perf.tbt}ms (target < 200ms)`)
+  if (perf.fcp != null) lines.push(`- FCP: ${perf.fcp}ms (target < 1800ms)`)
+  if (perf.speedIndex != null) lines.push(`- Speed Index: ${perf.speedIndex}ms (target < 3400ms)`)
+  return '# Performance\n' + lines.join('\n')
+}
+
 function buildContextBlock(context?: string): string {
   if (!context || !context.trim()) return ''
   return `--- USER CONTEXT ---\n${context.trim()}\n---`
@@ -100,13 +167,25 @@ export function buildPrompt(
   failures: AuditFailure[],
   template: string = 'default',
   designFails?: DesignFailure[],
-  context?: string
+  context?: string,
+  seoFails?: DesignFailure[],
+  securityFails?: DesignFailure[],
+  legalFails?: DesignFailure[],
+  perfResult?: AuditResults['performance'],
+  aiResult?: AuditResults['ai']
 ): string {
   const wcagSection = buildWcagSection(failures)
   const designSection = designFails && designFails.length > 0 ? buildDesignSection(designFails) : ''
+  const seoSection = buildGenericSection('SEO', seoFails || [])
+  const securitySection = buildGenericSection('Security', securityFails || [])
+  const legalSection = buildGenericSection('Legal & Privacy', legalFails || [])
+  const aiSection = aiResult && aiResult.failures && aiResult.failures.length > 0
+    ? buildGenericSection('AI Detection', aiResult.failures)
+    : ''
+  const perfSection = buildPerformanceSection(perfResult)
   const contextBlock = buildContextBlock(context)
 
-  const sections = [contextBlock, wcagSection, designSection].filter(Boolean)
+  const sections = [contextBlock, wcagSection, designSection, seoSection, securitySection, legalSection, aiSection, perfSection].filter(Boolean)
 
   if (template === 'simple') {
     const body = sections.join('\n\n')
@@ -147,12 +226,24 @@ async function getLLMClient(options: LLMOptions): Promise<LLMClient> {
 function mergeChunkedResponses(responses: LLMResponse[]): LLMResponse {
   const allFailure = responses.flatMap(r => r.perFailure)
   const allDesign = responses.flatMap(r => r.designFixes || [])
+  const allPerPillar: LLMResponse['perPillarFixes'] = {}
+  for (const r of responses) {
+    if (r.perPillarFixes) {
+      for (const key of ['seo', 'security', 'legal', 'performance', 'ai'] as const) {
+        const arr = r.perPillarFixes[key]
+        if (arr && arr.length > 0) {
+          allPerPillar[key] = [...(allPerPillar[key] || []), ...arr]
+        }
+      }
+    }
+  }
   return {
     provider: responses[0]?.provider ?? 'unknown',
     model: responses[0]?.model ?? 'unknown',
     summary: responses.map(r => r.summary).join(' '),
     perFailure: allFailure,
     designFixes: allDesign.length > 0 ? allDesign : undefined,
+    perPillarFixes: Object.keys(allPerPillar).length > 0 ? allPerPillar : undefined,
     cached: false
   }
 }
@@ -167,8 +258,18 @@ export async function enrichWithLLM(
 
   const wcagFails = auditResults.wcag?.failures || []
   const designFails = auditResults.design?.failures || []
+  const seoFails = (auditResults.seo as any)?.failures || []
+  const securityFails = (auditResults.security as any)?.failures || []
+  const legalFails = (auditResults.legal as any)?.failures || []
+  const aiFails = (auditResults.ai as any)?.failures || []
+  const perfResult = auditResults.performance
 
-  if (!wcagFails.length && !designFails.length) {
+  const hasAny = wcagFails.length > 0 || designFails.length > 0 ||
+    seoFails.length > 0 || securityFails.length > 0 ||
+    legalFails.length > 0 || aiFails.length > 0 ||
+    (perfResult && perfResult.grade && perfResult.grade !== 'A')
+
+  if (!hasAny) {
     return {
       provider: options.provider,
       model: options.model,
@@ -191,21 +292,26 @@ export async function enrichWithLLM(
   const summarized = summarizeFailures(wcagFails)
   const promptTemplate = options.promptTemplate ?? 'default'
 
-  // Build combined prompt with both WCAG and design failures
-  const combinedPrompt = buildPrompt(summarized, promptTemplate, designFails.slice(0, 30), options.context)
+  const combinedPrompt = buildPrompt(
+    summarized, promptTemplate,
+    designFails.slice(0, 30), options.context,
+    seoFails.slice(0, 30), securityFails.slice(0, 20),
+    legalFails.slice(0, 20), perfResult || undefined,
+    { failures: aiFails, confidence: auditResults.ai?.confidence || 0, level: auditResults.ai?.level || 'unlikely', signals: auditResults.ai?.signals || [], totalChecks: 1, failCount: aiFails.length, passCount: Math.max(0, 1 - aiFails.length), score: aiFails.length > 0 ? 0 : 100 } as any
+  )
 
   try {
     const client = await getLLMClient(options)
 
     const response = await client.complete<LLMResponse>(combinedPrompt, SYSTEM_PROMPT)
 
-    // Apply designFixes from response if present
     const merged: LLMResponse = {
       provider: options.provider,
       model: options.model,
       summary: response.summary || '',
       perFailure: response.perFailure || [],
       designFixes: response.designFixes || (designFails.length > 0 ? [] : undefined),
+      perPillarFixes: response.perPillarFixes || undefined,
       cached: false
     }
 

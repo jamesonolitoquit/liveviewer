@@ -36,6 +36,8 @@ const benchmarks = [
   ['SEO (internal fixtures)', 'scripts/benchmark-seo.js'],
   ['Security (internal fixtures)', 'scripts/benchmark-security.js'],
   ['Legal & Privacy (internal fixtures)', 'scripts/benchmark-legal.js'],
+  ['AI Detection (internal fixtures)', 'scripts/benchmark-ai.js'],
+  ['Mobile (internal fixtures)', 'scripts/benchmark-mobile.js'],
   ['Accessibility + Design (vs axe-core)', 'scripts/benchmark-accessibility.js'],
   ['Performance (resilience)', 'scripts/resilience-performance.js'],
   ['Performance (smoke)', 'scripts/smoke-performance.js'],

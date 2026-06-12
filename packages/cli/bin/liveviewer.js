@@ -40,10 +40,11 @@ Options for "audit":
   --seo               Enable SEO analysis (title, meta, canonical, structured data, social)
   --security          Enable security analysis (HTTPS, HSTS, CSP, headers, cookies)
   --legal             Enable legal & privacy analysis (cookie consent, privacy policy, imprint, terms, data collection)
-  --performance       Enable performance analysis via Lighthouse (LCP, CLS, TBT, FCP)
-  --all               Enable all pillars (WCAG, Design, SEO, Security, Legal, Performance)
+    --performance       Enable performance analysis via Lighthouse (LCP, CLS, TBT, FCP)
+    --all               Enable all main pillars (WCAG, Design, SEO, Security, Legal, Performance, AI detection)
+    --detect-ai         [EXPERIMENTAL] Detect AI-generated content (heuristic, beta)
   --json              Output raw JSON to stdout (default when piping)
-  --mobile            Audit at both Desktop (1280x800) and Mobile (375x812) viewports, merging results
+  --mobile            Audit at both Desktop (1280x800) and Mobile (375x812) viewports; enables mobile-specific checks (touch targets, reflow, zoom, orientation)
   --viewports <list>  Comma-separated viewports, e.g. "1280x800,375x812" (overrides --width/--height)
   --fail-on <n>       Exit non-zero if WCAG failures exceed n (for CI)
   --timeout <ms>      Navigation timeout (default: 30000)
@@ -230,12 +231,13 @@ async function main() {
       const doSecurity = hasFlag('--security') || doAll;
       const doLegal = hasFlag('--legal') || doAll;
       const doPerformance = hasFlag('--performance') || doAll;
+      const doAi = hasFlag('--detect-ai') || doAll;
       const doJson = hasFlag('--json');
       const doMobile = hasFlag('--mobile');
 
-      if (!doAll && !doWcag && !doDesign && !doSeo && !doSecurity && !doLegal && !doPerformance) {
-        console.error('Error: At least one pillar flag required (--wcag, --design, --seo, --security, --legal, --performance) or --all.');
-        console.error('Usage: liveviewer audit <url> [--wcag] [--design] [--seo] [--security] [--legal] [--performance] [--all]');
+      if (!doAll && !doWcag && !doDesign && !doSeo && !doSecurity && !doLegal && !doPerformance && !doAi) {
+        console.error('Error: At least one pillar flag required (--wcag, --design, --seo, --security, --legal, --performance, --detect-ai) or --all.');
+        console.error('Usage: liveviewer audit <url> [--wcag] [--design] [--seo] [--security] [--legal] [--performance] [--detect-ai] [--all]');
         process.exit(1);
       }
 
@@ -302,6 +304,8 @@ async function main() {
         security: doSecurity,
         legal: doLegal,
         performance: doPerformance,
+        mobile: doMobile,
+        detectai: doAi,
         timeout,
         waitUntil,
         waitStable: hasFlag('--wait-stable')
@@ -349,6 +353,7 @@ async function main() {
           security: doSecurity,
           legal: doLegal,
           performance: doPerformance,
+          detectai: doAi,
             viewport: { width, height },
             viewports: auditViewports || undefined,
             timeout,
@@ -407,6 +412,14 @@ async function main() {
           }
         }
 
+        if (result.mobile) {
+          console.log(`  Mobile:      ${result.mobile.score}% (${result.mobile.failCount} issue(s))`);
+          if (result.mobile.failures?.length > 0) {
+            for (const m of result.mobile.failures) {
+              console.log(`    ${m.severity === 'high' ? '!' : m.severity === 'medium' ? '~' : '?'} [${m.severity.toUpperCase()}] ${m.ruleId} on ${m.selector}: ${m.description.slice(0, 80)}`);
+            }
+          }
+        }
         if (result.design) {
           console.log(`  Design QA:   ${result.design.score}% (${result.design.failCount} issue(s))`);
           if (result.design.failures?.length > 0) {
@@ -448,6 +461,18 @@ async function main() {
           console.log(`  Performance: \u26A0 ${result.performance.error}`);
         }
 
+        if (result.ai && result.ai.failures) {
+          console.log(`  AI Detect:   ${result.ai.score}% (confidence: ${result.ai.confidence}%, level: ${result.ai.level})`);
+          if (result.ai.failures?.length > 0) {
+            for (const a of result.ai.failures) {
+              console.log(`    - [${a.severity.toUpperCase()}] ${a.description}`);
+            }
+          }
+          if (result.ai.signals?.length > 0) {
+            console.log(`    Signals:    ${result.ai.signals.length} (see JSON for details)`);
+          }
+        }
+
         if (result.security) {
           console.log(`  Security:    ${result.security.score}% (${result.security.failCount} issue(s))`);
           if (result.security.failures?.length > 0) {
@@ -480,9 +505,18 @@ async function main() {
         const wcagFails = result.wcag?.failures || [];
         const designFails = result.design?.failures || [];
         const seoFails = result.seo?.failures || [];
-        if (wcagFails.length > 0 || designFails.length > 0 || seoFails.length > 0) {
+        const securityFails = result.security?.failures || [];
+        const legalFails = result.legal?.failures || [];
+        const aiFails = result.ai?.failures || [];
+        const perfResult = result.performance || null;
+        const hasAny = wcagFails.length > 0 || designFails.length > 0 || seoFails.length > 0 ||
+          securityFails.length > 0 || legalFails.length > 0 || aiFails.length > 0 ||
+          (perfResult && perfResult.grade && perfResult.grade !== 'A');
+        if (hasAny) {
           const { buildPrompt, SYSTEM_PROMPT } = require('@liveviewer/llm');
-          const userPrompt = buildPrompt(wcagFails, 'default', designFails.slice(0, 30), seoFails.slice(0, 30), context || undefined);
+          const userPrompt = buildPrompt(wcagFails, 'default', designFails.slice(0, 30), context || undefined,
+            seoFails.slice(0, 30), securityFails.slice(0, 20), legalFails.slice(0, 20), perfResult || undefined,
+            result.ai || null);
           console.log('\n' + '='.repeat(50));
           console.log('SYSTEM PROMPT');
           console.log('='.repeat(50));
@@ -567,7 +601,9 @@ async function main() {
         if (doSeo && result.seo) totalFailures += result.seo.failCount;
         if (doSecurity && result.security) totalFailures += result.security.failCount;
         if (doLegal && result.legal) totalFailures += result.legal.failCount;
+        if (doMobile && result.mobile) totalFailures += result.mobile.failCount;
         if (doPerformance && result.performance) totalFailures += (result.performance.error ? 1 : 0);
+        if (doAi && result.ai) totalFailures += result.ai.failCount;
         if (totalFailures > threshold) {
           console.error(`Total failures (${totalFailures}) exceed threshold (${threshold})`);
           process.exit(1);

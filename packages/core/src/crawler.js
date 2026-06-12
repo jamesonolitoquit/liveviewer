@@ -17,6 +17,7 @@ const DEFAULT_OPTIONS = {
   security: false,
   legal: false,
   performance: false,
+  detectai: false,
   viewport: { width: 1280, height: 800 },
   viewports: null,
   label: 'crawl',
@@ -25,7 +26,7 @@ const DEFAULT_OPTIONS = {
 };
 
 function hashKey(url, opts) {
-  const raw = `${url}|${opts.wcag}|${opts.design}|${opts.seo}|${opts.security}|${opts.legal}|${opts.performance}|${opts.viewport.width}|${opts.viewport.height}`;
+  const raw = `${url}|${opts.wcag}|${opts.design}|${opts.seo}|${opts.security}|${opts.legal}|${opts.performance}|${opts.detectai}|${opts.viewport.width}|${opts.viewport.height}`;
   return crypto.createHash('md5').update(raw).digest('hex');
 }
 
@@ -138,6 +139,7 @@ async function crawl(startUrl, options = {}) {
         security: opts.security,
         legal: opts.legal,
         performance: opts.performance,
+        detectAi: opts.detectai,
         timeout: opts.timeout,
         waitUntil: opts.waitUntil,
       };
@@ -152,6 +154,7 @@ async function crawl(startUrl, options = {}) {
           securityScore: auditResult.security?.score ?? null,
           legalScore: auditResult.legal?.score ?? null,
           performanceScore: auditResult.performance?.score ?? null,
+          aiScore: auditResult.ai?.score ?? null,
           wcagFailures: auditResult.wcag?.failures?.length ?? 0,
           designFailures: auditResult.design?.failures?.length ?? 0,
           seoFailures: auditResult.seo?.failures?.length ?? 0,
@@ -189,7 +192,7 @@ async function crawl(startUrl, options = {}) {
   }
 
   const duration = Date.now() - startTime;
-  const scored = results.filter(r => r.wcagScore !== null || r.designScore !== null || r.seoScore !== null || r.securityScore !== null || r.legalScore !== null || r.performanceScore !== null);
+  const scored = results.filter(r => r.wcagScore !== null || r.designScore !== null || r.seoScore !== null || r.securityScore !== null || r.legalScore !== null || r.performanceScore !== null || r.aiScore !== null);
   const avgWcag = scored.length > 0
     ? Math.round(scored.reduce((s, r) => s + (r.wcagScore ?? 0), 0) / scored.length)
     : null;
@@ -208,6 +211,9 @@ async function crawl(startUrl, options = {}) {
   const avgLegal = scored.length > 0
     ? Math.round(scored.reduce((s, r) => s + (r.legalScore ?? 0), 0) / scored.length)
     : null;
+  const avgAi = scored.length > 0
+    ? Math.round(scored.reduce((s, r) => s + (r.aiScore ?? 0), 0) / scored.length)
+    : null;
   const worstWcag = results.filter(r => r.wcagScore !== null)
     .sort((a, b) => (a.wcagScore ?? 100) - (b.wcagScore ?? 100))[0] ?? null;
   const worstDesign = results.filter(r => r.designScore !== null)
@@ -220,6 +226,8 @@ async function crawl(startUrl, options = {}) {
     .sort((a, b) => (a.performanceScore ?? 100) - (b.performanceScore ?? 100))[0] ?? null;
   const worstLegal = results.filter(r => r.legalScore !== null)
     .sort((a, b) => (a.legalScore ?? 100) - (b.legalScore ?? 100))[0] ?? null;
+  const worstAi = results.filter(r => r.aiScore !== null)
+    .sort((a, b) => (a.aiScore ?? 100) - (b.aiScore ?? 100))[0] ?? null;
   const totalFailures = results.reduce((s, r) => s + (r.wcagFailures ?? 0) + (r.designFailures ?? 0) + (r.seoFailures ?? 0) + (r.securityFailures ?? 0), 0);
 
   return {
@@ -239,6 +247,8 @@ async function crawl(startUrl, options = {}) {
       worstSecurityPage: worstSecurity ? { url: worstSecurity.url, score: worstSecurity.securityScore } : null,
       worstPerformancePage: worstPerformance ? { url: worstPerformance.url, score: worstPerformance.performanceScore } : null,
       worstLegalPage: worstLegal ? { url: worstLegal.url, score: worstLegal.legalScore } : null,
+      worstAiPage: worstAi ? { url: worstAi.url, score: worstAi.aiScore } : null,
+      averageAiScore: avgAi,
       totalFailures,
     },
   };

@@ -85,11 +85,29 @@ const RULE_DEFS = {
   'A11Y-SKIP-NAV': {
     id: 'A11Y-SKIP-NAV',
     name: 'skip-navigation',
-    shortDescription: 'Page should have skip navigation or main landmark',
-    fullDescription: 'A skip link or role="main" landmark helps keyboard users bypass repetitive navigation.',
-    helpUri: 'https://www.w3.org/WAI/WCAG21/Understanding/bypass-blocks',
+    shortDescription: 'Add skip navigation link',
+    fullDescription: 'The page should have a skip navigation link (e.g., href="#main-content") or a role="main" landmark.',
+    helpUri: '',
     defaultLevel: 'error',
-    properties: { category: 'accessibility', tags: ['wcag', 'navigation', 'keyboard'] }
+    properties: { category: 'a11y', tags: ['a11y', 'skip-navigation', 'navigation'] }
+  },
+  'A11Y-FOCUS-INDICATOR': {
+    id: 'A11Y-FOCUS-INDICATOR',
+    name: 'focus-indicator',
+    shortDescription: 'Interactive elements must have visible focus indicator',
+    fullDescription: 'Elements with outline:none should have a custom :focus-visible style or a focus-visible class for keyboard accessibility.',
+    helpUri: '',
+    defaultLevel: 'error',
+    properties: { category: 'a11y', tags: ['a11y', 'focus', 'keyboard'] }
+  },
+  'A11Y-POSITIVE-TABINDEX': {
+    id: 'A11Y-POSITIVE-TABINDEX',
+    name: 'positive-tabindex',
+    shortDescription: 'Avoid positive tabindex values',
+    fullDescription: 'Positive tabindex values (tabindex="1" and above) override natural DOM focus order and can cause confusion for keyboard users.',
+    helpUri: '',
+    defaultLevel: 'warning',
+    properties: { category: 'a11y', tags: ['a11y', 'tabindex', 'focus-order'] }
   },
   'SEO-MISSING-TITLE': {
     id: 'SEO-MISSING-TITLE',
@@ -333,6 +351,15 @@ const RULE_DEFS = {
     helpUri: '',
     defaultLevel: 'note',
     properties: { category: 'legal', tags: ['legal', 'privacy', 'data-collection'] }
+  },
+  'AI-GENERATED': {
+    id: 'AI-GENERATED',
+    name: 'ai-generated-content',
+    shortDescription: 'Content may be AI-generated',
+    fullDescription: 'Heuristic analysis detected patterns consistent with AI-generated content. Consider human review and AI disclosure.',
+    helpUri: '',
+    defaultLevel: 'note',
+    properties: { category: 'ai', tags: ['ai', 'content', 'heuristic'], experimental: true }
   }
 }
 
@@ -347,6 +374,8 @@ function ruleIdFor(failure) {
   if (failure.ruleId === 'missing-lang') return 'A11Y-MISSING-LANG'
   if (failure.ruleId === 'missing-label') return 'A11Y-MISSING-LABEL'
   if (failure.ruleId === 'skip-navigation') return 'A11Y-SKIP-NAV'
+  if (failure.ruleId === 'focus-indicator') return 'A11Y-FOCUS-INDICATOR'
+  if (failure.ruleId === 'positive-tabindex') return 'A11Y-POSITIVE-TABINDEX'
   if (failure.ruleId === 'cookie-consent') return 'LEGAL-COOKIE'
   if (failure.ruleId === 'privacy-policy') return 'LEGAL-PRIVACY'
   if (failure.ruleId === 'imprint') return 'LEGAL-IMPRINT'
@@ -374,6 +403,7 @@ function ruleIdFor(failure) {
   if (failure.ruleId === 'total-blocking-time') return 'PERF-TBT'
   if (failure.ruleId === 'first-contentful-paint') return 'PERF-FCP'
   if (failure.ruleId === 'speed-index') return 'PERF-SI'
+  if (failure.ruleId === 'ai-generated-content') return 'AI-GENERATED'
   return 'CUSTOM'
 }
 
@@ -383,7 +413,7 @@ function levelFor(severity) {
   return 'note'
 }
 
-function toSarifResults(wcagFailures, designFailures, seoFailures, securityFailures, legalFailures, performanceResult) {
+function toSarifResults(wcagFailures, designFailures, seoFailures, securityFailures, legalFailures, performanceResult, mobileResult, aiResult) {
   const results = []
 
   for (const f of wcagFailures) {
@@ -519,6 +549,58 @@ function toSarifResults(wcagFailures, designFailures, seoFailures, securityFailu
     })
   }
 
+  // Mobile-specific results
+  for (const m of (mobileResult && mobileResult.failures ? mobileResult.failures : [])) {
+    const mRuleId = ruleIdFor(m)
+    results.push({
+      ruleId: mRuleId,
+      ruleIndex: Object.keys(RULE_DEFS).indexOf(mRuleId),
+      level: levelFor(m.severity),
+      message: { text: m.description },
+      locations: [{
+        physicalLocation: {
+          artifactLocation: { uri: m.url || '' },
+          region: { snippet: { text: m.selector } }
+        }
+      }],
+      properties: {
+        severity: m.severity,
+        ruleName: m.ruleName,
+        value: m.value,
+        expected: m.expected
+      }
+    })
+  }
+
+  // AI detection results
+  if (aiResult && aiResult.failures) {
+    for (var aiIdx = 0; aiIdx < aiResult.failures.length; aiIdx++) {
+      var af = aiResult.failures[aiIdx];
+      var aiRuleId = ruleIdFor(af);
+      results.push({
+        ruleId: aiRuleId,
+        ruleIndex: Object.keys(RULE_DEFS).indexOf(aiRuleId),
+        level: levelFor(af.severity || 'info'),
+        message: { text: af.description },
+        locations: [{
+          physicalLocation: {
+            artifactLocation: { uri: af.url || '' },
+            region: { snippet: { text: af.selector } }
+          }
+        }],
+        properties: {
+          severity: af.severity || 'info',
+          ruleName: af.ruleName,
+          value: af.value,
+          expected: af.expected,
+          confidence: aiResult.confidence,
+          level: aiResult.level,
+          signalCount: aiResult.signals ? aiResult.signals.length : 0
+        }
+      });
+    }
+  }
+
   // Performance metrics as informational SARIF results
   if (performanceResult && performanceResult.score !== null) {
     var perfMetrics = [
@@ -565,6 +647,8 @@ function toSarifLog(auditResult) {
   const seoFails = (auditResult.seo && auditResult.seo.failures) || []
   const securityFails = (auditResult.security && auditResult.security.failures) || []
   const legalFails = (auditResult.legal && auditResult.legal.failures) || []
+  const aiResult = (auditResult.ai && auditResult.ai.failures && auditResult.ai.failures.length > 0) ? { ...auditResult.ai, failures: auditResult.ai.failures.map(function(f) { return { ...f, url: auditResult.url }; }) } : null
+  const mobileResult = (auditResult.mobile && auditResult.mobile.failures && auditResult.mobile.failures.length > 0) ? { ...auditResult.mobile, failures: auditResult.mobile.failures.map(function(f) { return { ...f, url: auditResult.url }; }) } : null
   const performanceResult = (auditResult.performance && !auditResult.performance.error) ? { ...auditResult.performance, url: auditResult.url } : null
 
   wcagFails.forEach(f => { f.url = auditResult.url })
@@ -572,12 +656,13 @@ function toSarifLog(auditResult) {
   seoFails.forEach(f => { f.url = auditResult.url })
   securityFails.forEach(f => { f.url = auditResult.url })
   legalFails.forEach(f => { f.url = auditResult.url })
+  if (mobileResult && mobileResult.failures) mobileResult.failures.forEach(f => { f.url = auditResult.url })
 
   const rules = Object.values(RULE_DEFS)
   const ruleIndices = {}
   rules.forEach((r, i) => { ruleIndices[r.id] = i })
 
-  const results = toSarifResults(wcagFails, designFails, seoFails, securityFails, legalFails, performanceResult)
+  const results = toSarifResults(wcagFails, designFails, seoFails, securityFails, legalFails, performanceResult, mobileResult, aiResult)
 
   return {
     $schema: 'https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.json',

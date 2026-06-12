@@ -197,6 +197,54 @@ describe('toSarifLog', () => {
     expect(loc.physicalLocation.region.snippet.text).toBe('.btn')
   })
 
+  it('maps ai-generated-content to AI-GENERATED rule', () => {
+    const audit = {
+      ...baseAudit,
+      ai: {
+        failures: [{
+          ruleId: 'ai-generated-content',
+          ruleName: 'Content may be AI-generated',
+          category: 'ai',
+          selector: 'body',
+          description: 'AI detection confidence: 85%. Signals: 4',
+          severity: 'info',
+          value: '85% confidence',
+          expected: 'human-authored content expected (no AI signals)'
+        }],
+        confidence: 85,
+        level: 'likely',
+        signals: [{ type: 'ai-disclosure', detail: 'AI disclosure', weight: 0.3 }],
+        totalChecks: 1,
+        passCount: 0,
+        failCount: 1,
+        score: 0
+      }
+    }
+    const result = toSarifLog(audit)
+    const results = result.runs[0].results
+    expect(results).toHaveLength(1)
+    expect(results[0].ruleId).toBe('AI-GENERATED')
+    expect(results[0].level).toBe('note')
+    expect(results[0].message.text).toContain('AI detection confidence: 85%')
+    expect(results[0].properties.confidence).toBe(85)
+    expect(results[0].properties.level).toBe('likely')
+    expect(results[0].properties.signalCount).toBe(1)
+  })
+
+  it('includes AI-GENERATED rule in driver rules', () => {
+    const result = toSarifLog(baseAudit)
+    const ruleIds = result.runs[0].tool.driver.rules.map(r => r.id)
+    expect(ruleIds).toContain('AI-GENERATED')
+    const aiRule = result.runs[0].tool.driver.rules.find(r => r.id === 'AI-GENERATED')
+    expect(aiRule.properties.experimental).toBe(true)
+    expect(aiRule.properties.category).toBe('ai')
+  })
+
+  it('skips AI results when ai is null or has no failures', () => {
+    const result = toSarifLog(baseAudit)
+    expect(result.runs[0].results).toEqual([])
+  })
+
   it('returns empty results for no failures', () => {
     const result = toSarifLog(baseAudit)
     expect(result.runs[0].results).toEqual([])

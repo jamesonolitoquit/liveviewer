@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCachedAudit, setCachedAudit } from '@/lib/audit-cache'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { audit } from '@liveviewer/core/src/auditor'
+import { generateFixSuggestions } from '@liveviewer/core/src/recommender'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -66,6 +68,8 @@ export async function POST(request: NextRequest) {
       waitStable = false,
       bypassCache,
       loadImages = false,
+      detectai = false,
+      mobile = false,
       context: bodyContext
     } = body
 
@@ -123,9 +127,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { audit } = require('@liveviewer/core/src/auditor')
-    const { generateFixSuggestions } = require('@liveviewer/core/src/recommender')
-
     const auditOptions: any = {
       viewport: { width: 1024, height: 768 },
       label: 'web-audit',
@@ -135,6 +136,8 @@ export async function POST(request: NextRequest) {
       security: true,
       legal: true,
       performance: true,
+      detectAi: detectai,
+      mobile,
       timeout: Math.min(timeout, 7000),
       waitUntil,
       waitStable,
@@ -174,6 +177,12 @@ export async function POST(request: NextRequest) {
     }
     if (result.legal) {
       sanitized.legal = result.legal
+    }
+    if (result.ai) {
+      sanitized.ai = result.ai
+    }
+    if (result.mobile) {
+      sanitized.mobile = result.mobile
     }
     if (result.performance) {
       sanitized.performance = result.performance

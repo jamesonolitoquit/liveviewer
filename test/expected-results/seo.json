@@ -1,32 +1,62 @@
 {
   "title-pass.html": [],
   "title-fail.html": [
-    {"ruleId": "missing-title", "fixture": "title-fail.html"}
+    {"ruleId": "missing-title", "fixture": "title-fail.html"},
+    {"ruleId": "missing-og-extras", "fixture": "title-fail.html"},
+    {"ruleId": "missing-hreflang", "fixture": "title-fail.html"}
   ],
   "meta-description-pass.html": [],
   "meta-description-fail.html": [
-    {"ruleId": "missing-meta-description", "fixture": "meta-description-fail.html"}
+    {"ruleId": "missing-meta-description", "fixture": "meta-description-fail.html"},
+    {"ruleId": "missing-og-extras", "fixture": "meta-description-fail.html"},
+    {"ruleId": "missing-hreflang", "fixture": "meta-description-fail.html"}
   ],
   "canonical-pass.html": [],
   "canonical-fail.html": [
-    {"ruleId": "missing-canonical", "fixture": "canonical-fail.html"}
+    {"ruleId": "missing-canonical", "fixture": "canonical-fail.html"},
+    {"ruleId": "missing-og-extras", "fixture": "canonical-fail.html"},
+    {"ruleId": "missing-hreflang", "fixture": "canonical-fail.html"}
+  ],
+  "canonical-relative-fail.html": [
+    {"ruleId": "canonical-invalid", "fixture": "canonical-relative-fail.html"}
   ],
   "jsonld-pass.html": [],
   "jsonld-fail.html": [
-    {"ruleId": "missing-jsonld", "fixture": "jsonld-fail.html"}
+    {"ruleId": "missing-jsonld", "fixture": "jsonld-fail.html"},
+    {"ruleId": "missing-og-extras", "fixture": "jsonld-fail.html"},
+    {"ruleId": "missing-hreflang", "fixture": "jsonld-fail.html"}
+  ],
+  "jsonld-bad.html": [
+    {"ruleId": "invalid-jsonld", "fixture": "jsonld-bad.html"}
+  ],
+  "jsonld-incomplete.html": [
+    {"ruleId": "invalid-jsonld", "fixture": "jsonld-incomplete.html"}
   ],
   "viewport-pass.html": [],
   "viewport-fail.html": [
-    {"ruleId": "missing-viewport", "fixture": "viewport-fail.html"}
+    {"ruleId": "missing-viewport", "fixture": "viewport-fail.html"},
+    {"ruleId": "missing-og-extras", "fixture": "viewport-fail.html"},
+    {"ruleId": "missing-hreflang", "fixture": "viewport-fail.html"}
   ],
   "robots-pass.html": [],
   "robots-fail.html": [
-    {"ruleId": "robots-blocked", "fixture": "robots-fail.html"}
+    {"ruleId": "robots-blocked", "fixture": "robots-fail.html"},
+    {"ruleId": "missing-og-extras", "fixture": "robots-fail.html"},
+    {"ruleId": "missing-hreflang", "fixture": "robots-fail.html"}
   ],
   "og-pass.html": [],
   "og-fail.html": [
     {"ruleId": "missing-open-graph", "fixture": "og-fail.html"},
-    {"ruleId": "twitter-card-missing", "fixture": "og-fail.html"}
+    {"ruleId": "twitter-card-missing", "fixture": "og-fail.html"},
+    {"ruleId": "missing-og-extras", "fixture": "og-fail.html"},
+    {"ruleId": "missing-hreflang", "fixture": "og-fail.html"}
+  ],
+  "twitter-property-pass.html": [],
+  "hreflang-fail.html": [
+    {"ruleId": "missing-hreflang", "fixture": "hreflang-fail.html"}
+  ],
+  "duplicate-title-fail.html": [
+    {"ruleId": "duplicate-title", "fixture": "duplicate-title-fail.html"}
   ],
   "seo-perfect.html": [],
   "seo-mixed.html": [
@@ -38,6 +68,8 @@
     {"ruleId": "robots-blocked", "fixture": "seo-mixed.html"},
     {"ruleId": "missing-open-graph", "fixture": "seo-mixed.html"},
     {"ruleId": "twitter-card-missing", "fixture": "seo-mixed.html"},
-    {"ruleId": "heading-hierarchy", "fixture": "seo-mixed.html"}
+    {"ruleId": "heading-hierarchy", "fixture": "seo-mixed.html"},
+    {"ruleId": "missing-og-extras", "fixture": "seo-mixed.html"},
+    {"ruleId": "missing-hreflang", "fixture": "seo-mixed.html"}
   ]
 }

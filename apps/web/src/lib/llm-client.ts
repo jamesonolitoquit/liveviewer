@@ -16,9 +16,9 @@ interface DesignFailureCtx {
   ruleName: string
   selector: string
   description: string
-  severity: string
-  value: string
-  expected: string
+  severity?: string
+  value?: string
+  expected?: string
 }
 
 interface PerFailureResult {
@@ -27,6 +27,22 @@ interface PerFailureResult {
   explanation: string
   suggestion: string
   severity: 'high' | 'medium' | 'low'
+}
+
+interface GeneralFixResult {
+  pillar: string
+  selector: string
+  ruleId: string
+  explanation: string
+  suggestion: string
+  severity: string
+}
+
+interface PerPillarFixes {
+  seo?: GeneralFixResult[]
+  security?: GeneralFixResult[]
+  legal?: GeneralFixResult[]
+  performance?: GeneralFixResult[]
 }
 
 interface LlmResult {
@@ -39,51 +55,56 @@ interface LlmResult {
     suggestion: string
     severity: string
   }>
+  perPillarFixes?: PerPillarFixes
   provider: string
   model: string
 }
 
-const SYSTEM_PROMPT = `You are an expert web designer and accessibility consultant. Your task is to analyze the accessibility and design quality issues listed below and provide actionable, concise, and specific fix recommendations.
+const SYSTEM_PROMPT = `You are an expert web quality auditor. Analyze the accessibility, design, SEO, security, legal, and performance issues listed and provide actionable, concise fix recommendations.
 
-For each failure, you must output a JSON object with the following structure:
+Output a JSON object with this structure:
 
 {
-  "summary": "A one-sentence executive summary of the most critical issues.",
+  "summary": "One-sentence executive summary of the most critical issues across all pillars.",
   "perFailure": [
     {
       "selector": "CSS selector of the failing element (exact from the list)",
-      "ruleId": "WCAG rule ID or 'contrast'",
-      "explanation": "Why this fails (e.g., 'Text color #777 on white background has insufficient contrast')",
-      "suggestion": "Specific fix (e.g., 'Change text color to #333' or 'Increase font size to 16px')",
+      "ruleId": "contrast",
+      "explanation": "Why this fails",
+      "suggestion": "Specific fix",
       "severity": "high|medium|low"
     }
   ],
   "designFixes": [
     {
-      "selector": "CSS selector of the element with design issue",
-      "ruleId": "font-size-legible | line-height-readable | horizontal-scroll | ...",
-      "explanation": "Why this design choice is problematic (e.g., 'Body text below 16px reduces readability')",
-      "suggestion": "Specific fix (e.g., 'Increase font size to at least 16px' or 'Set line-height to 1.5')",
+      "selector": "CSS selector (exact)",
+      "ruleId": "font-size-legible | line-height-readable | ...",
+      "explanation": "Why problematic",
+      "suggestion": "Specific CSS fix",
       "severity": "high|medium|low"
     }
-  ]
+  ],
+  "perPillarFixes": {
+    "seo": [{ "pillar": "seo", "selector": "...", "ruleId": "...", "explanation": "...", "suggestion": "...", "severity": "..." }],
+    "security": [{ "pillar": "security", "selector": "...", "ruleId": "...", "explanation": "...", "suggestion": "...", "severity": "..." }],
+    "legal": [{ "pillar": "legal", "selector": "...", "ruleId": "...", "explanation": "...", "suggestion": "...", "severity": "..." }],
+    "performance": [{ "pillar": "performance", "selector": "page", "ruleId": "lcp|cls|tbt|fcp|speed-index|tti", "explanation": "...", "suggestion": "...", "severity": "..." }]
+  }
 }
 
 Important rules:
 - Return ONLY valid JSON. No extra text, no markdown formatting.
-- If a failure is not applicable (e.g., no design issues), return an empty array for that field.
-- Use the exact selectors provided. Do not modify them.
-- Severity mapping:
-  - high: critical for accessibility or usability (e.g., contrast < 3:1, font-size < 12px, line-height < 1.2, overlapping content).
-  - medium: important but not blocking (e.g., contrast 3:1–4.5:1, font-size 12–16px, line-height 1.2–1.4 or 1.6–1.8).
-  - low: minor improvements (e.g., small spacing issues, non-critical overlap).
-- For horizontal scroll: suggest \`overflow-x: hidden\` or responsive width adjustments.
-- For missing labels: suggest adding a <label> or aria-label.
-- For skip navigation: suggest adding a skip link or role="main".
+- If a pillar has no issues, omit the key or use an empty array.
+- Use the exact selectors provided. Do not modify them.`
 
-If the user provided additional context (e.g., site purpose, audience, brand guidelines), incorporate that context into your explanations and suggestions. For example, if the site is a dark-mode dashboard, you may suggest lighter text on dark backgrounds; if it's a mobile-first e-commerce site, prioritize touch targets and font legibility.`
-
-function buildPrompt(failures: Failure[], designFailures?: DesignFailureCtx[], context?: string): string {
+function buildPrompt(
+  failures: Failure[],
+  designFailures?: DesignFailureCtx[],
+  context?: string,
+  seoFails?: DesignFailureCtx[],
+  securityFails?: DesignFailureCtx[],
+  legalFails?: DesignFailureCtx[]
+): string {
   const parts: string[] = []
 
   if (context && context.trim()) {
@@ -102,6 +123,27 @@ function buildPrompt(failures: Failure[], designFailures?: DesignFailureCtx[], c
       `- ${d.selector}: ${d.description} (value: ${d.value}, expected: ${d.expected})`
     ).join('\n')
     parts.push('# Design Quality\n' + lines)
+  }
+
+  if (seoFails && seoFails.length > 0) {
+    const lines = seoFails.map(d =>
+      `- ${d.selector}: ${d.description} (value: ${d.value}, expected: ${d.expected})`
+    ).join('\n')
+    parts.push('# SEO\n' + lines)
+  }
+
+  if (securityFails && securityFails.length > 0) {
+    const lines = securityFails.map(d =>
+      `- ${d.selector}: ${d.description} (value: ${d.value}, expected: ${d.expected})`
+    ).join('\n')
+    parts.push('# Security\n' + lines)
+  }
+
+  if (legalFails && legalFails.length > 0) {
+    const lines = legalFails.map(d =>
+      `- ${d.selector}: ${d.description} (value: ${d.value}, expected: ${d.expected})`
+    ).join('\n')
+    parts.push('# Legal & Privacy\n' + lines)
   }
 
   return parts.join('\n\n') || 'No issues to analyze.'
@@ -329,9 +371,13 @@ export async function enrichWithLLM(
   apiKey: string,
   baseUrl?: string,
   designFailures?: DesignFailureCtx[],
-  context?: string
+  context?: string,
+  seoFails?: DesignFailureCtx[],
+  securityFails?: DesignFailureCtx[],
+  legalFails?: DesignFailureCtx[]
 ): Promise<LlmResult> {
-  const prompt = buildPrompt(failures.slice(0, 50), designFailures?.slice(0, 30), context)
+  const prompt = buildPrompt(failures.slice(0, 50), designFailures?.slice(0, 30), context,
+    seoFails?.slice(0, 30), securityFails?.slice(0, 20), legalFails?.slice(0, 20))
   switch (provider) {
     case 'openai-compatible': {
       const url = baseUrl || 'https://api.openai.com/v1'

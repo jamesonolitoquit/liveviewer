@@ -1,0 +1,74 @@
+{
+  "ai-clean.html": {
+    "confidence": 0,
+    "level": "unlikely",
+    "failCount": 0,
+    "signals": 0
+  },
+  "ai-disclosure.html": {
+    "confidence": 40,
+    "level": "possible",
+    "failCount": 1,
+    "signals": 2
+  },
+  "ai-fn-author-present-ai-content.html": {
+    "confidence": 100,
+    "level": "likely",
+    "failCount": 1,
+    "signals": 6
+  },
+  "ai-generator-meta.html": {
+    "confidence": 25,
+    "level": "unlikely",
+    "failCount": 0,
+    "signals": 2
+  },
+  "ai-generator-uncommon.html": {
+    "confidence": 25,
+    "level": "unlikely",
+    "failCount": 0,
+    "signals": 2
+  },
+  "ai-mixed-signals.html": {
+    "confidence": 50,
+    "level": "possible",
+    "failCount": 1,
+    "signals": 3
+  },
+  "ai-no-author.html": {
+    "confidence": 10,
+    "level": "unlikely",
+    "failCount": 0,
+    "signals": 1
+  },
+  "ai-phrasing.html": {
+    "confidence": 100,
+    "level": "likely",
+    "failCount": 1,
+    "signals": 6
+  },
+  "ai-phrasing-subtle.html": {
+    "confidence": 100,
+    "level": "likely",
+    "failCount": 1,
+    "signals": 6
+  },
+  "ai-repetition.html": {
+    "confidence": 10,
+    "level": "unlikely",
+    "failCount": 0,
+    "signals": 1
+  },
+  "ai-short-content.html": {
+    "confidence": 100,
+    "level": "likely",
+    "failCount": 1,
+    "signals": 6
+  },
+  "ai-uniform-length.html": {
+    "confidence": 20,
+    "level": "unlikely",
+    "failCount": 0,
+    "signals": 2
+  }
+}

@@ -21,7 +21,7 @@ async function main() {
     await page.goto(fileUrl, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('body');
 
-    const raw = await runLegalChecks(page);
+    const raw = await runLegalChecks(page, context);
     const results = Array.isArray(raw) ? raw : (raw.failures || []);
     await context.close();
 
