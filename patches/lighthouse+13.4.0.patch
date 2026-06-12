@@ -26,3 +26,27 @@ index 60415ba..3901fc0 100644
  /* eslint-enable max-len */
  
  export const flowReportAssets = {
+diff --git a/node_modules/lighthouse/report/generator/report-assets.js b/node_modules/lighthouse/report/generator/report-assets.js
+index 93d48a4..a1209f4 100644
+--- a/node_modules/lighthouse/report/generator/report-assets.js
++++ b/node_modules/lighthouse/report/generator/report-assets.js
+@@ -12,9 +12,16 @@ import {getModuleDirectory} from '../../shared/esm-utils.js';
+ 
+ const moduleDir = getModuleDirectory(import.meta);
+ 
+-const REPORT_TEMPLATE = fs.readFileSync(moduleDir + '/../assets/standalone-template.html',
+-    'utf8');
+-const REPORT_JAVASCRIPT = fs.readFileSync(moduleDir + '/../../dist/report/standalone.js', 'utf8');
++function readFileSafe(relativePath) {
++  try {
++    return fs.readFileSync(relativePath, 'utf8');
++  } catch {
++    return '';
++  }
++}
++
++const REPORT_TEMPLATE = readFileSafe(moduleDir + '/../assets/standalone-template.html');
++const REPORT_JAVASCRIPT = readFileSafe(moduleDir + '/../../dist/report/standalone.js');
+ 
+ export const reportAssets = {
+   REPORT_TEMPLATE,

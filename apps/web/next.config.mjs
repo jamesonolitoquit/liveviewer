@@ -8,6 +8,9 @@ const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, '../../'),
   outputFileTracingIncludes: {
     '/api/*': [
+      './node_modules/lighthouse/report/assets/standalone-template.html',
+      './node_modules/lighthouse/report/assets/styles.css',
+      './node_modules/lighthouse/dist/report/standalone.js',
       './node_modules/lighthouse/flow-report/assets/standalone-flow-template.html',
       './node_modules/lighthouse/flow-report/assets/styles.css',
       './node_modules/lighthouse/dist/report/flow.js',
