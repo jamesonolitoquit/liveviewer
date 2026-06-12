@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { CheckCircle } from 'lucide-react'
 import type { AuditData, WcagFailure, DesignFailure, FixSuggestion, SeoFailure, SecurityFailure, LegalFailure, PerformanceData } from '@/types/audit'
+import { PILLARS } from '@/lib/pillars'
 import { SmartFixButton } from './smart-fix-button'
 import { VisualReport } from './visual-report'
 
@@ -408,87 +409,27 @@ export function AuditResults({ data, children }: AuditResultsProps) {
             </div>
           </div>
           <p className="mb-5 truncate text-sm text-[var(--jao-text-secondary)]">{data.url}</p>
-          {(() => {
-            const showMulti = multi && data.viewports && data.viewports.length >= 2
-            const desktopVp = showMulti ? data.viewports!.find(v => v.viewport.width >= 1280) ?? data.viewports![0] : null
-            const mobileVp = showMulti ? data.viewports!.find(v => v.viewport.width <= 767) ?? data.viewports![1] : null
-            const gridCols = showMulti ? 'md:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
-            return (
-              <div className={`grid grid-cols-1 gap-6 ${gridCols}`}>
-                {showMulti ? (
-                  <>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            {PILLARS.map(({ key, label, ideal, idealLabel }) => {
+              const pd = data[key as keyof AuditData] as { score?: number; grade?: string } | null
+              const score = pd?.score ?? null
+              return (
+                <div key={key}>
+                  <h3 className="mb-2 text-xs font-semibold text-[var(--jao-text)]">{label}</h3>
+                  {score != null ? (
                     <div>
-                      <h3 className="mb-3 flex items-center gap-1 text-sm font-semibold text-[var(--jao-text)]">
-                        Desktop
-                        <span className="inline-flex cursor-help items-center rounded-full border border-[var(--jao-border)] px-1.5 py-0.5 text-[9px] text-[var(--jao-text-tertiary)]" title="Checks color contrast, missing alt text, form labels, skip navigation, and WCAG 2.2 AA requirements.">&#9432;</span>
-                      </h3>
-                      <ScoreCard score={desktopVp!.wcag.score} size={36} title="Desktop WCAG score" subtitle={`${desktopVp!.viewport.width}\u00d7${desktopVp!.viewport.height} viewport`} />
+                      <ScoreCard score={Math.round(score)} size={36} title={`${label} score`} subtitle={key === 'performance' && pd?.grade ? `Grade ${(pd as { grade: string }).grade}` : ''} />
+                      {key === 'performance' && score < ideal && (
+                        <p className="mt-1 text-[10px] text-[var(--jao-text-tertiary)]">Ideal: {idealLabel}</p>
+                      )}
                     </div>
-                    <div>
-                      <h3 className="mb-3 flex items-center gap-1 text-sm font-semibold text-[var(--jao-text)]">
-                        Mobile
-                        <span className="inline-flex cursor-help items-center rounded-full border border-[var(--jao-border)] px-1.5 py-0.5 text-[9px] text-[var(--jao-text-tertiary)]" title="Checks color contrast, missing alt text, form labels, skip navigation, and WCAG 2.2 AA requirements.">&#9432;</span>
-                      </h3>
-                      <ScoreCard score={mobileVp!.wcag.score} size={36} title="Mobile WCAG score" subtitle={`${mobileVp!.viewport.width}\u00d7${mobileVp!.viewport.height} viewport`} />
-                    </div>
-                  </>
-                ) : wcag && (
-                  <div>
-                    <h3 className="mb-3 flex items-center gap-1 text-sm font-semibold text-[var(--jao-text)]">
-                      Accessibility
-                      <span className="inline-flex cursor-help items-center rounded-full border border-[var(--jao-border)] px-1.5 py-0.5 text-[9px] text-[var(--jao-text-tertiary)]" title="Checks color contrast, missing alt text, form labels, skip navigation, and WCAG 2.2 AA requirements.">&#9432;</span>
-                    </h3>
-                    <ScoreCard score={wcag.score} size={36} title="Accessibility score" subtitle="" />
-                  </div>
-                )}
-                {design && (
-                  <div>
-                    <h3 className="mb-3 flex items-center gap-1 text-sm font-semibold text-[var(--jao-text)]">
-                      Design Quality
-                      <span className="inline-flex cursor-help items-center rounded-full border border-[var(--jao-border)] px-1.5 py-0.5 text-[9px] text-[var(--jao-text-tertiary)]" title="Checks font size (≥16px), line height (1.4–1.6), heading hierarchy, and horizontal scroll.">&#9432;</span>
-                    </h3>
-                    <ScoreCard score={design.score} size={36} title="Design QA score" subtitle={showMulti ? 'Both viewports' : ''} />
-                  </div>
-                )}
-                {seo && (
-                  <div>
-                    <h3 className="mb-3 flex items-center gap-1 text-sm font-semibold text-[var(--jao-text)]">
-                      SEO
-                      <span className="inline-flex cursor-help items-center rounded-full border border-[var(--jao-border)] px-1.5 py-0.5 text-[9px] text-[var(--jao-text-tertiary)]" title="Checks title, meta description, canonical, viewport, Open Graph, and Twitter Card tags.">&#9432;</span>
-                    </h3>
-                    <ScoreCard score={seo.score} size={36} title="SEO score" subtitle="" />
-                  </div>
-                )}
-                {security && (
-                  <div>
-                    <h3 className="mb-3 flex items-center gap-1 text-sm font-semibold text-[var(--jao-text)]">
-                      Security
-                      <span className="inline-flex cursor-help items-center rounded-full border border-[var(--jao-border)] px-1.5 py-0.5 text-[9px] text-[var(--jao-text-tertiary)]" title="Checks HSTS, CSP, X-Frame-Options, mixed content, secure cookies, and more.">&#9432;</span>
-                    </h3>
-                    <ScoreCard score={security.score} size={36} title="Security score" subtitle="" />
-                  </div>
-                )}
-                {legal && (
-                  <div>
-                    <h3 className="mb-3 flex items-center gap-1 text-sm font-semibold text-[var(--jao-text)]">
-                      Legal &amp; Privacy
-                      <span className="inline-flex cursor-help items-center rounded-full border border-[var(--jao-border)] px-1.5 py-0.5 text-[9px] text-[var(--jao-text-tertiary)]" title="Checks cookie consent, privacy policy, imprint, terms of service, and data collection notice.">&#9432;</span>
-                    </h3>
-                    <ScoreCard score={legal.score} size={36} title="Legal & Privacy score" subtitle="" />
-                  </div>
-                )}
-                {performance && (
-                  <div>
-                    <h3 className="mb-3 flex items-center gap-1 text-sm font-semibold text-[var(--jao-text)]">
-                      Performance
-                      <span className="inline-flex cursor-help items-center rounded-full border border-[var(--jao-border)] px-1.5 py-0.5 text-[9px] text-[var(--jao-text-tertiary)]" title="Lighthouse performance score based on LCP, FCP, TBT, CLS, and Speed Index.">&#9432;</span>
-                    </h3>
-                    {performance.score != null && <ScoreCard score={performance.score} size={36} title="Performance score" subtitle={performance.grade ? `Grade ${performance.grade}` : ''} />}
-                  </div>
-                )}
-              </div>
-            )
-          })()}
+                  ) : (
+                    <div className="rounded-2xl border border-[var(--jao-border)] bg-[var(--jao-surface)] p-4 text-center text-sm text-[var(--jao-text-tertiary)]">&mdash;</div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 

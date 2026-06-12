@@ -1,5 +1,7 @@
 'use client'
 
+import { PILLARS } from '@/lib/pillars'
+
 interface PillarScores {
   wcag?: number
   design?: number
@@ -36,17 +38,6 @@ function scoreBg(score: number): string {
   return 'border-red-200 dark:border-red-700/30 bg-red-50 dark:bg-red-900/20'
 }
 
-const PILLAR_LABELS: Record<string, string> = {
-  wcag: 'WCAG',
-  design: 'Design',
-  seo: 'SEO',
-  security: 'Security',
-  legal: 'Legal',
-  performance: 'Performance'
-}
-
-const PILLAR_ORDER = ['wcag', 'design', 'seo', 'security', 'legal', 'performance'] as const
-
 export function Dashboard({ entries, onReAudit }: DashboardProps) {
   if (entries.length === 0) return null
 
@@ -66,7 +57,7 @@ export function Dashboard({ entries, onReAudit }: DashboardProps) {
         </p>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {PILLAR_ORDER.map((key) => {
+          {PILLARS.map(({ key, label, ideal, idealLabel }) => {
             const score = latest.pillars?.[key]
             return (
               <div
@@ -74,11 +65,16 @@ export function Dashboard({ entries, onReAudit }: DashboardProps) {
                 className={`rounded-xl border p-4 text-center shadow-sm ${score !== undefined ? scoreBg(score) : 'border-[var(--jao-border)] bg-[var(--jao-surface)]'}`}
               >
                 <div className="text-xs uppercase tracking-wide text-[var(--jao-text-secondary)]">
-                  {PILLAR_LABELS[key]}
+                  {label}
                 </div>
                 <div className={`mt-1 text-2xl font-bold ${score !== undefined ? scoreColor(score) : 'text-[var(--jao-text-tertiary)]'}`}>
-                  {score !== undefined ? `${Math.round(score)}%` : '—'}
+                  {score !== undefined ? `${Math.round(score)}%` : '\u2014'}
                 </div>
+                {key === 'performance' && score !== undefined && score < ideal && (
+                  <div className="mt-1 text-[10px] text-[var(--jao-text-tertiary)]">
+                    Ideal: {idealLabel}
+                  </div>
+                )}
               </div>
             )
           })}

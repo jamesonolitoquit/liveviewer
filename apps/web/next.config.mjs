@@ -6,6 +6,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const nextConfig = {
   serverExternalPackages: ['lighthouse', 'chrome-launcher'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
+  outputFileTracingIncludes: {
+    '/api/*': [
+      './node_modules/lighthouse/**',
+      './node_modules/chrome-launcher/**',
+      './node_modules/@sparticuz/chromium-min/**'
+    ]
+  },
   transpilePackages: ['@liveviewer/core'],
   experimental: {
     optimizePackageImports: ['lucide-react', '@headlessui/react'],
