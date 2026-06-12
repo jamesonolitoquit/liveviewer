@@ -1,0 +1,28 @@
+diff --git a/node_modules/lighthouse/report/generator/flow-report-assets.js b/node_modules/lighthouse/report/generator/flow-report-assets.js
+index 60415ba..3901fc0 100644
+--- a/node_modules/lighthouse/report/generator/flow-report-assets.js
++++ b/node_modules/lighthouse/report/generator/flow-report-assets.js
+@@ -11,11 +11,19 @@ import {getModuleDirectory} from '../../shared/esm-utils.js';
+ 
+ const moduleDir = getModuleDirectory(import.meta);
+ 
++function readFileSafe(relativePath) {
++  try {
++    return fs.readFileSync(relativePath, 'utf8');
++  } catch {
++    return '';
++  }
++}
++
+ /* eslint-disable max-len */
+-const FLOW_REPORT_TEMPLATE = fs.readFileSync(`${moduleDir}/../../flow-report/assets/standalone-flow-template.html`, 'utf8');
+-const REGULAR_REPORT_CSS = fs.readFileSync(moduleDir + '/../assets/styles.css', 'utf8');
+-const FLOW_REPORT_CSS = fs.readFileSync(`${moduleDir}/../../flow-report/assets/styles.css`, 'utf8');
+-const FLOW_REPORT_JAVASCRIPT = fs.readFileSync(`${moduleDir}/../../dist/report/flow.js`, 'utf8');
++const FLOW_REPORT_TEMPLATE = readFileSafe(`${moduleDir}/../../flow-report/assets/standalone-flow-template.html`);
++const REGULAR_REPORT_CSS = readFileSafe(moduleDir + '/../assets/styles.css');
++const FLOW_REPORT_CSS = readFileSafe(`${moduleDir}/../../flow-report/assets/styles.css`);
++const FLOW_REPORT_JAVASCRIPT = readFileSafe(`${moduleDir}/../../dist/report/flow.js`);
+ /* eslint-enable max-len */
+ 
+ export const flowReportAssets = {
