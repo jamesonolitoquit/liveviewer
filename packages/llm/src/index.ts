@@ -84,16 +84,6 @@ Output a JSON object with this structure:
         "suggestion": "Specific optimisation advice",
         "severity": "high|medium|low"
       }
-    ],
-    "ai": [
-      {
-        "pillar": "ai",
-        "selector": "CSS selector (exact)",
-        "ruleId": "ai-generated-content",
-        "explanation": "Why this content may be AI-generated",
-        "suggestion": "Specific advice for adding human review or AI disclosure",
-        "severity": "high|medium|low|info"
-      }
     ]
   }
 }
@@ -171,21 +161,17 @@ export function buildPrompt(
   seoFails?: DesignFailure[],
   securityFails?: DesignFailure[],
   legalFails?: DesignFailure[],
-  perfResult?: AuditResults['performance'],
-  aiResult?: AuditResults['ai']
+  perfResult?: AuditResults['performance']
 ): string {
   const wcagSection = buildWcagSection(failures)
   const designSection = designFails && designFails.length > 0 ? buildDesignSection(designFails) : ''
   const seoSection = buildGenericSection('SEO', seoFails || [])
   const securitySection = buildGenericSection('Security', securityFails || [])
   const legalSection = buildGenericSection('Legal & Privacy', legalFails || [])
-  const aiSection = aiResult && aiResult.failures && aiResult.failures.length > 0
-    ? buildGenericSection('AI Detection', aiResult.failures)
-    : ''
   const perfSection = buildPerformanceSection(perfResult)
   const contextBlock = buildContextBlock(context)
 
-  const sections = [contextBlock, wcagSection, designSection, seoSection, securitySection, legalSection, aiSection, perfSection].filter(Boolean)
+  const sections = [contextBlock, wcagSection, designSection, seoSection, securitySection, legalSection, perfSection].filter(Boolean)
 
   if (template === 'simple') {
     const body = sections.join('\n\n')
@@ -229,7 +215,7 @@ function mergeChunkedResponses(responses: LLMResponse[]): LLMResponse {
   const allPerPillar: LLMResponse['perPillarFixes'] = {}
   for (const r of responses) {
     if (r.perPillarFixes) {
-      for (const key of ['seo', 'security', 'legal', 'performance', 'ai'] as const) {
+      for (const key of ['seo', 'security', 'legal', 'performance'] as const) {
         const arr = r.perPillarFixes[key]
         if (arr && arr.length > 0) {
           allPerPillar[key] = [...(allPerPillar[key] || []), ...arr]
@@ -261,12 +247,11 @@ export async function enrichWithLLM(
   const seoFails = (auditResults.seo as any)?.failures || []
   const securityFails = (auditResults.security as any)?.failures || []
   const legalFails = (auditResults.legal as any)?.failures || []
-  const aiFails = (auditResults.ai as any)?.failures || []
   const perfResult = auditResults.performance
 
   const hasAny = wcagFails.length > 0 || designFails.length > 0 ||
     seoFails.length > 0 || securityFails.length > 0 ||
-    legalFails.length > 0 || aiFails.length > 0 ||
+    legalFails.length > 0 ||
     (perfResult && perfResult.grade && perfResult.grade !== 'A')
 
   if (!hasAny) {
@@ -296,8 +281,7 @@ export async function enrichWithLLM(
     summarized, promptTemplate,
     designFails.slice(0, 30), options.context,
     seoFails.slice(0, 30), securityFails.slice(0, 20),
-    legalFails.slice(0, 20), perfResult || undefined,
-    { failures: aiFails, confidence: auditResults.ai?.confidence || 0, level: auditResults.ai?.level || 'unlikely', signals: auditResults.ai?.signals || [], totalChecks: 1, failCount: aiFails.length, passCount: Math.max(0, 1 - aiFails.length), score: aiFails.length > 0 ? 0 : 100 } as any
+    legalFails.slice(0, 20), perfResult || undefined
   )
 
   try {

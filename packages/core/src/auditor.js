@@ -1457,6 +1457,9 @@ async function audit(url, options = {}) {
         var perfResult = null;
         if (doPerformance) {
           try {
+            if (browser) {
+              try { await browser.close(); } catch (_) {}
+            }
             var { runPerformanceChecks } = require('./performance');
             var hasMobileVp = vps.some(function(v) { return v.width <= 768; });
             perfResult = await runPerformanceChecks(url, chromePath, hasMobileVp ? 'mobile' : 'desktop');

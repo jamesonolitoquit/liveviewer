@@ -122,53 +122,6 @@ export interface PerformanceData {
   recommendations: string[]
 }
 
-export interface AiFailure {
-  ruleId: string
-  ruleName: string
-  category?: string
-  selector: string
-  description: string
-  severity?: string
-  value?: string
-  expected?: string
-}
-
-export interface AiSignal {
-  type: string
-  detail: string
-  weight: number
-}
-
-export interface AiData {
-  failures: AiFailure[]
-  confidence: number
-  level: string
-  signals: AiSignal[]
-  totalChecks: number
-  passCount: number
-  failCount: number
-  score: number
-}
-
-export interface MobileFailure {
-  ruleId: string
-  ruleName: string
-  category: string
-  selector: string
-  description: string
-  severity: string
-  value: string
-  expected: string
-}
-
-export interface MobileData {
-  failures: MobileFailure[]
-  totalChecks: number
-  passCount: number
-  failCount: number
-  score: number
-}
-
 export interface AuditData {
   url: string
   timestamp: number
@@ -181,7 +134,5 @@ export interface AuditData {
   security?: SecurityData | null
   legal?: LegalData | null
   performance?: PerformanceData | null
-  ai?: AiData | null
-  mobile?: MobileData | null
   recommendations?: FixSuggestion[]
 }

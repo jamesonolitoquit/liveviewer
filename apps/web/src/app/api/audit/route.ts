@@ -6,10 +6,9 @@ import { generateFixSuggestions } from '@liveviewer/core/src/recommender'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-export const maxDuration = 10
 
-const HARD_TIMEOUT_MS = 9500
-const LAUNCH_TIMEOUT_MS = 4000
+const HARD_TIMEOUT_MS = 45000
+const LAUNCH_TIMEOUT_MS = 10000
 
 const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL_ENV
 
@@ -68,8 +67,6 @@ export async function POST(request: NextRequest) {
       waitStable = false,
       bypassCache,
       loadImages = false,
-      detectai = false,
-      mobile = false,
       context: bodyContext
     } = body
 
@@ -136,8 +133,6 @@ export async function POST(request: NextRequest) {
       security: true,
       legal: true,
       performance: true,
-      detectAi: detectai,
-      mobile,
       timeout: Math.min(timeout, 7000),
       waitUntil,
       waitStable,
@@ -177,12 +172,6 @@ export async function POST(request: NextRequest) {
     }
     if (result.legal) {
       sanitized.legal = result.legal
-    }
-    if (result.ai) {
-      sanitized.ai = result.ai
-    }
-    if (result.mobile) {
-      sanitized.mobile = result.mobile
     }
     if (result.performance) {
       sanitized.performance = result.performance

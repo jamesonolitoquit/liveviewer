@@ -291,21 +291,6 @@ function generateFixSuggestions(auditResult) {
     });
   }
 
-  const aiResult = auditResult.ai || null;
-  if (aiResult && aiResult.failures) {
-    for (const f of aiResult.failures) {
-      suggestions.push({
-        type: f.ruleId,
-        severity: f.severity || 'info',
-        selector: f.selector,
-        text: f.description || '',
-        currentValue: f.value,
-        suggestedValue: f.expected,
-        recommendation: 'Review content for AI-generated patterns: ' + f.description + '. Consider adding AI disclosure, human review, or author attribution.'
-      });
-    }
-  }
-
   if (perfData && perfData.grade && perfData.grade !== 'A') {
     if (perfData.lcp && perfData.lcp > 2500) {
       suggestions.push({

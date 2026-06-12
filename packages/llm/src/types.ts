@@ -123,25 +123,6 @@ export interface AuditPerformanceResult {
   recommendations?: Array<{ title: string; description?: string }>
 }
 
-export interface AuditAiResult {
-  failures: DesignFailure[]
-  confidence: number
-  level: string
-  signals: Array<{ type: string; detail: string; weight: number }>
-  totalChecks: number
-  failCount: number
-  passCount: number
-  score: number
-}
-
-export interface AuditMobileResult {
-  failures: DesignFailure[]
-  totalChecks: number
-  failCount: number
-  passCount: number
-  score: number
-}
-
 export interface AuditResults {
   url: string
   timestamp: number
@@ -152,8 +133,6 @@ export interface AuditResults {
   security?: AuditSecurityResult | null
   legal?: AuditLegalResult | null
   performance?: AuditPerformanceResult | null
-  mobile?: AuditMobileResult | null
-  ai?: AuditAiResult | null
 }
 
 export interface LLMResponse {
@@ -167,7 +146,6 @@ export interface LLMResponse {
     security?: GeneralFix[]
     legal?: GeneralFix[]
     performance?: GeneralFix[]
-    ai?: GeneralFix[]
   }
   cached: boolean
 }
