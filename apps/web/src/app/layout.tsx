@@ -2,9 +2,11 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { cookies } from 'next/headers'
 import './globals.css'
-import { FeedbackButton } from '../components/feedback-button'
-import { CookieConsent } from '../components/cookie-consent'
-import { OnboardingModal } from '../components/onboarding-modal'
+import dynamic from 'next/dynamic'
+
+const FeedbackButton = dynamic(() => import('../components/feedback-button').then(m => ({ default: m.FeedbackButton })))
+const CookieConsent = dynamic(() => import('../components/cookie-consent').then(m => ({ default: m.CookieConsent })))
+const OnboardingModal = dynamic(() => import('../components/onboarding-modal').then(m => ({ default: m.OnboardingModal })))
 
 const inter = Inter({ subsets: ['latin'], display: 'optional', variable: '--font-inter' })
 
