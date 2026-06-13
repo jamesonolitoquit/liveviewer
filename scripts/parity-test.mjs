@@ -63,63 +63,29 @@ function collectFailures(auditResult, section) {
   }));
 }
 
-// --- CLI audit (run via temp inline script) ---
+// --- CLI audit (run via CLI directly) ---
 async function runCliAudit() {
-  const tmpScript = path.join(REPO_ROOT, 'scripts', '.tmp-parity-cli.cjs');
-  const fs = await import('fs');
+  const viewportStr = VIEWPORTS.map(v => `${v.width}x${v.height}`).join(',');
 
-  const auditorPath = path.join(REPO_ROOT, 'packages', 'core', 'src', 'auditor.js');
-
-  // Write a temporary CJS script that imports the auditor, calls audit, and prints JSON
-  const code = `
-const { audit } = require('${auditorPath.replace(/\\/g, '\\\\')}');
-(async () => {
-  try {
-    const result = await audit('${TARGET_URL.replace(/'/g, "\\'")}', {
-      design: true,
-      wcag: true,
-      viewports: ${JSON.stringify(VIEWPORTS)},
-      timeout: 30000
-    });
-    // Remove screenshot path and other machine-specific fields
-    const clean = {
-      wcag: result.wcag,
-      design: result.design
-    };
-    process.stdout.write(JSON.stringify(clean));
-  } catch (err) {
-    process.stderr.write('CLI_ERROR:' + err.message);
-    process.exit(1);
-  }
-})();
-`;
-
-  fs.writeFileSync(tmpScript, code, 'utf-8');
-
-  const child = spawnSync('node', [tmpScript], {
+  const child = spawnSync(process.execPath, [CLI, 'audit', TARGET_URL, '--design', '--wcag', '--json', '--viewports', viewportStr], {
     cwd: REPO_ROOT,
     encoding: 'utf-8',
-    timeout: 60000,
-    maxBuffer: 10 * 1024 * 1024
+    timeout: 120000,
+    maxBuffer: 50 * 1024 * 1024
   });
-
-  // Clean up
-  try { fs.unlinkSync(tmpScript); } catch (_) {}
 
   if (child.error) {
     throw new Error(`CLI spawn error: ${child.error.message}`);
   }
-  if (child.stderr && child.stderr.includes('CLI_ERROR:')) {
-    throw new Error(`CLI audit error: ${child.stderr.replace('CLI_ERROR:', '').trim()}`);
-  }
   if (child.status !== 0) {
-    throw new Error(`CLI exited with code ${child.status}: ${child.stderr.slice(0, 200)}`);
+    throw new Error(`CLI exited with code ${child.status}: ${child.stderr.slice(0, 300)}`);
   }
 
   try {
-    return JSON.parse(child.stdout);
+    const parsed = JSON.parse(child.stdout);
+    return { wcag: parsed.wcag, design: parsed.design };
   } catch (e) {
-    throw new Error(`Failed to parse CLI output: ${e.message}\nstdout: ${child.stdout.slice(0, 200)}`);
+    throw new Error(`Failed to parse CLI output: ${e.message}\nstdout: ${child.stdout.slice(0, 300)}`);
   }
 }
 
@@ -127,8 +93,7 @@ const { audit } = require('${auditorPath.replace(/\\/g, '\\\\')}');
 async function runWebAudit() {
   const body = JSON.stringify({
     url: TARGET_URL,
-    wcag: true,
-    design: true,
+    pillars: ['wcag', 'design'],
     viewports: VIEWPORTS
   });
 

@@ -1,7 +1,7 @@
 import type { ElementDatum } from '../dom-analyzer'
 import type { DesignFailure } from './font-size.js'
 
-const BODY_TAGS = new Set(['p', 'li', 'td', 'th', 'dd', 'dt', 'figcaption', 'label', 'span', 'a', 'button', 'div'])
+const BODY_TAGS = new Set(['p', 'li', 'td', 'th', 'dd', 'dt', 'figcaption', 'label', 'span', 'a', 'div'])
 
 export function checkLineHeight(elements: ElementDatum[]): DesignFailure[] {
   const failures: DesignFailure[] = []

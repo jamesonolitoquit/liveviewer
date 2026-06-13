@@ -11,7 +11,7 @@ export interface DesignFailure {
   expected: string
 }
 
-const BODY_TAGS = new Set(['p', 'li', 'td', 'th', 'dd', 'dt', 'figcaption', 'label', 'span', 'a', 'button', 'div'])
+const BODY_TAGS = new Set(['p', 'li', 'td', 'th', 'dd', 'dt', 'figcaption', 'label', 'span', 'a', 'div'])
 
 export function checkFontSize(elements: ElementDatum[]): DesignFailure[] {
   const failures: DesignFailure[] = []
