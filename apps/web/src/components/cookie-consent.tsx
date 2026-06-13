@@ -11,6 +11,12 @@ export function CookieConsent() {
     try {
       if (!localStorage.getItem(STORAGE_KEY)) setShow(true)
     } catch {}
+    const handler = () => {
+      try { localStorage.removeItem(STORAGE_KEY) } catch {}
+      setShow(true)
+    }
+    window.addEventListener('show-cookie-consent', handler)
+    return () => window.removeEventListener('show-cookie-consent', handler)
   }, [])
 
   const accept = () => {

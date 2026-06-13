@@ -212,7 +212,8 @@ async function runLegalChecks(page, context) {
       'privacy statement', 'data privacy',
       'information we collect', 'data we collect',
       'we process your personal', 'we protect your data',
-      'privacy notice', 'data processing'
+      'privacy notice', 'data processing',
+      'we do not collect', 'we do not share your data'
     ];
     var dataFound = false;
     // Check footers and main content areas first (stronger signal)

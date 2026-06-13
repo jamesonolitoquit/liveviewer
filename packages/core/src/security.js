@@ -47,6 +47,9 @@ function isValidReferrerPolicy(value) {
 async function runSecurityChecks(page, context, url, responseHeaders) {
   var results = [];
 
+  var isPrivate = /^https?:\/\/(localhost|127\.0\.0\.1|::1|0\.0\.0\.0)([:\/]|$)/i.test(url);
+  if (isPrivate) return results;
+
   var isHttps = url.indexOf('https://') === 0 || (responseHeaders['x-forwarded-proto'] || '').toLowerCase() === 'https';
 
   // 1. HTTPS enforcement

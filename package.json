@@ -4,12 +4,17 @@
   "private": true,
   "description": "Frame-by-frame visual recording and analysis engine for live websites",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
   "scripts": {
-    "build": "npm -w packages/core run build && npm -w packages/llm run build && npm -w packages/cli run build",
+    "build": "npm -w packages/llm run build && npm -w apps/web run build",
+    "start": "npm -w apps/web run start",
+    "build:web": "npm -w apps/web run build",
     "test": "npm -w packages/core run test && npm -w packages/llm run test && npm -w packages/cli run test && npm -w apps/web run test",
     "test:core": "npm -w packages/core run test",
     "test:llm": "npm -w packages/llm run test",
@@ -25,11 +30,8 @@
     "mcp": "node --import tsx/esm packages/cli/bin/liveviewer.js mcp",
     "web": "npm -w apps/web run dev",
     "web:build": "npm -w apps/web run build",
-    "postinstall": "node scripts/patch-lighthouse.js && patch-package",
+    "postinstall": "node scripts/patch-lighthouse.js && patch-package && npx playwright install chromium 2>/dev/null || true",
     "verify:deployment": "node scripts/verify-deployment.js"
-  },
-  "engines": {
-    "node": ">=18"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",

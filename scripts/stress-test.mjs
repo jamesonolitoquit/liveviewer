@@ -2,7 +2,7 @@
  * Liveviewer v2.2.1 Stress Test Script
  *
  * Usage:
- *   node scripts/stress-test.mjs                    # defaults to https://jao-liveviewer.vercel.app
+ *   node scripts/stress-test.mjs                    # defaults to https://liveviewer-production.up.railway.app
  *   node scripts/stress-test.mjs http://localhost:3000    # local dev
  *   node scripts/stress-test.mjs https://my-instance.vercel.app
  *
@@ -14,7 +14,7 @@
  *   5. Client retry simulation (bad auth → not retried, 503 → retried once)
  */
 
-const BASE_URL = process.argv[2] || 'https://jao-liveviewer.vercel.app';
+const BASE_URL = process.argv[2] || 'https://liveviewer-production.up.railway.app';
 const ENDPOINT = `${BASE_URL}/api/audit`;
 
 let passed = 0;

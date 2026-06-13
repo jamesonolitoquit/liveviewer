@@ -7,7 +7,7 @@ import { generateFixSuggestions } from '@liveviewer/core/src/recommender'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const HARD_TIMEOUT_MS = 45000
+const HARD_TIMEOUT_MS = 75000
 const LAUNCH_TIMEOUT_MS = 10000
 
 const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL_ENV
@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
       waitStable = false,
       bypassCache,
       pillars: rawPillars,
-      context: bodyContext
+      context: bodyContext,
+      progressKey
     } = body
 
     let viewports: { width: number; height: number }[] | undefined
@@ -135,13 +136,15 @@ export async function POST(request: NextRequest) {
       security: !pillars || pillars.includes('security'),
       legal: !pillars || pillars.includes('legal'),
       performance: !pillars || pillars.includes('performance'),
-      timeout: Math.min(timeout, 15000),
+      timeout: HARD_TIMEOUT_MS,
       waitUntil,
       waitStable,
       blockFonts: true,
       blockMedia: true,
       navigationTimeout: 15000,
-      pageSizeLimit: { htmlBytes: 5242880, domElements: 8000 }
+      pageSizeLimit: { htmlBytes: 10485760, domElements: 15000 },
+      pillarTimeouts: { wcag: 8000, design: 8000, seo: 8000, security: 6000, legal: 6000, mobile: 6000, performance: 40000 },
+      progressKey: progressKey || undefined
     }
     if (viewports) {
       auditOptions.viewports = viewports
@@ -192,7 +195,11 @@ export async function POST(request: NextRequest) {
 
     setCachedAudit(cacheKey, sanitized, undefined, viewports)
 
-    return NextResponse.json({ success: true, data: sanitized, cached: false })
+    const responseBody: any = { success: true, data: sanitized, cached: false }
+    if (result.pillarErrors) {
+      responseBody.pillarErrors = result.pillarErrors
+    }
+    return NextResponse.json(responseBody)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     const name = err instanceof Error ? err.name : ''

@@ -1,33 +1,56 @@
 'use client'
 
-export function LoadingSkeleton() {
+import { useState, useEffect } from 'react'
+
+const defaultPillars = ['WCAG', 'Design', 'SEO', 'Security', 'Legal', 'Performance']
+
+const pillarLabels: Record<string, string> = {
+  navigating: 'Navigating',
+  wcag: 'WCAG',
+  design: 'Design',
+  mobile: 'Mobile',
+  seo: 'SEO',
+  security: 'Security',
+  legal: 'Legal',
+  ai: 'AI Detection',
+  performance: 'Performance'
+}
+
+const pillarOrder = ['navigating', 'wcag', 'design', 'mobile', 'seo', 'security', 'legal', 'ai', 'performance']
+
+export function LoadingSkeleton({ pillars, currentPillar }: { pillars?: string[]; currentPillar?: string | null }) {
+  const active = pillars || defaultPillars
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    if (currentPillar) return
+    const t = setInterval(() => setIndex(i => (i + 1) % active.length), 1000)
+    return () => clearInterval(t)
+  }, [active.length, currentPillar])
+
+  const label = currentPillar
+    ? (pillarLabels[currentPillar] || currentPillar)
+    : active[index]
+
+  const currentIdx = currentPillar
+    ? Math.max(0, pillarOrder.indexOf(currentPillar))
+    : index
+
   return (
-    <div className="card mt-6 p-5 space-y-4 animate-pulse" role="status" aria-label="Loading audit results">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <div className="h-4 w-24 bg-[var(--jao-border)] rounded" />
-          <div className="h-3 w-48 bg-[var(--jao-border)] rounded" />
+    <div className="card mt-6 p-8" role="status" aria-label="Auditing in progress">
+      <div className="flex flex-col items-center gap-5">
+        <div className="relative h-14 w-14">
+          <div className="absolute inset-0 rounded-full border-[3px] border-[var(--jao-border)]" />
+          <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[var(--jao-primary)] animate-spin" />
         </div>
-        <div className="flex gap-2">
-          <div className="h-10 w-10 rounded-full bg-[var(--jao-border)]" />
-          <div className="h-10 w-10 rounded-full bg-[var(--jao-border)]" />
+        <div className="text-center">
+          <p className="text-sm text-[var(--jao-text-secondary)] transition-opacity duration-300" key={currentPillar || index}>
+            {label} audit&hellip;
+          </p>
+          <p className="mt-1 text-xs text-[var(--jao-text-tertiary)]">
+            Pillar {currentIdx + 1} of {(currentPillar ? pillarOrder.length : active.length)}
+          </p>
         </div>
-      </div>
-      <div className="h-px bg-[var(--jao-border)]" />
-      <div className="space-y-3">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="rounded-lg bg-[var(--jao-bg)] p-3 space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="h-4 w-12 bg-[var(--jao-border)] rounded-full" />
-              <div className="h-3 w-36 bg-[var(--jao-border)] rounded" />
-            </div>
-            <div className="h-3 w-full bg-[var(--jao-border)] rounded" />
-            <div className="h-3 w-4/5 bg-[var(--jao-border)] rounded" />
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center justify-center gap-2 pt-2">
-        <div className="h-3 w-16 bg-[var(--jao-border)] rounded" />
       </div>
     </div>
   )

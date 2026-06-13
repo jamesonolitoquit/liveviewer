@@ -48,6 +48,8 @@ export default function Home() {
   const [demoUrl, setDemoUrl] = useState<string | undefined>(undefined)
   const [selectedPillars, setSelectedPillars] = useState<string[]>(PILLARS.map(p => p.key))
   const [cliRecommendation, setCliRecommendation] = useState<string | null>(null)
+  const [pillarErrors, setPillarErrors] = useState<Record<string, string> | null>(null)
+  const [currentPillar, setCurrentPillar] = useState<string | null>(null)
 
   useEffect(() => {
     try {
@@ -108,12 +110,26 @@ export default function Home() {
     setData(null)
     setLlmResult(null)
     setCliRecommendation(null)
+    setPillarErrors(null)
+    setCurrentPillar(null)
 
     const controller = new AbortController()
     abortRef.current = controller
 
+    const progressKey = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/audit/progress?key=${progressKey}`)
+        if (res.ok) {
+          const { pillar } = await res.json()
+          if (pillar) setCurrentPillar(pillar)
+        }
+      } catch {}
+    }, 500)
+
     try {
-      const body: any = { url, pillars: selectedPillars }
+      const body: any = { url, pillars: selectedPillars, progressKey }
       const vps = viewportMode === 'both'
         ? [VIEWPORT_MAP.desktop, VIEWPORT_MAP.mobile]
         : [VIEWPORT_MAP[viewportMode]]
@@ -124,6 +140,8 @@ export default function Home() {
         body: JSON.stringify(body),
         signal: controller.signal
       })
+
+      clearInterval(pollInterval)
 
       const json = await res.json()
 
@@ -143,6 +161,7 @@ export default function Home() {
       }
 
       setData(json.data)
+      setPillarErrors(json.pillarErrors || null)
       setStatus('complete')
       saveToHistory(json.data)
     } catch (err) {
@@ -155,6 +174,7 @@ export default function Home() {
         if (cancelledRef.current) return
         return runAudit(url, attempt + 1)
       }
+      clearInterval(pollInterval)
       setError(err instanceof Error ? err.message : humanError('audit'))
       setStatus('error')
     }
@@ -279,7 +299,7 @@ export default function Home() {
           })}
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Audit pillars">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5" role="group" aria-label="Audit pillars">
             {PILLARS.map(({ key, label }) => {
               const isActive = selectedPillars.includes(key)
               return (
@@ -311,21 +331,6 @@ export default function Home() {
             </button>
           </div>
 
-          <details className="mt-3 group">
-            <summary className="flex cursor-pointer items-center gap-1.5 text-base text-[var(--jao-text-secondary)] transition-colors hover:text-[var(--jao-text)] focus:outline-none focus:ring-2 focus:ring-[var(--jao-primary)]/30 rounded-lg px-2 py-1">
-              <span>✨ Advanced</span>
-              <span className="text-base leading-normal text-[var(--jao-text-tertiary)] group-open:hidden">— site context</span>
-            </summary>
-            <textarea
-              value={context}
-              onChange={e => setContext(e.target.value)}
-              placeholder="Describe your site — e.g., Dark mode SaaS dashboard for engineers, data-dense UX"
-              rows={2}
-              className="mt-2 w-full rounded-lg border border-[var(--jao-border)] bg-[var(--jao-bg)] px-3 py-2 text-sm outline-none transition-all placeholder:text-[var(--jao-text-tertiary)] focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20"
-              aria-label="Site context"
-            />
-          </details>
-
           {status === 'idle' && !data && (
             <div className="mt-3 flex justify-center">
               <button
@@ -350,7 +355,7 @@ export default function Home() {
 
         {status === 'running' && (
           <div className="relative mt-8">
-            <LoadingSkeleton />
+            <LoadingSkeleton pillars={PILLARS.filter(p => selectedPillars.includes(p.key)).map(p => p.label)} currentPillar={currentPillar} />
             <div className="flex justify-center pt-4">
               <button
                 onClick={cancelAudit}
@@ -364,6 +369,19 @@ export default function Home() {
 
         {status === 'error' && error && (
           <ErrorToast message={error} onDismiss={dismissError} />
+        )}
+
+        {pillarErrors && (
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800/30 dark:bg-amber-900/20 dark:text-amber-200">
+            <p className="font-medium">Some audits incomplete</p>
+            <ul className="mt-1 list-inside list-disc space-y-0.5">
+              {Object.entries(pillarErrors).map(([key, msg]) => (
+                <li key={key} className="text-xs">
+                  <span className="font-medium capitalize">{key}:</span> {msg}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {cliRecommendation && (
@@ -419,6 +437,8 @@ export default function Home() {
           onEnrich={runLlmEnrichment}
           llmLoading={llmLoading}
           llmResult={llmResult}
+          context={context}
+          onContextChange={setContext}
         />
       )}
 
@@ -466,9 +486,17 @@ export default function Home() {
           <Link href="/imprint" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">
             Imprint
           </Link>
+          {' / '}
+          <button
+            id="cookie-settings"
+            className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]"
+            onClick={() => window.dispatchEvent(new CustomEvent('show-cookie-consent'))}
+          >
+            Cookie Settings
+          </button>
         </p>
         <p className="mt-4 text-base text-[var(--jao-text-tertiary)]">
-          We do not collect or share your data. See our <a href="/privacy" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">privacy policy</a>.
+          We protect your data and value your privacy. We do not collect or share your data. See our <a href="/privacy" className="underline decoration-dotted underline-offset-2 hover:text-[var(--jao-primary)]">privacy policy</a>.
         </p>
       </footer>
     </div>

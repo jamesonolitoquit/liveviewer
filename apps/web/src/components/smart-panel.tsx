@@ -11,6 +11,8 @@ interface SmartPanelProps {
   onEnrich: () => void
   llmLoading: boolean
   llmResult: any
+  context: string
+  onContextChange: (context: string) => void
 }
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com/v1'
@@ -36,7 +38,7 @@ function SeverityPill({ severity }: { severity: string }) {
   )
 }
 
-export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoading, llmResult }: SmartPanelProps) {
+export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoading, llmResult, context, onContextChange }: SmartPanelProps) {
   const [open, setOpen] = useState(false)
   const [key, setKey] = useState('')
   const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE_URL)
@@ -269,6 +271,20 @@ export function SmartPanel({ enabled, onToggle, hasFailures, onEnrich, llmLoadin
                             />
                           )}
                         </div>
+
+                        {key && (
+                          <div>
+                            <label htmlFor="drawer-context" className="mb-1.5 block text-xs font-medium text-[var(--jao-text-tertiary)]">Site Context</label>
+                            <textarea
+                              id="drawer-context"
+                              value={context}
+                              onChange={e => onContextChange(e.target.value)}
+                              placeholder="Describe your site — e.g., Dark mode SaaS dashboard for engineers, data-dense UX"
+                              rows={2}
+                              className="w-full rounded-lg border border-[var(--jao-border)] bg-[var(--jao-bg)] px-3 py-2 text-sm outline-none transition-colors placeholder:text-[var(--jao-text-tertiary)] focus:border-[var(--jao-primary)] focus:ring-2 focus:ring-[var(--jao-primary)]/20 resize-none"
+                            />
+                          </div>
+                        )}
 
                         <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3 text-xs text-amber-800 dark:text-amber-200">
                           Your key never leaves your browser. Get a free key at{' '}

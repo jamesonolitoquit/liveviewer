@@ -10,6 +10,17 @@ const { runMobileChecks } = require('./mobile');
 
 const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL_ENV;
 
+function withTimeout(promise, ms, label) {
+  if (ms <= 0) return promise;
+  var timer;
+  return Promise.race([
+    promise,
+    new Promise(function(_, reject) {
+      timer = setTimeout(function() { reject(new Error(label + ' timed out after ' + ms + 'ms')); }, ms);
+    })
+  ]).finally(function() { clearTimeout(timer); });
+}
+
 class PageTooLargeError extends Error {
   constructor(reason, details) {
     super(reason);
@@ -64,7 +75,7 @@ async function getChromium() {
   return {
     launcher: playwright.chromium,
     getArgs: () => ['--disable-dev-shm-usage', '--disable-gpu', '--no-sandbox'],
-    executablePath: undefined,
+    executablePath: playwright.chromium.executablePath(),
     tempDir: null
   };
 }
@@ -587,7 +598,7 @@ async function runDesignPageChecks(page, designSkipSelectors) {
     results.push.apply(results, checkHeadingHierarchy('typography'));
 
     // Typography: font-size and line-height checks
-    const BODY_TAGS = new Set(['p', 'li', 'td', 'th', 'dd', 'dt', 'figcaption', 'label', 'span', 'a', 'button', 'div']);
+    const BODY_TAGS = new Set(['p', 'li', 'td', 'th', 'dd', 'dt', 'figcaption', 'label', 'span', 'a', 'div']);
     const walker = document.createTreeWalker(document.body, 4 /* NodeFilter.SHOW_TEXT */, null, false);
     while (walker.nextNode()) {
       const el = walker.currentNode.parentElement;
@@ -931,9 +942,10 @@ async function runSeoPageChecks(page) {
       });
     }
 
-    // 10. Hreflang tags
+    // 10. Hreflang tags (skip if no language-switching evidence)
     var hreflangLinks = document.querySelectorAll('link[rel="alternate"][hreflang]');
-    if (hreflangLinks.length === 0) {
+    var langSwitch = document.querySelector('[class*="language"] a[href], [class*="locale"] a[href], [aria-label*="language" i] a[href], select[aria-label*="language" i]');
+    if (hreflangLinks.length === 0 && langSwitch) {
       results.push({
         ruleId: 'missing-hreflang',
         ruleName: 'Page should have hreflang tags for language/region targeting',
@@ -1187,8 +1199,9 @@ async function audit(url, options = {}) {
     disableJavaScript = false,
     navigationTimeout = 8000,
     waitStable = false,
-    pageSizeLimit = null
-  } = options;
+    pageSizeLimit = null,
+    pillarTimeouts = { wcag: 8000, design: 8000, seo: 8000, security: 6000, legal: 6000, mobile: 6000, performance: 40000 },
+    progressKey = null  } = options;
 
   const vps = viewports && viewports.length > 0
     ? [...viewports].sort((a, b) => b.width - a.width)
@@ -1226,17 +1239,9 @@ async function audit(url, options = {}) {
   const MAX_AUDIT_RETRIES = 1;
 
   for (let attempt = 1; attempt <= MAX_AUDIT_RETRIES + 1; attempt++) {
-    let timedOut = false;
-    let timeoutHandle;
-    const hardTimeout = new Promise((_, reject) => {
-      timeoutHandle = setTimeout(() => {
-        timedOut = true;
-        reject(new Error('Audit exceeded hard timeout'));
-      }, timeout);
-    });
-
     try {
       const auditWork = (async () => {
+        const pillarErrors = {};
         const context = await browser.newContext({ viewport: vps[0] });
         const page = await context.newPage();
 
@@ -1271,6 +1276,11 @@ async function audit(url, options = {}) {
           }
         }
 
+        if (progressKey) {
+          if (typeof global.__auditProgress === 'undefined') global.__auditProgress = {};
+          global.__auditProgress[progressKey] = 'navigating';
+        }
+
         const viewportResults = [];
         let lastElements = [];
         const pageLevelFailures = [];
@@ -1283,31 +1293,51 @@ async function audit(url, options = {}) {
             await waitForLayout(page);
           }
           if (doWcag || doDesign) {
-            const result = await runWcagOnPage(page);
-            if (doWcag) viewportResults.push({ viewport: vp, wcag: result });
-            if (result._elements) {
-              const seen = new Set((lastElements || []).map(e => e.selector));
-              for (const el of result._elements) {
-                if (!seen.has(el.selector)) {
-                  seen.add(el.selector);
-                  lastElements.push(el);
+            if (progressKey) global.__auditProgress[progressKey] = 'wcag';
+            try {
+              const result = await withTimeout(runWcagOnPage(page), pillarTimeouts.wcag, 'WCAG');
+              if (doWcag) viewportResults.push({ viewport: vp, wcag: result });
+              if (result._elements) {
+                const seen = new Set((lastElements || []).map(function(e) { return e.selector; }));
+                for (const el of result._elements) {
+                  if (!seen.has(el.selector)) {
+                    seen.add(el.selector);
+                    lastElements.push(el);
+                  }
                 }
               }
+            } catch (e) {
+              pillarErrors.wcag = e.message;
             }
           }
           if (doDesign) {
-            const pageFails = await runDesignPageChecks(page, designSkipSelectors);
-            pageLevelFailures.push(...pageFails);
-            const a11yFails = await runA11yPageChecks(page);
-            pageLevelFailures.push(...a11yFails);
+            if (progressKey) global.__auditProgress[progressKey] = 'design';
+            try {
+              const pageFails = await withTimeout(runDesignPageChecks(page, designSkipSelectors), pillarTimeouts.design, 'Design');
+              pageLevelFailures.push(...pageFails);
+              const a11yFails = await withTimeout(runA11yPageChecks(page), pillarTimeouts.design, 'A11y');
+              pageLevelFailures.push(...a11yFails);
+            } catch (e) {
+              pillarErrors.design = e.message;
+            }
           }
           if (doMobile) {
-            const mobileFails = await runMobileChecks(page, vp);
-            mobileFailures.push(...mobileFails);
+            if (progressKey) global.__auditProgress[progressKey] = 'mobile';
+            try {
+              const mobileFails = await withTimeout(runMobileChecks(page, vp), pillarTimeouts.mobile, 'Mobile');
+              mobileFailures.push(...mobileFails);
+            } catch (e) {
+              pillarErrors.mobile = e.message;
+            }
           }
           if (doSeo) {
-            const result = await runSeoPageChecks(page);
-            seoFailures.push(...result);
+            if (progressKey) global.__auditProgress[progressKey] = 'seo';
+            try {
+              const result = await withTimeout(runSeoPageChecks(page), pillarTimeouts.seo, 'SEO');
+              seoFailures.push(...result);
+            } catch (e) {
+              pillarErrors.seo = e.message;
+            }
           }
         }
 
@@ -1339,7 +1369,6 @@ async function audit(url, options = {}) {
           };
         }
         if (doDesign) {
-          // Deduplicate page-level failures across viewports
           const seen = new Set();
           const uniquePageFails = [];
           for (const f of pageLevelFailures) {
@@ -1397,24 +1426,30 @@ async function audit(url, options = {}) {
         }
 
         if (doSecurity) {
-          var securityFails = await runSecurityChecks(page, context, url, responseHeaders);
-          var securityTotalChecks = 13;
-          var securityFailCount = securityFails.length;
-          securityResult = {
-            failures: securityFails,
-            totalChecks: securityTotalChecks,
-            passCount: Math.max(0, securityTotalChecks - securityFailCount),
-            failCount: securityFailCount,
-            score: securityTotalChecks > 0
-              ? Math.round(Math.max(0, securityTotalChecks - securityFailCount) / securityTotalChecks * 1000) / 10
-              : 100
-          };
+          if (progressKey) global.__auditProgress[progressKey] = 'security';
+          try {
+            var securityFails = await withTimeout(runSecurityChecks(page, context, url, responseHeaders), pillarTimeouts.security, 'Security');
+            var securityTotalChecks = 13;
+            var securityFailCount = securityFails.length;
+            securityResult = {
+              failures: securityFails,
+              totalChecks: securityTotalChecks,
+              passCount: Math.max(0, securityTotalChecks - securityFailCount),
+              failCount: securityFailCount,
+              score: securityTotalChecks > 0
+                ? Math.round(Math.max(0, securityTotalChecks - securityFailCount) / securityTotalChecks * 1000) / 10
+                : 100
+            };
+          } catch (e) {
+            pillarErrors.security = e.message;
+          }
         }
 
         var legalResult = null;
         if (doLegal) {
+          if (progressKey) global.__auditProgress[progressKey] = 'legal';
           try {
-            var legalResultData = await runLegalChecks(page, context);
+            var legalResultData = await withTimeout(runLegalChecks(page, context), pillarTimeouts.legal, 'Legal');
             var legalFails = legalResultData.failures;
             var legalTotal = legalResultData.totalChecks;
             var legalFailCount = legalFails.length;
@@ -1428,6 +1463,7 @@ async function audit(url, options = {}) {
                 : 100
             };
           } catch (e) {
+            pillarErrors.legal = e.message;
             legalResult = { failures: [], totalChecks: 0, passCount: 0, failCount: 0, score: 100 };
           }
         }
@@ -1455,8 +1491,9 @@ async function audit(url, options = {}) {
 
         var aiResult = null;
         if (doAi) {
+          if (progressKey) global.__auditProgress[progressKey] = 'ai';
           try {
-            var aiResultData = await runAiDetectionChecks(page);
+            var aiResultData = await withTimeout(runAiDetectionChecks(page), pillarTimeouts.design, 'AI Detection');
             aiResult = {
               failures: aiResultData.failures,
               confidence: aiResultData.confidence,
@@ -1470,6 +1507,7 @@ async function audit(url, options = {}) {
                 : 100
             };
           } catch (e) {
+            pillarErrors.ai = e.message;
             aiResult = { failures: [], confidence: 0, level: 'unlikely', signals: [], totalChecks: 1, failCount: 0, passCount: 1, score: 100 };
           }
         }
@@ -1480,22 +1518,24 @@ async function audit(url, options = {}) {
 
         var perfResult = null;
         if (doPerformance) {
+          if (progressKey) global.__auditProgress[progressKey] = 'performance';
           try {
             if (browser) {
               try { await browser.close(); } catch (_) {}
             }
             var { runPerformanceChecks } = require('./performance');
             var hasMobileVp = vps.some(function(v) { return v.width <= 768; });
-            perfResult = await runPerformanceChecks(url, chromePath, hasMobileVp ? 'mobile' : 'desktop');
+            perfResult = await withTimeout(runPerformanceChecks(url, chromePath, hasMobileVp ? 'mobile' : 'desktop'), pillarTimeouts.performance, 'Performance');
           } catch (e) {
+            pillarErrors.performance = e.message;
             perfResult = { error: e.message, score: null, lcp: null, cls: null, tbt: null, fcp: null, speedIndex: null, tti: null, grade: null, recommendations: [] };
           }
         }
 
-        return { viewportResults, mergedWcag, designResult, seo: seoResult, security: securityResult, legal: legalResult, mobile: mobileResult, performance: perfResult, ai: aiResult };
+        return { viewportResults, mergedWcag, designResult, seo: seoResult, security: securityResult, legal: legalResult, mobile: mobileResult, performance: perfResult, ai: aiResult, pillarErrors };
       })();
 
-      const { viewportResults, mergedWcag, designResult, seo: seoResult, security: securityResult, legal: legalResult, mobile: mobileResult, performance: perfResult, ai: aiResult } = await Promise.race([auditWork, hardTimeout]);
+      const { viewportResults, mergedWcag, designResult, seo: seoResult, security: securityResult, legal: legalResult, mobile: mobileResult, performance: perfResult, ai: aiResult, pillarErrors } = await auditWork;
 
       if (knownFalsePositives.length > 0) {
         function filterFailures(result) {
@@ -1532,6 +1572,12 @@ async function audit(url, options = {}) {
         }
       }
 
+      var hasPillarErrors = Object.keys(pillarErrors).length > 0;
+
+      if (progressKey && typeof global.__auditProgress !== 'undefined') {
+        delete global.__auditProgress[progressKey];
+      }
+
       return {
         filepath, filename, timestamp, url,
         viewport: vps[0],
@@ -1544,14 +1590,10 @@ async function audit(url, options = {}) {
         mobile: mobileResult,
         performance: perfResult,
         ai: aiResult,
+        pillarErrors: hasPillarErrors ? pillarErrors : undefined,
         timedOut: false
       };
     } catch (err) {
-      clearTimeout(timeoutHandle);
-      if (timedOut) {
-        try { fs.unlinkSync(filepath); } catch (_) {}
-        throw new Error('Audit timeout: page too large or slow. Try the CLI: npm install -g @liveviewer/cli');
-      }
       const isClosed = err.message?.includes?.('Target page, context or browser has been closed')
         || err.message?.includes?.('browser has been closed');
       if (isClosed && attempt <= MAX_AUDIT_RETRIES) {
@@ -1564,9 +1606,10 @@ async function audit(url, options = {}) {
         });
         continue;
       }
+      if (progressKey && typeof global.__auditProgress !== 'undefined') {
+        delete global.__auditProgress[progressKey];
+      }
       throw err;
-    } finally {
-      clearTimeout(timeoutHandle);
     }
   }
 }

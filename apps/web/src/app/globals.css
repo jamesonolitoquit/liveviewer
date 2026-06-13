@@ -73,6 +73,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+button {
+  font-size: 100%;
+}
+
 .card {
   border-radius: 12px;
   border: 1px solid var(--jao-border);

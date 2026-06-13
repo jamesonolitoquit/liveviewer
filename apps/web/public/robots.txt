@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://jao-liveviewer.vercel.app/sitemap.xml
+Sitemap: https://liveviewer-production.up.railway.app/sitemap.xml

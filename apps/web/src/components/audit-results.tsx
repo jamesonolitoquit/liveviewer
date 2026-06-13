@@ -418,7 +418,7 @@ export function AuditResults({ data, children }: AuditResultsProps) {
                   <h3 className="mb-2 text-xs font-semibold text-[var(--jao-text)]">{label}</h3>
                   {score != null ? (
                     <div>
-                      <ScoreCard score={Math.round(score)} size={36} title={`${label} score`} subtitle={key === 'performance' && pd?.grade ? `Grade ${(pd as { grade: string }).grade}` : ''} />
+                      <ScoreCard score={Math.round(score)} size={36} title={`${label} score`} />
                       {key === 'performance' && score < ideal && (
                         <p className="mt-1 text-[10px] text-[var(--jao-text-tertiary)]">Ideal: {idealLabel}</p>
                       )}

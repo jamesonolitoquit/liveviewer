@@ -8,12 +8,13 @@ import { OnboardingModal } from '../components/onboarding-modal'
 
 const inter = Inter({ subsets: ['latin'], display: 'optional', variable: '--font-inter' })
 
-const baseUrl = 'https://jao-liveviewer.vercel.app'
+const baseUrl = 'https://liveviewer-production.up.railway.app'
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://jao-liveviewer.vercel.app'),
+  metadataBase: new URL('https://liveviewer-production.up.railway.app'),
   alternates: {
     canonical: '/',
+    languages: { 'en': '/' },
   },
   title: 'Liveviewer – Complete Website Quality Audits',
   description: 'Audit WCAG contrast, design QA, SEO, security headers, legal compliance, and performance. Free, open-source, no tracking.',

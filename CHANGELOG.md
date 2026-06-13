@@ -1,5 +1,19 @@
 # Changelog
 
+## v4.5.0 (2026-06-13)
+
+- **Platform migration** — deployed from Vercel (serverless) to Railway (persistent Node.js process). Eliminates cold-start Chromium downloads, `serverless_constraint` 503s, and Lambda filesystem limits.
+- **Performance pillar fixed** — `getChromium()` now returns `playwright.chromium.executablePath()` instead of `undefined` on non-Vercel platforms, giving Lighthouse/ChromeLauncher the correct Chromium path. Performance audits now work on Railway (scored 99/A on example.com).
+- **Pillar selection UI** — toggle buttons on the web app to select/deselect which pillars to run (All/Min preset). `selectedPillars` state filters the audit request payload.
+- **Accuracy mode** — enables stricter timeouts (15s), `blockFonts: true`, and `pageSizeLimit: { htmlBytes: 5242880, domElements: 8000 }` for more reliable audits on heavy pages.
+- **CLI recommendation banner** — API returns `recommendation: 'use_cli'` on 413 (page too large) and 503 (server error) responses, linking users to the CLI for heavy pages.
+- **`PageTooLargeError` exported** from `auditor.js` so callers can catch and handle oversized pages.
+- **Lighthouse ENOENT fix** — postinstall script `scripts/patch-lighthouse.js` wraps `fs.readFileSync` in Lighthouse's report generator with try/catch, returning `'`'` on ENOENT. Patches both `report-assets.js` and `flow-report-assets.js`. Replaces fragile `patch-package` hash-matching.
+- **Railway Dockerfile** — Node 22, Playwright Chromium + system deps, single-stage build with lockfile regeneration for proper Linux native modules.
+- **Environment variables** — `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `OPENAI_BASE_URL`, `OPENAI_MODEL` configured on Railway.
+- **URLs updated** — all references from `jao-liveviewer.vercel.app` → `liveviewer-production.up.railway.app` (layout metadata, sitemap, robots.txt, README, scripts).
+- **Vercel artifacts removed** — `vercel.json`, `warmup.yml` deleted.
+
 ## v4.2.0 (2026-06-12)
 
 - **`waitUntil` default changed to `load`** — ensures React hydration completes before element collection; eliminates race condition where dynamic modals/overlays appeared inconsistently between CLI and web app
@@ -36,7 +50,7 @@
 - **Visual report** on web app — Recharts radar chart (6-axis score comparison) and stacked pass/fail bar chart per pillar
 - **CLI `--all` flag** — runs all 6 pillars in one command
 - **Parity script** now uses async parallel execution and proportional tolerance (max 10/10%) for dynamic sites — verified 10/10 real-world URLs match between CLI and web app
-- **Production web app** deployed at jao-liveviewer.vercel.app — all pillars available, shareable report links, dark/light mode
+- **Production web app** deployed — all pillars available, shareable report links, dark/light mode
 - **npm packages published** — `@liveviewer/core`, `@liveviewer/llm`, `@liveviewer/cli` at v4.0.0
 
 ## v2.3.0 (2026-06-09)

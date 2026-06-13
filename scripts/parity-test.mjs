@@ -8,7 +8,7 @@
  *   node scripts/parity-test.mjs <url> [webAppBaseUrl]
  *
  * Examples:
- *   node scripts/parity-test.mjs https://jao-liveviewer.vercel.app
+ *   node scripts/parity-test.mjs https://liveviewer-production.up.railway.app
  *   node scripts/parity-test.mjs https://example.com http://localhost:3000
  */
 
@@ -21,7 +21,7 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const CLI = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'liveviewer.js');
 
 const TARGET_URL = process.argv[2];
-const WEB_APP_BASE = process.argv[3] || 'https://jao-liveviewer.vercel.app';
+const WEB_APP_BASE = process.argv[3] || 'https://liveviewer-production.up.railway.app';
 
 if (!TARGET_URL) {
   console.error('Usage: node scripts/parity-test.mjs <url> [webAppBaseUrl]');
