@@ -15,8 +15,8 @@
   --jao-text: #111827;
   --jao-text-secondary: #4B5563;
   --jao-text-tertiary: #6B7280;
-  --jao-gradient: linear-gradient(135deg, #4F46E5, #14B8A6);
-  --jao-gradient-hover: linear-gradient(135deg, #4338CA, #0D9488);
+  --jao-gradient: linear-gradient(135deg, #4338CA, #0D9488);
+  --jao-gradient-hover: linear-gradient(135deg, #3730A3, #0F766E);
 
   --primary: #4F46E5;
   --primary-foreground: #fff;
@@ -48,8 +48,8 @@
   --jao-text: #F1F5F9;
   --jao-text-secondary: #94A3B8;
   --jao-text-tertiary: #64748B;
-  --jao-gradient: linear-gradient(135deg, #4F46E5, #14B8A6);
-  --jao-gradient-hover: linear-gradient(135deg, #4338CA, #0D9488);
+  --jao-gradient: linear-gradient(135deg, #4338CA, #0D9488);
+  --jao-gradient-hover: linear-gradient(135deg, #3730A3, #0F766E);
 
   --primary: #4F46E5;
   --primary-foreground: #fff;

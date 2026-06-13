@@ -320,7 +320,7 @@ export default function Home() {
                 </button>
               )
             })}
-            <span className="ml-1 text-sm text-[var(--jao-text-tertiary)]">{selectedPillars.length} of {PILLARS.length}</span>
+            <span className="ml-1 text-base text-[var(--jao-text-tertiary)]">{selectedPillars.length} of {PILLARS.length}</span>
             <button
               type="button"
               onClick={() => setSelectedPillars(selectedPillars.length < PILLARS.length ? PILLARS.map(p => p.key) : PILLARS.slice(0, 1).map(p => p.key))}
